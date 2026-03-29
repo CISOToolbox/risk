@@ -1,0 +1,2824 @@
+{
+  "context": {
+    "societe": "MedSecure SAS — Dispositifs médicaux connectés (IoMT)",
+    "date": "Mars 2026",
+    "analyste": "RSSI MedSecure + Cabinet conseil cybersécurité santé",
+    "reglementation": "RGPD, MDR (EU 2017/745), HDS (Hébergement Données de Santé), NIS2 (entité importante — secteur santé)",
+    "socle": "Guide d'hygiène ANSSI — 42 mesures",
+    "commentaires": "Analyse réalisée dans le cadre de la démarche ISO 27001 et de la mise en conformité NIS2. Les dispositifs médicaux (capteurs, pompes) communiquent via Azure IoT Hub vers la plateforme cloud AWS de télésurveillance. Données de santé (HDS) hébergées chez un hébergeur certifié HDS. Enjeu critique : sécurité des patients."
+  },
+  "gravity_scale": [
+    {
+      "niveau": 4,
+      "label": "Critique",
+      "description": "Mise en danger de la vie des patients ou perte irréversible",
+      "impact_financier": "> 1 M€ ou retrait du marché",
+      "impact_reputation": "Couverture médiatique nationale/internationale, crise de confiance",
+      "impact_reglementaire": "Retrait certification CE/MDR, sanction CNIL/ANSM majeure",
+      "impact_donnees_perso": "Fuite massive données de santé (> 10 000 patients)",
+      "impact_operationnel": "Indisponibilité dispositifs médicaux > 4h en situation critique"
+    },
+    {
+      "niveau": 3,
+      "label": "Grave",
+      "description": "Impact majeur sur la prise en charge des patients",
+      "impact_financier": "200 K€ - 1 M€",
+      "impact_reputation": "Perte de confiance de plusieurs établissements clients",
+      "impact_reglementaire": "Mise en demeure CNIL, incident de matériovigilance ANSM",
+      "impact_donnees_perso": "Fuite données de santé (1 000 - 10 000 patients)",
+      "impact_operationnel": "Indisponibilité plateforme télésurveillance 4-24h"
+    },
+    {
+      "niveau": 2,
+      "label": "Significatif",
+      "description": "Dégradation de service sans impact patient direct",
+      "impact_financier": "50 - 200 K€",
+      "impact_reputation": "Insatisfaction clients, incident médiatisé secteur santé",
+      "impact_reglementaire": "Non-conformité partielle MDR/HDS",
+      "impact_donnees_perso": "Fuite données de santé limitée (< 1 000 patients)",
+      "impact_operationnel": "Indisponibilité plateforme 1-4h"
+    },
+    {
+      "niveau": 1,
+      "label": "Mineur",
+      "description": "Impact limité, sans conséquence sur les patients",
+      "impact_financier": "< 50 K€",
+      "impact_reputation": "Impact négligeable",
+      "impact_reglementaire": "Écart de conformité sans conséquence",
+      "impact_donnees_perso": "Pas d'impact données de santé",
+      "impact_operationnel": "Indisponibilité < 1h, contournement possible"
+    }
+  ],
+  "risk_matrix": [
+    {
+      "g": 4,
+      "levels": [
+        "Moyen",
+        "Moyen",
+        "Élevé",
+        "Élevé"
+      ]
+    },
+    {
+      "g": 3,
+      "levels": [
+        "Faible",
+        "Moyen",
+        "Moyen",
+        "Élevé"
+      ]
+    },
+    {
+      "g": 2,
+      "levels": [
+        "Faible",
+        "Faible",
+        "Moyen",
+        "Moyen"
+      ]
+    },
+    {
+      "g": 1,
+      "levels": [
+        "Faible",
+        "Faible",
+        "Faible",
+        "Moyen"
+      ]
+    }
+  ],
+  "vm": [
+    {
+      "id": "VM-01",
+      "nom": "Télésurveillance des patients",
+      "description": "Plateforme cloud de collecte et analyse en temps réel des données physiologiques des patients équipés de dispositifs MedSecure. Alertes automatiques aux soignants. Disponibilité critique : une interruption peut retarder la détection d'une urgence vitale.",
+      "d": 4,
+      "i": 4,
+      "c": 4,
+      "t": 4
+    },
+    {
+      "id": "VM-02",
+      "nom": "Données de santé des patients",
+      "description": "Données physiologiques (ECG, SpO2, glycémie, débit perfusion), données d'identification des patients, historique médical transmis par les établissements. Soumises RGPD + HDS. Données sensibles au sens de l'article 9 du RGPD.",
+      "d": 3,
+      "i": 4,
+      "c": 4,
+      "t": 4
+    },
+    {
+      "id": "VM-03",
+      "nom": "Firmware et logiciel embarqué des dispositifs",
+      "description": "Code firmware des capteurs physiologiques et pompes à perfusion. Classé comme logiciel de dispositif médical (SaMD/SiMD). Soumis à la validation MDR. Propriété intellectuelle majeure.",
+      "d": 3,
+      "i": 4,
+      "c": 4,
+      "t": 4
+    },
+    {
+      "id": "VM-04",
+      "nom": "Infrastructure IoT et connectivité dispositifs",
+      "description": "Azure IoT Hub, certificats d'authentification des dispositifs, protocoles MQTT/AMQP. Gestion du parc de ~5 000 dispositifs déployés dans 50 établissements.",
+      "d": 4,
+      "i": 4,
+      "c": 3,
+      "t": 3
+    },
+    {
+      "id": "VM-05",
+      "nom": "Dossier technique et conformité réglementaire",
+      "description": "Documentation technique MDR (dossier de marquage CE), rapports de validation, preuves de conformité HDS, registre de traitement RGPD. Stocké sur SharePoint.",
+      "d": 3,
+      "i": 4,
+      "c": 3,
+      "t": 4
+    },
+    {
+      "id": "VM-06",
+      "nom": "Relation clients et support hospitalier",
+      "description": "CRM, contrats avec les établissements de santé, SLA de maintenance, tickets de support. Données de contact des professionnels de santé.",
+      "d": 3,
+      "i": 3,
+      "c": 3,
+      "t": 3
+    },
+    {
+      "id": "VM-07",
+      "nom": "R&D et propriété intellectuelle",
+      "description": "Brevets, algorithmes de détection d'anomalies physiologiques, modèles ML pour la prédiction d'événements critiques. Code source sur GitLab. Avantage concurrentiel différenciant.",
+      "d": 2,
+      "i": 4,
+      "c": 4,
+      "t": 3
+    },
+    {
+      "id": "VM-08",
+      "nom": "Gestion financière et RH",
+      "description": "Comptabilité (SAP B1), paie, données personnelles des collaborateurs. Facturation des établissements clients.",
+      "d": 3,
+      "i": 3,
+      "c": 3,
+      "t": 3
+    }
+  ],
+  "bs": [
+    {
+      "id": "BS-01",
+      "nom": "Plateforme cloud télésurveillance (AWS)",
+      "type": "Infrastructure cloud",
+      "vm": "VM-01 - Télésurveillance, VM-02 - Données de santé",
+      "localisation": "AWS EU (Paris) — hébergeur certifié HDS",
+      "proprietaire": "CTO + DevOps + Hébergeur HDS"
+    },
+    {
+      "id": "BS-02",
+      "nom": "Base de données patients (PostgreSQL/RDS)",
+      "type": "Données",
+      "vm": "VM-01 - Télésurveillance, VM-02 - Données de santé",
+      "localisation": "AWS EU — chiffrement AES-256",
+      "proprietaire": "CTO + DPO"
+    },
+    {
+      "id": "BS-03",
+      "nom": "Azure IoT Hub + Device Provisioning",
+      "type": "Infrastructure IoT",
+      "vm": "VM-04 - Infrastructure IoT",
+      "localisation": "Azure EU (France)",
+      "proprietaire": "CTO + Ingénieurs IoT"
+    },
+    {
+      "id": "BS-04",
+      "nom": "Dispositifs médicaux connectés (capteurs + pompes)",
+      "type": "Matériel IoT",
+      "vm": "VM-01 - Télésurveillance, VM-03 - Firmware, VM-04 - IoT",
+      "localisation": "Déployés dans 50 établissements",
+      "proprietaire": "Ingénieurs biomédicaux + Maintenance"
+    },
+    {
+      "id": "BS-05",
+      "nom": "GitLab (code source + CI/CD)",
+      "type": "Applicatif",
+      "vm": "VM-03 - Firmware, VM-07 - R&D",
+      "localisation": "GitLab SaaS",
+      "proprietaire": "CTO + Dev"
+    },
+    {
+      "id": "BS-06",
+      "nom": "Microsoft 365 + SharePoint",
+      "type": "Applicatif",
+      "vm": "VM-05 - Conformité, VM-06 - Clients, VM-08 - Finance/RH",
+      "localisation": "Cloud Microsoft",
+      "proprietaire": "DSI"
+    },
+    {
+      "id": "BS-07",
+      "nom": "Entra ID (SSO + MFA)",
+      "type": "Sécurité",
+      "vm": "VM-01 à VM-08 (tous)",
+      "localisation": "Cloud Microsoft",
+      "proprietaire": "DSI"
+    },
+    {
+      "id": "BS-08",
+      "nom": "SAP Business One (ERP)",
+      "type": "Applicatif",
+      "vm": "VM-08 - Finance/RH",
+      "localisation": "On-premise / Cloud SAP",
+      "proprietaire": "DAF + DSI"
+    },
+    {
+      "id": "BS-09",
+      "nom": "Serveur de mise à jour firmware (OTA)",
+      "type": "Infrastructure",
+      "vm": "VM-03 - Firmware, VM-04 - IoT",
+      "localisation": "AWS EU",
+      "proprietaire": "CTO + DevOps"
+    },
+    {
+      "id": "BS-10",
+      "nom": "SIEM + SOC (Elastic / prestataire SOC)",
+      "type": "Sécurité",
+      "vm": "VM-01 - Télésurveillance, VM-04 - IoT",
+      "localisation": "Elastic Cloud + SOC externalisé",
+      "proprietaire": "RSSI"
+    },
+    {
+      "id": "BS-11",
+      "nom": "Postes de travail (Windows + Mac)",
+      "type": "Matériel",
+      "vm": "VM-05 - Conformité, VM-06 - Clients, VM-07 - R&D",
+      "localisation": "Bureaux + Nomade",
+      "proprietaire": "DSI"
+    },
+    {
+      "id": "BS-12",
+      "nom": "VPN site-à-site vers établissements",
+      "type": "Réseau",
+      "vm": "VM-01 - Télésurveillance, VM-04 - IoT",
+      "localisation": "Tunnels IPSec / WireGuard",
+      "proprietaire": "DSI + Établissements"
+    },
+    {
+      "id": "BS-13",
+      "nom": "PKI interne (certificats dispositifs)",
+      "type": "Sécurité",
+      "vm": "VM-03 - Firmware, VM-04 - IoT",
+      "localisation": "AWS Certificate Manager + HSM",
+      "proprietaire": "CTO + RSSI"
+    }
+  ],
+  "pp": [
+    {
+      "id": "PP-01",
+      "nom": "AWS (hébergeur HDS)",
+      "categorie": "Prestataire",
+      "type": "Hébergeur cloud IaaS certifié HDS",
+      "dependance": 4,
+      "penetration": 4,
+      "maturite": 4,
+      "confiance": 3,
+      "bs": "BS-01 - Plateforme AWS, BS-02 - BDD patients, BS-09 - OTA, BS-13 - PKI"
+    },
+    {
+      "id": "PP-02",
+      "nom": "Microsoft (Azure IoT + M365 + Entra ID)",
+      "categorie": "Prestataire",
+      "type": "Fournisseur cloud / IoT / SaaS",
+      "dependance": 4,
+      "penetration": 3,
+      "maturite": 4,
+      "confiance": 3,
+      "bs": "BS-03 - Azure IoT Hub, BS-06 - M365, BS-07 - Entra ID"
+    },
+    {
+      "id": "PP-03",
+      "nom": "Établissements de santé clients",
+      "categorie": "Client",
+      "type": "Clients / utilisateurs",
+      "dependance": 4,
+      "penetration": 3,
+      "maturite": 2,
+      "confiance": 3,
+      "bs": "BS-04 - Dispositifs, BS-12 - VPN"
+    },
+    {
+      "id": "PP-04",
+      "nom": "GitLab",
+      "categorie": "Prestataire",
+      "type": "Plateforme code + CI/CD",
+      "dependance": 3,
+      "penetration": 3,
+      "maturite": 3,
+      "confiance": 3,
+      "bs": "BS-05 - GitLab"
+    },
+    {
+      "id": "PP-05",
+      "nom": "Fournisseurs de composants électroniques",
+      "categorie": "Prestataire",
+      "type": "Supply chain hardware",
+      "dependance": 3,
+      "penetration": 2,
+      "maturite": 2,
+      "confiance": 2,
+      "bs": "BS-04 - Dispositifs"
+    },
+    {
+      "id": "PP-06",
+      "nom": "Prestataire SOC / SIEM",
+      "categorie": "Prestataire",
+      "type": "Fournisseur sécurité",
+      "dependance": 3,
+      "penetration": 3,
+      "maturite": 3,
+      "confiance": 3,
+      "bs": "BS-10 - SIEM/SOC"
+    },
+    {
+      "id": "PP-07",
+      "nom": "Organisme notifié (certification MDR)",
+      "categorie": "Partenaire",
+      "type": "Auditeur réglementaire",
+      "dependance": 2,
+      "penetration": 1,
+      "maturite": 4,
+      "confiance": 4,
+      "bs": "BS-05 - GitLab (audit code)"
+    }
+  ],
+  "er": [
+    {
+      "id": "ER-01",
+      "evenement": "Indisponibilité de la plateforme de télésurveillance > 4h",
+      "vm": "VM-01 - Télésurveillance",
+      "dict": "Disponibilité",
+      "impacts": "Retard détection urgence vitale, dégradation prise en charge patients, activation procédure dégradée par les établissements",
+      "gravite": 4
+    },
+    {
+      "id": "ER-02",
+      "evenement": "Fuite massive de données de santé des patients",
+      "vm": "VM-02 - Données de santé",
+      "dict": "Confidentialité",
+      "impacts": "Notification CNIL < 72h, notification patients, class action, sanction CNIL, perte certification HDS, résiliation contrats établissements",
+      "gravite": 4
+    },
+    {
+      "id": "ER-03",
+      "evenement": "Altération des données physiologiques transmises (ECG, SpO2, glycémie)",
+      "vm": "VM-01 - Télésurveillance",
+      "dict": "Intégrité",
+      "impacts": "Diagnostic erroné, traitement inadapté, mise en danger du patient — responsabilité pénale du fabricant",
+      "gravite": 4
+    },
+    {
+      "id": "ER-04",
+      "evenement": "Compromission du firmware d'un dispositif médical",
+      "vm": "VM-03 - Firmware",
+      "dict": "Intégrité",
+      "impacts": "Dispositif non conforme MDR, rappel de lot, signalement ANSM, risque pour la sécurité des patients",
+      "gravite": 4
+    },
+    {
+      "id": "ER-05",
+      "evenement": "Prise de contrôle d'une pompe à perfusion connectée",
+      "vm": "VM-04 - Infrastructure IoT",
+      "dict": "Intégrité, Disponibilité",
+      "impacts": "Modification débit perfusion = mise en danger directe du patient — scénario médiatiquement catastrophique",
+      "gravite": 4
+    },
+    {
+      "id": "ER-06",
+      "evenement": "Vol des algorithmes de détection et de la propriété intellectuelle",
+      "vm": "VM-07 - R&D",
+      "dict": "Confidentialité",
+      "impacts": "Perte avantage concurrentiel, copie par concurrent asiatique, dévalorisation des brevets",
+      "gravite": 3
+    },
+    {
+      "id": "ER-07",
+      "evenement": "Perte du dossier technique MDR et des preuves de conformité",
+      "vm": "VM-05 - Conformité",
+      "dict": "Disponibilité, Intégrité",
+      "impacts": "Impossibilité de démontrer la conformité lors d'un audit ANSM/organisme notifié, suspension du marquage CE",
+      "gravite": 4
+    },
+    {
+      "id": "ER-08",
+      "evenement": "Compromission de la PKI et des certificats des dispositifs",
+      "vm": "VM-04 - Infrastructure IoT",
+      "dict": "Confidentialité, Intégrité",
+      "impacts": "Dispositifs non authentifiés, possibilité d'injecter de faux dispositifs, interception des données patient en transit",
+      "gravite": 4
+    },
+    {
+      "id": "ER-09",
+      "evenement": "Fraude financière / BEC",
+      "vm": "VM-08 - Finance/RH",
+      "dict": "Intégrité",
+      "impacts": "Perte financière, impact trésorerie PME",
+      "gravite": 2
+    },
+    {
+      "id": "ER-10",
+      "evenement": "Indisponibilité des mises à jour firmware OTA",
+      "vm": "VM-03 - Firmware",
+      "dict": "Disponibilité",
+      "impacts": "Impossibilité de patcher une vulnérabilité critique sur les dispositifs déployés, exposition prolongée des patients",
+      "gravite": 3
+    }
+  ],
+  "ss": [
+    {
+      "id": "SS-01",
+      "scenario": "Ransomware ciblant l'infrastructure cloud de télésurveillance",
+      "couple_id": "SR/OV-01",
+      "couple_desc": "SR-01 - Cybercriminels — Ransomware santé",
+      "pp": "PP-01 - AWS, PP-02 - Microsoft",
+      "bs": "BS-01 - Plateforme AWS, BS-02 - BDD patients, BS-06 - M365",
+      "er": "ER-01 - Indisponibilité télésurveillance, ER-02 - Fuite données patients"
+    },
+    {
+      "id": "SS-02",
+      "scenario": "Exfiltration de données de santé via compromission applicative",
+      "couple_id": "SR/OV-02",
+      "couple_desc": "SR-01 - Cybercriminels — Vol données",
+      "pp": "PP-01 - AWS",
+      "bs": "BS-01 - Plateforme AWS, BS-02 - BDD patients",
+      "er": "ER-02 - Fuite données patients"
+    },
+    {
+      "id": "SS-03",
+      "scenario": "Compromission du firmware via supply chain ou mise à jour malveillante",
+      "couple_id": "SR/OV-04",
+      "couple_desc": "SR-03 - Supply chain — Firmware",
+      "pp": "PP-04 - GitLab, PP-05 - Fournisseurs composants",
+      "bs": "BS-04 - Dispositifs, BS-05 - GitLab, BS-09 - Serveur OTA, BS-13 - PKI",
+      "er": "ER-04 - Compromission firmware, ER-05 - Contrôle pompe perfusion, ER-08 - Compromission PKI"
+    },
+    {
+      "id": "SS-04",
+      "scenario": "Exploitation vulnérabilité IoT pour accéder au réseau hospitalier",
+      "couple_id": "SR/OV-09",
+      "couple_desc": "SR-08 - Opportuniste — Vuln IoT",
+      "pp": "PP-03 - Établissements clients",
+      "bs": "BS-04 - Dispositifs, BS-03 - Azure IoT, BS-12 - VPN",
+      "er": "ER-03 - Altération données physio, ER-05 - Contrôle pompe perfusion"
+    },
+    {
+      "id": "SS-05",
+      "scenario": "Phishing ciblé menant à compromission M365 et fuite de dossiers",
+      "couple_id": "SR/OV-08",
+      "couple_desc": "SR-07 - Personnel hospitalier — Phishing",
+      "pp": "PP-02 - Microsoft",
+      "bs": "BS-06 - M365, BS-07 - Entra ID, BS-11 - Postes",
+      "er": "ER-02 - Fuite données patients, ER-07 - Perte dossier MDR"
+    },
+    {
+      "id": "SS-06",
+      "scenario": "Attaque ciblée sur la PKI et les certificats des dispositifs",
+      "couple_id": "SR/OV-05, SR/OV-06",
+      "couple_desc": "SR-04 - Hacktiviste / SR-05 - Étatique — PKI",
+      "pp": "PP-01 - AWS",
+      "bs": "BS-13 - PKI, BS-03 - Azure IoT, BS-09 - OTA",
+      "er": "ER-08 - Compromission PKI, ER-04 - Compromission firmware"
+    },
+    {
+      "id": "SS-07",
+      "scenario": "Vol de propriété intellectuelle par un développeur malveillant",
+      "couple_id": "SR/OV-07",
+      "couple_desc": "SR-06 - Employé R&D — Vol PI",
+      "pp": "— (acteur interne)",
+      "bs": "BS-05 - GitLab, BS-11 - Postes",
+      "er": "ER-06 - Vol algorithmes/PI"
+    }
+  ],
+  "socle_anssi": [
+    {
+      "num": 1,
+      "thematique": "Sensibiliser et former",
+      "mesure": "Former les équipes opérationnelles à la sécurité des SI",
+      "conformite": 75,
+      "ecart": "Formation dev sécurisé OK, formation biomédicale à renforcer",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 2,
+      "thematique": "Sensibiliser et former",
+      "mesure": "Sensibiliser les utilisateurs aux bonnes pratiques",
+      "conformite": 70,
+      "ecart": "Programme sensibilisation annuel, pas encore trimestriel",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 3,
+      "thematique": "Connaître le SI",
+      "mesure": "Connaître les SI et les cartographier",
+      "conformite": 80,
+      "ecart": "Cartographie cloud OK, cartographie IoT en cours",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 4,
+      "thematique": "Connaître le SI",
+      "mesure": "Gérer les actifs",
+      "conformite": 75,
+      "ecart": "CMDB cloud OK, inventaire dispositifs médicaux à compléter",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 5,
+      "thematique": "Connaître le SI",
+      "mesure": "Identifier les informations et serveurs sensibles",
+      "conformite": 85,
+      "ecart": "Classification données de santé formalisée (HDS)",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 6,
+      "thematique": "Connaître le SI",
+      "mesure": "Inventaire exhaustif des comptes privilégiés",
+      "conformite": 70,
+      "ecart": "Revue comptes cloud en place, comptes IoT à inventorier",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 7,
+      "thematique": "Connaître le SI",
+      "mesure": "Procédures arrivée/mutation/départ",
+      "conformite": 90,
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 8,
+      "thematique": "Connaître le SI",
+      "mesure": "Accès admin restreints aux personnels habilités",
+      "conformite": 80,
+      "ecart": "Accès cloud restreints, accès maintenance dispositifs à renforcer",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 9,
+      "thematique": "Authentifier / accès",
+      "mesure": "Règles de choix des mots de passe",
+      "conformite": 100,
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 10,
+      "thematique": "Authentifier / accès",
+      "mesure": "Protéger les mots de passe stockés",
+      "conformite": 85,
+      "ecart": "Vault HashiCorp pour les secrets applicatifs",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 11,
+      "thematique": "Authentifier / accès",
+      "mesure": "Authentification forte (MFA)",
+      "conformite": 90,
+      "ecart": "MFA Entra ID sur tous les accès cloud, pas sur SAP",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 12,
+      "thematique": "Authentifier / accès",
+      "mesure": "Pas de mots de passe en clair dans fichiers",
+      "conformite": 60,
+      "ecart": "Secrets dans le code firmware à auditer",
+      "mesures_prevues": "M-17 - Audit secrets firmware"
+    },
+    {
+      "num": 13,
+      "thematique": "Authentifier / accès",
+      "mesure": "Changer les authentifications par défaut",
+      "conformite": 80,
+      "ecart": "Dispositifs déployés : credentials par défaut changés mais processus manuel",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 14,
+      "thematique": "Authentifier / accès",
+      "mesure": "Authentification centrale",
+      "conformite": 75,
+      "ecart": "SSO Entra ID pour cloud, pas pour SAP ni IoT Hub admin",
+      "mesures_prevues": "M-18 - SSO unifié"
+    },
+    {
+      "num": 15,
+      "thematique": "Authentifier / accès",
+      "mesure": "Moindre privilège",
+      "conformite": 70,
+      "ecart": "IAM AWS correct, RBAC Azure IoT à affiner",
+      "mesures_prevues": "M-19 - RBAC IoT"
+    },
+    {
+      "num": 16,
+      "thematique": "Sécuriser les postes",
+      "mesure": "Mettre à niveau les logiciels",
+      "conformite": 80,
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 17,
+      "thematique": "Sécuriser les postes",
+      "mesure": "Socle de sécurité minimum sur le parc",
+      "conformite": 75,
+      "ecart": "Postes OK, durcissement firmware à formaliser dans le SDLC",
+      "mesures_prevues": "M-20 - SDLC sécurisé firmware"
+    },
+    {
+      "num": 18,
+      "thematique": "Sécuriser les postes",
+      "mesure": "Chiffrer les données sensibles sur postes",
+      "conformite": 90,
+      "ecart": "BitLocker/FileVault + chiffrement données patient au repos",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 19,
+      "thematique": "Sécuriser les postes",
+      "mesure": "EDR / protection codes malveillants",
+      "conformite": 85,
+      "ecart": "CrowdStrike sur postes, pas de protection runtime sur dispositifs",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 20,
+      "thematique": "Sécuriser les postes",
+      "mesure": "Maîtrise des supports amovibles",
+      "conformite": 80,
+      "ecart": "USB restreint sur postes, ports maintenance dispositifs à sécuriser",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 21,
+      "thematique": "Sécuriser le réseau",
+      "mesure": "Segmenter le réseau",
+      "conformite": 85,
+      "ecart": "VPC AWS segmenté, réseau IoT isolé dans les établissements (recommandation)",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 22,
+      "thematique": "Sécuriser le réseau",
+      "mesure": "Sécurité des réseaux Wi-Fi",
+      "conformite": 70,
+      "ecart": "WiFi bureau OK, communication dispositifs WiFi hospitalier = responsabilité client",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 23,
+      "thematique": "Sécuriser le réseau",
+      "mesure": "Protocoles réseaux sécurisés",
+      "conformite": 90,
+      "ecart": "TLS 1.3 pour API, MQTT over TLS pour IoT",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 24,
+      "thematique": "Sécuriser le réseau",
+      "mesure": "Passerelle sécurisée Internet",
+      "conformite": 80,
+      "ecart": "WAF AWS, filtrage sortant à renforcer",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 25,
+      "thematique": "Sécuriser le réseau",
+      "mesure": "Sécuriser interconnexions partenaires",
+      "conformite": 85,
+      "ecart": "VPN IPSec vers établissements",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 26,
+      "thematique": "Sécuriser le réseau",
+      "mesure": "Contrôler les accès distants",
+      "conformite": 90,
+      "ecart": "VPN + MFA pour accès admin",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 27,
+      "thematique": "Sécuriser le réseau",
+      "mesure": "Superviser les flux réseaux",
+      "conformite": 75,
+      "ecart": "Monitoring cloud OK, flux IoT à superviser plus finement",
+      "mesures_prevues": "M-21 - Monitoring flux IoT"
+    },
+    {
+      "num": 28,
+      "thematique": "Sécuriser l'administration",
+      "mesure": "Postes d'administration dédiés",
+      "conformite": 50,
+      "ecart": "Pas de poste admin dédié — accès via VPN + MFA",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 29,
+      "thematique": "Sécuriser l'administration",
+      "mesure": "Outils d'admin à distance sécurisés (PAM/bastion)",
+      "conformite": 40,
+      "ecart": "Pas de bastion — accès SSH direct via VPN",
+      "mesures_prevues": "M-22 - Bastion/PAM"
+    },
+    {
+      "num": 30,
+      "thematique": "Sécuriser l'administration",
+      "mesure": "Réseau dédié à l'administration",
+      "conformite": 60,
+      "ecart": "VLAN admin en place au bureau, pas en cloud",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 31,
+      "thematique": "Sécuriser l'administration",
+      "mesure": "Tracer les opérations d'administration",
+      "conformite": 70,
+      "ecart": "CloudTrail AWS OK, traçabilité Azure IoT/maintenance dispositifs partielle",
+      "mesures_prevues": "M-10 - SIEM centralisé"
+    },
+    {
+      "num": 32,
+      "thematique": "Sécuriser l'administration",
+      "mesure": "Limiter les droits d'administration",
+      "conformite": 75,
+      "ecart": "IAM AWS OK, trop d'admins sur Azure IoT Hub",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 33,
+      "thematique": "Gérer le nomadisme",
+      "mesure": "Sécuriser physiquement les terminaux nomades",
+      "conformite": 85,
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 34,
+      "thematique": "Gérer le nomadisme",
+      "mesure": "Chiffrer les données des terminaux nomades",
+      "conformite": 90,
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 35,
+      "thematique": "Gérer le nomadisme",
+      "mesure": "Sécuriser la connexion des postes nomades",
+      "conformite": 90,
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 36,
+      "thematique": "Maintenir le SI à jour",
+      "mesure": "Politique de mise à jour",
+      "conformite": 65,
+      "ecart": "Postes et serveurs OK, firmware dispositifs : processus OTA mais cycle long (validation MDR)",
+      "mesures_prevues": "M-23 - Processus MAJ firmware sécurisé"
+    },
+    {
+      "num": 37,
+      "thematique": "Maintenir le SI à jour",
+      "mesure": "Anticiper la fin de maintenance",
+      "conformite": 60,
+      "ecart": "Composants IoT avec cycle de vie court — obsolescence à anticiper",
+      "mesures_prevues": "M-24 - Plan obsolescence composants IoT"
+    },
+    {
+      "num": 38,
+      "thematique": "Maintenir le SI à jour",
+      "mesure": "Correctifs dans un délai adapté",
+      "conformite": 70,
+      "ecart": "Cloud OK, firmware : délai validation MDR (3-6 mois pour un patch critique)",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 39,
+      "thematique": "Superviser / auditer / réagir",
+      "mesure": "Journalisation des composants importants",
+      "conformite": 75,
+      "ecart": "Logs cloud centralisés, logs dispositifs remontés partiellement",
+      "mesures_prevues": "M-10 - SIEM centralisé"
+    },
+    {
+      "num": 40,
+      "thematique": "Superviser / auditer / réagir",
+      "mesure": "Politique de sauvegarde",
+      "conformite": 90,
+      "ecart": "Backups RDS automatiques, snapshots EBS, pas de backup firmware signé",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 41,
+      "thematique": "Superviser / auditer / réagir",
+      "mesure": "Contrôles et audits réguliers",
+      "conformite": 85,
+      "ecart": "Pentests annuels cloud + tests sécurité firmware (fuzzing)",
+      "mesures_prevues": ""
+    },
+    {
+      "num": 42,
+      "thematique": "Superviser / auditer / réagir",
+      "mesure": "Référent sécurité désigné",
+      "conformite": 100,
+      "ecart": "RSSI à temps plein",
+      "mesures_prevues": ""
+    }
+  ],
+  "socle_iso": [
+    {
+      "ref": "A.5.1",
+      "theme": "Organisationnelles",
+      "mesure": "Politiques de sécurité de l'information",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.2",
+      "theme": "Organisationnelles",
+      "mesure": "Rôles et responsabilités en sécurité",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.3",
+      "theme": "Organisationnelles",
+      "mesure": "Séparation des tâches",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.4",
+      "theme": "Organisationnelles",
+      "mesure": "Responsabilités de la direction",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.5",
+      "theme": "Organisationnelles",
+      "mesure": "Relations avec les autorités",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.6",
+      "theme": "Organisationnelles",
+      "mesure": "Relations avec les groupes spécialisés",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.7",
+      "theme": "Organisationnelles",
+      "mesure": "Renseignement sur les menaces",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.8",
+      "theme": "Organisationnelles",
+      "mesure": "Sécurité dans la gestion de projet",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.9",
+      "theme": "Organisationnelles",
+      "mesure": "Inventaire des informations et actifs",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.10",
+      "theme": "Organisationnelles",
+      "mesure": "Utilisation correcte des informations et actifs",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.11",
+      "theme": "Organisationnelles",
+      "mesure": "Restitution des actifs",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.12",
+      "theme": "Organisationnelles",
+      "mesure": "Classification de l'information",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.13",
+      "theme": "Organisationnelles",
+      "mesure": "Marquage de l'information",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.14",
+      "theme": "Organisationnelles",
+      "mesure": "Transfert d'information",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.15",
+      "theme": "Organisationnelles",
+      "mesure": "Contrôle d'accès",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.16",
+      "theme": "Organisationnelles",
+      "mesure": "Gestion des identités",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.17",
+      "theme": "Organisationnelles",
+      "mesure": "Informations d'authentification",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.18",
+      "theme": "Organisationnelles",
+      "mesure": "Droits d'accès",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.19",
+      "theme": "Organisationnelles",
+      "mesure": "Sécurité dans les relations avec les fournisseurs",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.20",
+      "theme": "Organisationnelles",
+      "mesure": "Sécurité dans les accords avec les fournisseurs",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.21",
+      "theme": "Organisationnelles",
+      "mesure": "Gestion de la sécurité dans la chaîne d'approvisionnement TIC",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.22",
+      "theme": "Organisationnelles",
+      "mesure": "Surveillance et revue des services fournisseurs",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.23",
+      "theme": "Organisationnelles",
+      "mesure": "Sécurité de l'information dans l'utilisation de services cloud",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.24",
+      "theme": "Organisationnelles",
+      "mesure": "Planification et préparation de la gestion des incidents",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.25",
+      "theme": "Organisationnelles",
+      "mesure": "Évaluation des événements de sécurité et prise de décision",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.26",
+      "theme": "Organisationnelles",
+      "mesure": "Réponse aux incidents de sécurité",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.27",
+      "theme": "Organisationnelles",
+      "mesure": "Apprentissage des incidents de sécurité",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.28",
+      "theme": "Organisationnelles",
+      "mesure": "Collecte de preuves",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.29",
+      "theme": "Organisationnelles",
+      "mesure": "Sécurité pendant une perturbation",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.30",
+      "theme": "Organisationnelles",
+      "mesure": "Préparation des TIC pour la continuité d'activité",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.31",
+      "theme": "Organisationnelles",
+      "mesure": "Exigences légales, statutaires, réglementaires et contractuelles",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.32",
+      "theme": "Organisationnelles",
+      "mesure": "Droits de propriété intellectuelle",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.33",
+      "theme": "Organisationnelles",
+      "mesure": "Protection des enregistrements",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.34",
+      "theme": "Organisationnelles",
+      "mesure": "Vie privée et protection des données personnelles",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.35",
+      "theme": "Organisationnelles",
+      "mesure": "Revue indépendante de la sécurité de l'information",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.36",
+      "theme": "Organisationnelles",
+      "mesure": "Conformité aux politiques et normes de sécurité",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.5.37",
+      "theme": "Organisationnelles",
+      "mesure": "Procédures opérationnelles documentées",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.6.1",
+      "theme": "Personnes",
+      "mesure": "Vérification des antécédents",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.6.2",
+      "theme": "Personnes",
+      "mesure": "Conditions d'emploi",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.6.3",
+      "theme": "Personnes",
+      "mesure": "Sensibilisation, éducation et formation à la sécurité",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.6.4",
+      "theme": "Personnes",
+      "mesure": "Processus disciplinaire",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.6.5",
+      "theme": "Personnes",
+      "mesure": "Responsabilités après la fin ou le changement d'emploi",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.6.6",
+      "theme": "Personnes",
+      "mesure": "Accords de confidentialité ou de non-divulgation",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.6.7",
+      "theme": "Personnes",
+      "mesure": "Travail à distance",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.6.8",
+      "theme": "Personnes",
+      "mesure": "Signalement des événements de sécurité",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.7.1",
+      "theme": "Physiques",
+      "mesure": "Périmètres de sécurité physique",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.7.2",
+      "theme": "Physiques",
+      "mesure": "Contrôles physiques des accès",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.7.3",
+      "theme": "Physiques",
+      "mesure": "Sécurisation des bureaux, salles et équipements",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.7.4",
+      "theme": "Physiques",
+      "mesure": "Surveillance de la sécurité physique",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.7.5",
+      "theme": "Physiques",
+      "mesure": "Protection contre les menaces physiques et environnementales",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.7.6",
+      "theme": "Physiques",
+      "mesure": "Travail dans les zones sécurisées",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.7.7",
+      "theme": "Physiques",
+      "mesure": "Bureau propre et écran verrouillé",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.7.8",
+      "theme": "Physiques",
+      "mesure": "Emplacement et protection des matériels",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.7.9",
+      "theme": "Physiques",
+      "mesure": "Sécurité des actifs hors site",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.7.10",
+      "theme": "Physiques",
+      "mesure": "Supports de stockage",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.7.11",
+      "theme": "Physiques",
+      "mesure": "Services généraux",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.7.12",
+      "theme": "Physiques",
+      "mesure": "Sécurité du câblage",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.7.13",
+      "theme": "Physiques",
+      "mesure": "Maintenance des matériels",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.7.14",
+      "theme": "Physiques",
+      "mesure": "Mise au rebut ou réutilisation sécurisée des matériels",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.1",
+      "theme": "Technologiques",
+      "mesure": "Terminaux utilisateurs",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.2",
+      "theme": "Technologiques",
+      "mesure": "Droits d'accès privilégiés",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.3",
+      "theme": "Technologiques",
+      "mesure": "Restriction d'accès à l'information",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.4",
+      "theme": "Technologiques",
+      "mesure": "Accès au code source",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.5",
+      "theme": "Technologiques",
+      "mesure": "Authentification sécurisée",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.6",
+      "theme": "Technologiques",
+      "mesure": "Dimensionnement",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.7",
+      "theme": "Technologiques",
+      "mesure": "Protection contre les programmes malveillants",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.8",
+      "theme": "Technologiques",
+      "mesure": "Gestion des vulnérabilités techniques",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.9",
+      "theme": "Technologiques",
+      "mesure": "Gestion de la configuration",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.10",
+      "theme": "Technologiques",
+      "mesure": "Suppression d'information",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.11",
+      "theme": "Technologiques",
+      "mesure": "Masquage des données",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.12",
+      "theme": "Technologiques",
+      "mesure": "Prévention de la fuite de données",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.13",
+      "theme": "Technologiques",
+      "mesure": "Sauvegarde des informations",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.14",
+      "theme": "Technologiques",
+      "mesure": "Redondance des moyens de traitement",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.15",
+      "theme": "Technologiques",
+      "mesure": "Journalisation",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.16",
+      "theme": "Technologiques",
+      "mesure": "Activités de surveillance",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.17",
+      "theme": "Technologiques",
+      "mesure": "Synchronisation des horloges",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.18",
+      "theme": "Technologiques",
+      "mesure": "Utilisation de programmes utilitaires privilégiés",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.19",
+      "theme": "Technologiques",
+      "mesure": "Installation de logiciels sur les systèmes en production",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.20",
+      "theme": "Technologiques",
+      "mesure": "Sécurité des réseaux",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.21",
+      "theme": "Technologiques",
+      "mesure": "Sécurité des services réseau",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.22",
+      "theme": "Technologiques",
+      "mesure": "Séparation des réseaux",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.23",
+      "theme": "Technologiques",
+      "mesure": "Filtrage web",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.24",
+      "theme": "Technologiques",
+      "mesure": "Utilisation de la cryptographie",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.25",
+      "theme": "Technologiques",
+      "mesure": "Cycle de vie du développement sécurisé",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.26",
+      "theme": "Technologiques",
+      "mesure": "Exigences de sécurité des applications",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.27",
+      "theme": "Technologiques",
+      "mesure": "Architecture système sécurisée et principes d'ingénierie",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.28",
+      "theme": "Technologiques",
+      "mesure": "Codage sécurisé",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.29",
+      "theme": "Technologiques",
+      "mesure": "Tests de sécurité dans le développement et l'acceptation",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.30",
+      "theme": "Technologiques",
+      "mesure": "Développement externalisé",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.31",
+      "theme": "Technologiques",
+      "mesure": "Séparation des environnements de développement, de test et de production",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.32",
+      "theme": "Technologiques",
+      "mesure": "Gestion des changements",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.33",
+      "theme": "Technologiques",
+      "mesure": "Informations relatives aux tests",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    },
+    {
+      "ref": "A.8.34",
+      "theme": "Technologiques",
+      "mesure": "Protection des systèmes d'information pendant les tests d'audit",
+      "applicable": "Oui",
+      "conformite": "",
+      "ecart": "",
+      "mesures_prevues": ""
+    }
+  ],
+  "srov": [
+    {
+      "couple": "SR/OV-01",
+      "sr_id": "SR-01",
+      "ov_id": "OV-01",
+      "motivation": 4,
+      "ressources": 4,
+      "activite": 4,
+      "justification": "Secteur santé = cible prioritaire ransomware (valeur données, pression vitale)"
+    },
+    {
+      "couple": "SR/OV-02",
+      "sr_id": "SR-01",
+      "ov_id": "OV-02",
+      "motivation": 4,
+      "ressources": 4,
+      "activite": 3,
+      "justification": "Données de santé = valeur élevée sur le darkweb (10-50x données bancaires)"
+    },
+    {
+      "couple": "SR/OV-03",
+      "sr_id": "SR-02",
+      "ov_id": "OV-03",
+      "motivation": 3,
+      "ressources": 3,
+      "activite": 2,
+      "justification": "Algorithmes de détection d'anomalies = avantage concurrentiel"
+    },
+    {
+      "couple": "SR/OV-04",
+      "sr_id": "SR-03",
+      "ov_id": "OV-04",
+      "motivation": 3,
+      "ressources": 3,
+      "activite": 4,
+      "justification": "Supply chain IoT complexe — composants chinois, firmware tiers"
+    },
+    {
+      "couple": "SR/OV-05",
+      "sr_id": "SR-04",
+      "ov_id": "OV-05",
+      "motivation": 2,
+      "ressources": 3,
+      "activite": 3,
+      "justification": "Dispositifs médicaux = cible médiatique pour chercheurs (BlackHat, DEF CON)"
+    },
+    {
+      "couple": "SR/OV-06",
+      "sr_id": "SR-05",
+      "ov_id": "OV-06",
+      "motivation": 2,
+      "ressources": 4,
+      "activite": 1,
+      "justification": "Patients potentiellement sensibles (politiques, militaires) dans hôpitaux publics"
+    },
+    {
+      "couple": "SR/OV-07",
+      "sr_id": "SR-06",
+      "ov_id": "OV-07",
+      "motivation": 3,
+      "ressources": 3,
+      "activite": 2,
+      "justification": "Développeurs firmware ont accès au code critique et aux clés de signature"
+    },
+    {
+      "couple": "SR/OV-08",
+      "sr_id": "SR-07",
+      "ov_id": "OV-08",
+      "motivation": 3,
+      "ressources": 2,
+      "activite": 4,
+      "justification": "Utilisateurs finaux = personnel soignant non formé à la cybersécurité"
+    },
+    {
+      "couple": "SR/OV-09",
+      "sr_id": "SR-08",
+      "ov_id": "OV-09",
+      "motivation": 3,
+      "ressources": 3,
+      "activite": 3,
+      "justification": "Dispositifs IoT potentiellement exposés sur réseau hospitalier mal segmenté"
+    },
+    {
+      "couple": "SR/OV-10",
+      "sr_id": "SR-09",
+      "ov_id": "OV-10",
+      "motivation": 2,
+      "ressources": 2,
+      "activite": 2,
+      "justification": "Certains dispositifs ont une interface patient (pompe à perfusion)"
+    }
+  ],
+  "sr_list": [
+    {
+      "id": "SR-01",
+      "nom": "Groupe cybercriminel (ransomware santé)"
+    },
+    {
+      "id": "SR-02",
+      "nom": "Concurrent / espion industriel"
+    },
+    {
+      "id": "SR-03",
+      "nom": "Attaquant supply chain"
+    },
+    {
+      "id": "SR-04",
+      "nom": "Hacktiviste / chercheur sécurité"
+    },
+    {
+      "id": "SR-05",
+      "nom": "Acteur étatique"
+    },
+    {
+      "id": "SR-06",
+      "nom": "Employé malveillant R&D"
+    },
+    {
+      "id": "SR-07",
+      "nom": "Personnel hospitalier négligent"
+    },
+    {
+      "id": "SR-08",
+      "nom": "Cybercriminel opportuniste"
+    },
+    {
+      "id": "SR-09",
+      "nom": "Attaquant via patient"
+    }
+  ],
+  "ov_list": [
+    {
+      "id": "OV-01",
+      "nom": "Chiffrement infrastructure + extorsion données patients"
+    },
+    {
+      "id": "OV-02",
+      "nom": "Vol et revente de données de santé"
+    },
+    {
+      "id": "OV-03",
+      "nom": "Vol des algorithmes de détection et brevets"
+    },
+    {
+      "id": "OV-04",
+      "nom": "Compromission firmware via composant ou mise à jour"
+    },
+    {
+      "id": "OV-05",
+      "nom": "Démonstration vulnérabilité dispositif médical"
+    },
+    {
+      "id": "OV-06",
+      "nom": "Espionnage des données patients (personnalités, militaires)"
+    },
+    {
+      "id": "OV-07",
+      "nom": "Vol de propriété intellectuelle"
+    },
+    {
+      "id": "OV-08",
+      "nom": "Mauvaise manipulation dispositif / fuite données"
+    },
+    {
+      "id": "OV-09",
+      "nom": "Exploitation vulnérabilité IoT exposée"
+    },
+    {
+      "id": "OV-10",
+      "nom": "Manipulation dispositif depuis l'interface patient"
+    }
+  ],
+  "eco": [
+    {
+      "pp_id": "PP-01",
+      "mesures_existantes": "M-01 - MFA cloud, M-05 - Backups immutables, M-06 - Chiffrement AES-256, M-03 - SIEM CloudTrail",
+      "mesures_complementaires": "M-22 - Bastion/PAM, M-10 - SIEM centralisé, M-14 - PKI HSM renforcée",
+      "categorie": "Technique / Contractuelle",
+      "dep_resid": 4,
+      "pen_resid": 3,
+      "mat_resid": 4,
+      "conf_resid": 4
+    },
+    {
+      "pp_id": "PP-02",
+      "mesures_existantes": "M-01 - MFA Entra ID, M-02 - Defender M365",
+      "mesures_complementaires": "M-18 - SSO unifié Azure IoT",
+      "categorie": "Technique",
+      "dep_resid": 3,
+      "pen_resid": 2,
+      "mat_resid": 4,
+      "conf_resid": 4
+    },
+    {
+      "pp_id": "PP-03",
+      "mesures_existantes": "VPN IPSec, recommandations segmentation réseau IoT",
+      "mesures_complementaires": "M-26 - Guide sécurité déploiement client",
+      "categorie": "Technique / Organisationnelle",
+      "dep_resid": 3,
+      "pen_resid": 2,
+      "mat_resid": 3,
+      "conf_resid": 3
+    },
+    {
+      "pp_id": "PP-04",
+      "mesures_existantes": "M-08 - Branch protection GitLab, M-04 - SonarQube SAST",
+      "mesures_complementaires": "M-20 - SDLC sécurisé firmware",
+      "categorie": "Technique",
+      "dep_resid": 3,
+      "pen_resid": 2,
+      "mat_resid": 4,
+      "conf_resid": 3
+    },
+    {
+      "pp_id": "PP-05",
+      "mesures_existantes": "Cahier des charges sécurité composants, audit réception",
+      "mesures_complementaires": "M-25 - Vérification intégrité composants supply chain",
+      "categorie": "Contractuelle / Technique",
+      "dep_resid": 3,
+      "pen_resid": 1,
+      "mat_resid": 3,
+      "conf_resid": 3
+    },
+    {
+      "pp_id": "PP-06",
+      "mesures_existantes": "M-03 - SIEM centralisé, SLA détection < 15 min",
+      "mesures_complementaires": "M-10 - SIEM centralisé, M-21 - Monitoring flux IoT",
+      "categorie": "Technique / Contractuelle",
+      "dep_resid": 2,
+      "pen_resid": 2,
+      "mat_resid": 4,
+      "conf_resid": 4
+    },
+    {
+      "pp_id": "PP-07",
+      "mesures_existantes": "Audits réguliers, rapports d'évaluation",
+      "mesures_complementaires": "M-16 - Classification données santé",
+      "categorie": "Organisationnelle",
+      "dep_resid": 2,
+      "pen_resid": 1,
+      "mat_resid": 4,
+      "conf_resid": 4
+    }
+  ],
+  "sop_detail": [
+    {
+      "sop": "SOP-01",
+      "ss": "SS-01 - Ransomware télésurveillance",
+      "phase": "1. Reconnaissance",
+      "action": "Scan infrastructure exposée, identification endpoints API santé",
+      "bs": "BS-01 Plateforme AWS",
+      "controle": "WAF AWS, rate limiting",
+      "ref": "#24",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-12 - WAF renforcé",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-01",
+      "ss": "SS-01 - Ransomware télésurveillance",
+      "phase": "2. Intrusion initiale",
+      "action": "Phishing ciblé personnel MedSecure ou exploitation VPN",
+      "bs": "BS-06 M365, BS-07 Entra ID",
+      "controle": "MFA Entra ID, Defender for Office 365",
+      "ref": "#2, #11",
+      "efficacite": "Efficace",
+      "commentaire": "",
+      "mesure_proposee": "",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-01",
+      "ss": "SS-01 - Ransomware télésurveillance",
+      "phase": "3. Élévation privilèges",
+      "action": "Exploitation IAM AWS mal configuré pour obtenir accès admin",
+      "bs": "BS-01 AWS",
+      "controle": "IAM AWS, principe moindre privilège",
+      "ref": "#15, #8",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-19 - RBAC IoT",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-01",
+      "ss": "SS-01 - Ransomware télésurveillance",
+      "phase": "4. Mouvement latéral",
+      "action": "Accès aux bases patients via rôles cross-account",
+      "bs": "BS-02 BDD patients",
+      "controle": "Segmentation VPC, security groups",
+      "ref": "#21",
+      "efficacite": "Efficace",
+      "commentaire": "",
+      "mesure_proposee": "",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-01",
+      "ss": "SS-01 - Ransomware télésurveillance",
+      "phase": "5. Exfiltration",
+      "action": "Copie données patients avant chiffrement (double extorsion)",
+      "bs": "BS-02 BDD patients",
+      "controle": "DLP non implémenté, chiffrement au repos AES-256",
+      "ref": "#5",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-13 - DLP M365, M-16 - Classification données santé",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-01",
+      "ss": "SS-01 - Ransomware télésurveillance",
+      "phase": "6. Impact",
+      "action": "Chiffrement RDS + EBS, suppression snapshots",
+      "bs": "BS-01, BS-02",
+      "controle": "Backups S3 versioning + immutabilité, plan de reprise",
+      "ref": "#40",
+      "efficacite": "Efficace",
+      "commentaire": "",
+      "mesure_proposee": "",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-02",
+      "ss": "SS-02 - Exfiltration données santé",
+      "phase": "1. Reconnaissance",
+      "action": "Cartographie API de la plateforme télésurveillance",
+      "bs": "BS-01 Plateforme AWS",
+      "controle": "Documentation API privée, authentification JWT",
+      "ref": "#24",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-12 - WAF renforcé",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-02",
+      "ss": "SS-02 - Exfiltration données santé",
+      "phase": "2. Exploitation API",
+      "action": "Injection SQL / IDOR sur endpoints de données patients",
+      "bs": "BS-01, BS-02",
+      "controle": "SonarQube SAST, tests intrusion annuels, WAF",
+      "ref": "#41, #24",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-09 - Tests sécurité firmware, M-12 - WAF renforcé",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-02",
+      "ss": "SS-02 - Exfiltration données santé",
+      "phase": "3. Accès données patients",
+      "action": "Extraction via API avec token compromis ou vulnérabilité IDOR",
+      "bs": "BS-02 BDD patients",
+      "controle": "RBAC applicatif, chiffrement champs sensibles",
+      "ref": "#15",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-19 - RBAC IoT",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-02",
+      "ss": "SS-02 - Exfiltration données santé",
+      "phase": "4. Exfiltration",
+      "action": "Transfert données via HTTPS vers infrastructure attaquant",
+      "bs": "BS-01 AWS",
+      "controle": "Pas de DLP, monitoring sorties réseau partiel",
+      "ref": "#27",
+      "efficacite": "Absent",
+      "commentaire": "",
+      "mesure_proposee": "M-10 - SIEM centralisé, M-21 - Monitoring flux IoT",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-03",
+      "ss": "SS-03 - Supply chain firmware",
+      "phase": "1. Compromission amont",
+      "action": "Insertion composant malveillant ou modification firmware tiers",
+      "bs": "BS-04 Dispositifs",
+      "controle": "Audit réception composants (partiel), pas de vérification firmware tiers systématique",
+      "ref": "#36, #37",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-23 - MAJ firmware sécurisé, M-20 - SDLC sécurisé, M-24 - Plan obsolescence composants",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-03",
+      "ss": "SS-03 - Supply chain firmware",
+      "phase": "2. Injection CI/CD",
+      "action": "Modification pipeline GitLab CI pour injecter code malveillant dans le firmware",
+      "bs": "BS-05 GitLab",
+      "controle": "Branch protection, code review obligatoire, SAST SonarQube",
+      "ref": "#41",
+      "efficacite": "Efficace",
+      "commentaire": "",
+      "mesure_proposee": "",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-03",
+      "ss": "SS-03 - Supply chain firmware",
+      "phase": "3. Signature et déploiement",
+      "action": "Firmware malveillant signé avec clé compromise ou processus de signature contourné",
+      "bs": "BS-13 PKI, BS-09 OTA",
+      "controle": "PKI avec HSM, processus de signature multi-approbation",
+      "ref": "#10",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-14 - Protection clés PKI HSM",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-03",
+      "ss": "SS-03 - Supply chain firmware",
+      "phase": "4. Activation",
+      "action": "Firmware malveillant actif sur dispositifs déployés",
+      "bs": "BS-04 Dispositifs",
+      "controle": "Monitoring comportement dispositifs (partiel), alertes anomalies IoT",
+      "ref": "#39",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-10 - SIEM centralisé",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-03",
+      "ss": "SS-03 - Supply chain firmware",
+      "phase": "5. Impact",
+      "action": "Compromission de masse des dispositifs, données patients exposées",
+      "bs": "BS-04, BS-02",
+      "controle": "Segmentation réseau IoT, plan de rappel dispositifs",
+      "ref": "#21",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-11 - Segmentation réseau IoT",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-04",
+      "ss": "SS-04 - Exploitation vuln IoT",
+      "phase": "1. Scan réseau hospitalier",
+      "action": "Découverte dispositifs MedSecure sur réseau hospitalier mal segmenté",
+      "bs": "BS-04 Dispositifs",
+      "controle": "Recommandation segmentation réseau IoT aux clients",
+      "ref": "#21",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-11 - Segmentation réseau IoT",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-04",
+      "ss": "SS-04 - Exploitation vuln IoT",
+      "phase": "2. Exploitation vulnérabilité",
+      "action": "Exploitation vulnérabilité firmware (buffer overflow, auth bypass)",
+      "bs": "BS-04 Dispositifs",
+      "controle": "Fuzzing firmware annuel, cycle patch MDR long (3-6 mois)",
+      "ref": "#36, #38",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-23 - MAJ firmware sécurisé, M-20 - SDLC sécurisé",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-04",
+      "ss": "SS-04 - Exploitation vuln IoT",
+      "phase": "3. Mouvement latéral",
+      "action": "Depuis le dispositif compromis, accès au réseau hospitalier",
+      "bs": "BS-12 VPN",
+      "controle": "Dispositif isolé par VLAN (si recommandation suivie par l'hôpital)",
+      "ref": "#21, #25",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-11 - Segmentation réseau IoT",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-04",
+      "ss": "SS-04 - Exploitation vuln IoT",
+      "phase": "4. Manipulation données",
+      "action": "Altération des données physiologiques transmises au cloud",
+      "bs": "BS-03 Azure IoT",
+      "controle": "Vérification intégrité données côté cloud (checksum), certificat TLS mutel",
+      "ref": "#23",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-21 - Monitoring flux IoT",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-04",
+      "ss": "SS-04 - Exploitation vuln IoT",
+      "phase": "5. Impact",
+      "action": "Diagnostic erroné / modification débit pompe perfusion",
+      "bs": "BS-04 Dispositifs",
+      "controle": "Alarmes double canal (dispositif + cloud), contrôle physique infirmier",
+      "ref": "#41",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-09 - Tests sécurité firmware",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-05",
+      "ss": "SS-05 - Phishing M365",
+      "phase": "1. Phishing ciblé",
+      "action": "Email usurpant organisme de santé (ARS, ANSM) avec pièce jointe malveillante",
+      "bs": "BS-06 M365",
+      "controle": "Defender for Office 365, sensibilisation annuelle",
+      "ref": "#2, #19",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-15 - Sensibilisation renforcée santé",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-05",
+      "ss": "SS-05 - Phishing M365",
+      "phase": "2. Compromission session",
+      "action": "Vol cookie session M365 via adversary-in-the-middle",
+      "bs": "BS-07 Entra ID",
+      "controle": "MFA Entra ID, accès conditionnel",
+      "ref": "#11, #14",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-01 - MFA Entra ID, M-18 - SSO unifié",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-05",
+      "ss": "SS-05 - Phishing M365",
+      "phase": "3. Accès SharePoint",
+      "action": "Navigation dossiers techniques MDR et données patients",
+      "bs": "BS-06 M365",
+      "controle": "Classification données, DLP M365 (partiel)",
+      "ref": "#5",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-13 - DLP M365, M-16 - Classification données santé",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-05",
+      "ss": "SS-05 - Phishing M365",
+      "phase": "4. Exfiltration",
+      "action": "Téléchargement massif dossiers sensibles",
+      "bs": "BS-06 M365",
+      "controle": "DLP M365, SIEM",
+      "ref": "#27, #39",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-10 - SIEM centralisé, M-21 - Monitoring flux IoT",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-06",
+      "ss": "SS-06 - Attaque PKI",
+      "phase": "1. Reconnaissance PKI",
+      "action": "Identification de l'infrastructure PKI et du processus de signature firmware",
+      "bs": "BS-13 PKI",
+      "controle": "PKI documentée en interne uniquement",
+      "ref": "#5",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-13 - DLP M365, M-16 - Classification données santé",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-06",
+      "ss": "SS-06 - Attaque PKI",
+      "phase": "2. Compromission clé",
+      "action": "Exploitation accès admin AWS pour accéder au HSM ou clé de signature",
+      "bs": "BS-13 PKI, BS-01 AWS",
+      "controle": "HSM CloudHSM, accès restreint aux clés",
+      "ref": "#10, #29",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-14 - Protection clés PKI HSM, M-22 - Bastion/PAM",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-06",
+      "ss": "SS-06 - Attaque PKI",
+      "phase": "3. Signature firmware malveillant",
+      "action": "Signature d'un firmware modifié avec la clé volée",
+      "bs": "BS-09 OTA",
+      "controle": "Multi-approbation (partiel), journalisation signatures",
+      "ref": "#31",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-10 - SIEM centralisé",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-06",
+      "ss": "SS-06 - Attaque PKI",
+      "phase": "4. Déploiement OTA",
+      "action": "Push firmware malveillant vers les dispositifs via OTA",
+      "bs": "BS-04 Dispositifs",
+      "controle": "Validation firmware côté dispositif (signature vérifiée)",
+      "ref": "#36",
+      "efficacite": "Efficace",
+      "commentaire": "",
+      "mesure_proposee": "",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-07",
+      "ss": "SS-07 - Vol PI développeur",
+      "phase": "1. Accès légitime",
+      "action": "Le développeur accède au code source et aux algorithmes via son compte GitLab",
+      "bs": "BS-05 GitLab",
+      "controle": "Accès restreints par projet, code review obligatoire",
+      "ref": "#8, #15",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-19 - RBAC IoT",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-07",
+      "ss": "SS-07 - Vol PI développeur",
+      "phase": "2. Collecte données sensibles",
+      "action": "Clone des repos contenant les algorithmes de détection et les brevets",
+      "bs": "BS-05 GitLab",
+      "controle": "Audit logs GitLab, alertes clone massif absentes",
+      "ref": "#31, #39",
+      "efficacite": "Absent",
+      "commentaire": "",
+      "mesure_proposee": "M-10 - SIEM centralisé",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-07",
+      "ss": "SS-07 - Vol PI développeur",
+      "phase": "3. Exfiltration",
+      "action": "Copie sur clé USB ou envoi vers compte personnel (email, cloud perso)",
+      "bs": "BS-11 Postes",
+      "controle": "DLP non déployé sur postes dev, USB partiellement restreint",
+      "ref": "#20, #5",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-13 - DLP M365, M-16 - Classification données santé",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-07",
+      "ss": "SS-07 - Vol PI développeur",
+      "phase": "4. Dissimulation",
+      "action": "Suppression traces de téléchargement, activité normale en apparence",
+      "bs": "BS-05 GitLab, BS-10 SIEM",
+      "controle": "SIEM centralisé mais pas de cas d'usage vol PI",
+      "ref": "#39",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-10 - SIEM centralisé",
+      "type_mesure": ""
+    },
+    {
+      "sop": "SOP-07",
+      "ss": "SS-07 - Vol PI développeur",
+      "phase": "5. Exploitation",
+      "action": "Revente algorithmes à un concurrent ou création startup concurrente",
+      "bs": "—",
+      "controle": "Clauses de non-concurrence, NDA",
+      "ref": "#7",
+      "efficacite": "Partiel",
+      "commentaire": "",
+      "mesure_proposee": "M-16 - Classification données santé",
+      "type_mesure": ""
+    }
+  ],
+  "sop_summary": [
+    {
+      "sop": "SOP-01",
+      "ss": "SS-01 - Ransomware télésurveillance"
+    },
+    {
+      "sop": "SOP-02",
+      "ss": "SS-02 - Exfiltration données santé"
+    },
+    {
+      "sop": "SOP-03",
+      "ss": "SS-03 - Supply chain firmware"
+    },
+    {
+      "sop": "SOP-04",
+      "ss": "SS-04 - Exploitation vuln IoT"
+    },
+    {
+      "sop": "SOP-05",
+      "ss": "SS-05 - Phishing M365"
+    },
+    {
+      "sop": "SOP-06",
+      "ss": "SS-06 - Attaque PKI"
+    },
+    {
+      "sop": "SOP-07",
+      "ss": "SS-07 - Vol PI par développeur malveillant"
+    }
+  ],
+  "measures": [
+    {
+      "id": "M-01",
+      "mesure": "MFA Entra ID sur tous les accès cloud",
+      "details": "Déployer l'authentification multifacteur (MFA) via Microsoft Entra ID sur l'ensemble des accès cloud de MedSecure, incluant AWS Console, Azure IoT Hub, GitLab et Microsoft 365. L'enrôlement MFA doit être obligatoire avec des méthodes résistantes au phishing (FIDO2, Microsoft Authenticator) conformément aux exigences HDS et ISO 27001 A.8.5. Cette mesure réduit de plus de 99% le risque de compromission de compte par credential stuffing ou phishing, protégeant ainsi l'accès aux données de santé des patients.",
+      "origine": "Socle",
+      "type": "Prévention",
+      "sop": "",
+      "phase": "Intrusion initiale",
+      "effet": "MFA en place — #11 conforme",
+      "ref_socle": "#11",
+      "responsable": "DSI",
+      "echeance": "—",
+      "cout": "—",
+      "statut": "Terminé"
+    },
+    {
+      "id": "M-02",
+      "mesure": "Defender for Office 365 (anti-phishing, safe links)",
+      "details": "Activer Microsoft Defender for Office 365 Plan 2 avec les fonctionnalités anti-phishing avancées, Safe Links et Safe Attachments sur l'ensemble des boîtes mail MedSecure. Configurer des politiques de détection spécifiques au secteur santé (leurres imitant l'ANSM, les établissements clients ou les organismes notifiés MDR). Cette protection réduit significativement le risque de compromission initiale par spear-phishing, vecteur principal d'attaque contre les fabricants de dispositifs médicaux.",
+      "origine": "Socle",
+      "type": "Détection",
+      "sop": "",
+      "phase": "Phishing",
+      "effet": "Protection email — #19 conforme",
+      "ref_socle": "#19",
+      "responsable": "DSI",
+      "echeance": "—",
+      "cout": "—",
+      "statut": "Terminé"
+    },
+    {
+      "id": "M-03",
+      "mesure": "SIEM Elastic + SOC externalisé (CloudTrail, Azure logs)",
+      "details": "Centraliser la collecte et l'analyse des logs de sécurité dans un SIEM Elastic, alimenté par AWS CloudTrail, Azure Activity Logs, les journaux Entra ID et les alertes CrowdStrike. Le SOC externalisé assure une surveillance 24/7 avec des règles de détection adaptées au contexte IoMT (tentatives d'accès anormales aux API de télésurveillance, modifications non autorisées de configuration IoT Hub). Le temps moyen de détection (MTTD) cible est inférieur à 15 minutes pour les alertes critiques impactant la sécurité des patients.",
+      "origine": "Socle",
+      "type": "Détection",
+      "sop": "",
+      "phase": "Tous",
+      "effet": "Détection SOC 24/7 — #39 partiellement conforme",
+      "ref_socle": "#39",
+      "responsable": "RSSI",
+      "echeance": "—",
+      "cout": "—",
+      "statut": "Terminé"
+    },
+    {
+      "id": "M-04",
+      "mesure": "SonarQube SAST dans CI/CD (cloud + firmware)",
+      "details": "Intégrer SonarQube dans les pipelines CI/CD GitLab pour l'analyse statique de sécurité (SAST) de l'ensemble du code applicatif cloud et firmware embarqué des dispositifs médicaux. Les règles d'analyse doivent couvrir les vulnérabilités OWASP Top 10, les failles spécifiques aux systèmes embarqués (buffer overflow, integer overflow) et les exigences IEC 62443. Le pipeline bloque automatiquement tout merge request contenant des vulnérabilités de sévérité critique ou haute.",
+      "origine": "Socle",
+      "type": "Détection",
+      "sop": "",
+      "phase": "Injection code",
+      "effet": "Analyse statique — #41 conforme",
+      "ref_socle": "#41",
+      "responsable": "CTO",
+      "echeance": "—",
+      "cout": "—",
+      "statut": "Terminé"
+    },
+    {
+      "id": "M-05",
+      "mesure": "Backups RDS versioning + immutabilité S3",
+      "details": "Mettre en place des sauvegardes automatisées de la base PostgreSQL/RDS avec versioning activé et rétention de 90 jours, conformément aux exigences HDS. Les sauvegardes des données patients sont stockées dans des buckets S3 avec verrouillage d'immutabilité (Object Lock) pour prévenir toute suppression ou chiffrement par un ransomware. Des tests de restauration sont effectués mensuellement avec un objectif RPO de 1 heure et RTO de 4 heures pour la plateforme de télésurveillance.",
+      "origine": "Socle",
+      "type": "Réaction",
+      "sop": "",
+      "phase": "Ransomware",
+      "effet": "Restauration données patients — #40 conforme",
+      "ref_socle": "#40",
+      "responsable": "DevOps",
+      "echeance": "—",
+      "cout": "—",
+      "statut": "Terminé"
+    },
+    {
+      "id": "M-06",
+      "mesure": "Chiffrement AES-256 données patients au repos + TLS 1.3 en transit",
+      "details": "Chiffrer systématiquement toutes les données de santé des patients au repos avec AES-256 (RDS encryption, EBS encryption, S3 SSE-KMS) et en transit avec TLS 1.3 pour les API REST et MQTT over TLS pour les communications IoT. Les clés de chiffrement sont gérées via AWS KMS avec rotation automatique annuelle, conformément aux exigences HDS et RGPD article 32. Cette mesure garantit la confidentialité des données physiologiques (ECG, SpO2, glycémie) même en cas d'accès non autorisé au stockage.",
+      "origine": "Socle",
+      "type": "Prévention",
+      "sop": "",
+      "phase": "Exfiltration",
+      "effet": "Chiffrement données santé — #18, #23 conforme",
+      "ref_socle": "#18, #23",
+      "responsable": "CTO",
+      "echeance": "—",
+      "cout": "—",
+      "statut": "Terminé"
+    },
+    {
+      "id": "M-07",
+      "mesure": "Segmentation VPC AWS + VLAN bureau",
+      "details": "Segmenter l'infrastructure AWS en VPC dédiés (production télésurveillance, développement, administration) avec des security groups et NACLs restrictifs. Le réseau bureau est segmenté en VLANs (postes utilisateurs, administration, invités). Les flux entre segments sont filtrés et journalisés, limitant la propagation latérale en cas de compromission d'un composant. Cette architecture respecte le principe de défense en profondeur requis par ISO 27001 et NIS2.",
+      "origine": "Socle",
+      "type": "Prévention",
+      "sop": "",
+      "phase": "Mouvement latéral",
+      "effet": "Segmentation réseau — #21 partiellement conforme",
+      "ref_socle": "#21",
+      "responsable": "DevOps",
+      "echeance": "—",
+      "cout": "—",
+      "statut": "Terminé"
+    },
+    {
+      "id": "M-08",
+      "mesure": "Branch protection + code review obligatoire GitLab",
+      "details": "Configurer la protection des branches sur GitLab pour les repositories firmware et plateforme cloud : merge requests obligatoires, minimum deux approbateurs dont un reviewer sécurité, et pipelines CI/CD validés avant merge. Cette mesure prévient l'injection de code malveillant dans le firmware des dispositifs médicaux (SaMD/SiMD) et garantit la traçabilité des modifications exigée par le règlement MDR (EU 2017/745) pour le dossier technique.",
+      "origine": "Socle",
+      "type": "Prévention",
+      "sop": "",
+      "phase": "Injection CI/CD",
+      "effet": "Contrôle code — #41 conforme",
+      "ref_socle": "#41",
+      "responsable": "CTO",
+      "echeance": "—",
+      "cout": "—",
+      "statut": "Terminé"
+    },
+    {
+      "id": "M-09",
+      "mesure": "Tests sécurité firmware (fuzzing + pentests annuels)",
+      "details": "Réaliser des tests de sécurité approfondis sur le firmware des capteurs physiologiques et pompes à perfusion : fuzzing automatisé des interfaces MQTT/BLE, pentests annuels par un cabinet spécialisé en sécurité des dispositifs médicaux, et analyse de vulnérabilités conforme à la norme IEC 62443. Les résultats alimentent le dossier technique MDR et le processus de gestion des risques ISO 14971. L'objectif est d'identifier et corriger les vulnérabilités avant le déploiement en environnement hospitalier.",
+      "origine": "Socle",
+      "type": "Détection",
+      "sop": "",
+      "phase": "Vulnérabilités firmware",
+      "effet": "Tests sécurité — #41 conforme",
+      "ref_socle": "#41",
+      "responsable": "RSSI + CTO",
+      "echeance": "—",
+      "cout": "—",
+      "statut": "Terminé"
+    },
+    {
+      "id": "M-10",
+      "mesure": "SIEM centralisé : intégrer logs IoT + Azure + maintenance dispositifs",
+      "details": "Étendre le périmètre du SIEM Elastic pour intégrer les logs des dispositifs IoT (messages MQTT, événements Azure IoT Hub, journaux de provisioning), les traces de maintenance terrain et les alertes de comportement anormal des capteurs. Développer des règles de corrélation spécifiques : détection de firmware non signé, communication vers des endpoints inconnus, tentatives de re-provisioning non autorisées. Cette extension couvre un angle mort critique pour la détection d'attaques ciblant les 5 000 dispositifs déployés dans les établissements de santé.",
+      "origine": "Socle",
+      "type": "Détection",
+      "sop": "SOP-01 - Ransomware, SOP-02 - Exfiltration, SOP-03 - Supply chain, SOP-06 - PKI",
+      "phase": "Tous — détection comportements anormaux IoT",
+      "effet": "Améliorer #31, #39 — logs IoT + maintenance",
+      "ref_socle": "#31, #39",
+      "responsable": "RSSI",
+      "echeance": "T3 2026",
+      "cout": "40K",
+      "statut": "En cours"
+    },
+    {
+      "id": "M-11",
+      "mesure": "Segmentation réseau IoT : guide déploiement client + monitoring",
+      "details": "Élaborer un guide de déploiement réseau à destination des 50 établissements clients, imposant l'isolation des dispositifs MedSecure dans un VLAN dédié avec filtrage strict des flux (uniquement MQTT/TLS sortant vers Azure IoT Hub). Fournir un outil de vérification automatisée de la conformité réseau pré-installation. Déployer un monitoring des flux inter-VLAN pour détecter toute tentative de mouvement latéral depuis un dispositif compromis vers le réseau hospitalier.",
+      "origine": "Socle",
+      "type": "Prévention",
+      "sop": "SOP-04 - Vuln IoT",
+      "phase": "Mouvement latéral depuis dispositif compromis",
+      "effet": "Améliorer #21 — réseau IoT isolé",
+      "ref_socle": "#21",
+      "responsable": "CTO + Support",
+      "echeance": "T2 2026",
+      "cout": "20K",
+      "statut": "À étudier"
+    },
+    {
+      "id": "M-12",
+      "mesure": "WAF renforcé + API rate limiting + DAST automatisé",
+      "details": "Renforcer le WAF AWS devant les API de la plateforme de télésurveillance avec des règles personnalisées contre les attaques spécifiques (injection SQL, XXE, SSRF ciblant les endpoints de données patients). Implémenter un rate limiting par établissement client et par dispositif pour prévenir les abus d'API. Intégrer un scanner DAST automatisé (OWASP ZAP) dans le pipeline CI/CD pour détecter les vulnérabilités des API REST avant chaque mise en production.",
+      "origine": "Socle",
+      "type": "Prévention",
+      "sop": "SOP-01 - Ransomware, SOP-02 - Exfiltration",
+      "phase": "Exploitation API",
+      "effet": "Améliorer #24",
+      "ref_socle": "#24",
+      "responsable": "DevOps",
+      "echeance": "T2 2026",
+      "cout": "25K",
+      "statut": "À étudier"
+    },
+    {
+      "id": "M-13",
+      "mesure": "DLP Microsoft 365 (données de santé)",
+      "details": "Déployer les politiques DLP de Microsoft 365 pour détecter et bloquer le partage non autorisé de données de santé via email, SharePoint et Teams. Configurer des classifieurs sensibles aux données médicales (numéros de patients, résultats ECG/SpO2, données d'identification) et des règles de blocage pour les transferts vers des domaines externes non autorisés. Cette mesure répond aux exigences RGPD de protection des données sensibles (article 9) et prévient l'exfiltration via les outils collaboratifs.",
+      "origine": "Socle",
+      "type": "Détection",
+      "sop": "SOP-05 - Phishing M365",
+      "phase": "Exfiltration via M365",
+      "effet": "Améliorer #5 — classification + DLP données santé",
+      "ref_socle": "#5",
+      "responsable": "DSI",
+      "echeance": "T3 2026",
+      "cout": "15K",
+      "statut": "À étudier"
+    },
+    {
+      "id": "M-14",
+      "mesure": "Protection renforcée clés PKI : multi-approbation HSM + rotation",
+      "details": "Migrer les clés de signature firmware vers un HSM certifié FIPS 140-2 Level 3 (AWS CloudHSM) avec un mécanisme de multi-approbation exigeant au minimum deux personnes autorisées (CTO + RSSI) pour toute opération de signature. Implémenter une rotation automatique des clés de chiffrement et de signature avec une période maximale de 12 mois. Cette mesure protège l'intégrité du firmware des dispositifs médicaux contre une compromission de la PKI qui permettrait l'injection de mises à jour malveillantes sur les pompes à perfusion.",
+      "origine": "Socle",
+      "type": "Prévention",
+      "sop": "SOP-06 - Attaque PKI",
+      "phase": "Compromission clés signature firmware",
+      "effet": "Améliorer #10 — HSM multi-approbation",
+      "ref_socle": "#10",
+      "responsable": "CTO + RSSI",
+      "echeance": "T2 2026",
+      "cout": "30K",
+      "statut": "En cours"
+    },
+    {
+      "id": "M-15",
+      "mesure": "Sensibilisation renforcée cybersécurité santé (trimestrielle + simulation)",
+      "details": "Mettre en place un programme de sensibilisation trimestriel adapté au contexte santé, incluant des simulations de phishing réalistes (usurpation d'identité d'établissements clients, faux rappels ANSM, faux emails d'organisme notifié MDR). Former spécifiquement les équipes biomédicales et le support client aux risques d'ingénierie sociale. Mesurer le taux de clic et le taux de signalement avec un objectif de taux de clic inférieur à 5% et un taux de signalement supérieur à 70%.",
+      "origine": "Socle",
+      "type": "Prévention",
+      "sop": "SOP-05 - Phishing M365",
+      "phase": "Phishing ciblé personnel santé",
+      "effet": "Améliorer #2 — sensibilisation trimestrielle",
+      "ref_socle": "#2",
+      "responsable": "RSSI",
+      "echeance": "T1 2026",
+      "cout": "10K/an",
+      "statut": "En cours"
+    },
+    {
+      "id": "M-16",
+      "mesure": "Classification automatique données de santé (Azure Information Protection)",
+      "details": "Déployer Azure Information Protection pour classifier automatiquement les documents contenant des données de santé (dossiers patients, rapports de télésurveillance, résultats d'analyses physiologiques) stockés sur SharePoint et échangés via Microsoft 365. Appliquer des étiquettes de sensibilité avec chiffrement automatique et restrictions de partage pour les documents classifiés 'Données de santé - Confidentiel'. Cette mesure complète le dispositif DLP (M-13) et répond aux exigences de classification HDS.",
+      "origine": "Socle",
+      "type": "Prévention",
+      "sop": "SOP-02 - Exfiltration, SOP-05 - Phishing",
+      "phase": "Fuite données non classifiées",
+      "effet": "Améliorer #5",
+      "ref_socle": "#5",
+      "responsable": "DPO + DSI",
+      "echeance": "T3 2026",
+      "cout": "15K",
+      "statut": "À étudier"
+    },
+    {
+      "id": "M-17",
+      "mesure": "Audit secrets dans le code firmware + rotation",
+      "details": "Réaliser un audit exhaustif du code firmware des capteurs et pompes à perfusion pour identifier tous les secrets en clair (clés API, certificats, identifiants de connexion Azure IoT Hub) à l'aide d'outils de détection automatique (GitLeaks, TruffleHog) intégrés dans le pipeline CI/CD. Migrer tous les secrets identifiés vers HashiCorp Vault avec injection sécurisée au moment du build. Mettre en place une rotation automatique des credentials IoT et des alertes en cas de détection de nouveau secret dans le code.",
+      "origine": "Socle",
+      "type": "Prévention",
+      "sop": "SOP-03 - Supply chain",
+      "phase": "Credentials en clair dans firmware",
+      "effet": "Améliorer #12",
+      "ref_socle": "#12",
+      "responsable": "CTO",
+      "echeance": "T2 2026",
+      "cout": "5K",
+      "statut": "À étudier"
+    },
+    {
+      "id": "M-18",
+      "mesure": "SSO unifié Entra ID sur tous les services (SAP, Azure IoT admin)",
+      "details": "Étendre le périmètre du SSO Entra ID à l'ensemble des applications de MedSecure, incluant SAP Business One (via SAML/OIDC), l'interface d'administration Azure IoT Hub et les outils de maintenance terrain. Éliminer tous les comptes locaux non fédérés pour garantir une gestion centralisée des identités, une revue d'accès unifiée et une révocation immédiate lors des départs. Cette consolidation renforce la conformité ISO 27001 A.5.15 et simplifie l'audit des accès pour HDS.",
+      "origine": "Socle",
+      "type": "Prévention",
+      "sop": "SOP-05 - Phishing M365",
+      "phase": "Comptes non fédérés",
+      "effet": "Améliorer #14",
+      "ref_socle": "#14",
+      "responsable": "DSI",
+      "echeance": "T3 2026",
+      "cout": "10K",
+      "statut": "En cours"
+    },
+    {
+      "id": "M-19",
+      "mesure": "RBAC Azure IoT Hub affiné + revue trimestrielle",
+      "details": "Revoir et affiner les rôles RBAC Azure IoT Hub en appliquant strictement le principe du moindre privilège : séparer les rôles de provisioning, monitoring, maintenance et administration. Réduire le nombre d'administrateurs de 12 à 4 maximum et attribuer des rôles granulaires (IoT Hub Data Reader, Device Provisioning Operator). Instituer une revue trimestrielle des droits d'accès avec validation par le RSSI, conformément aux exigences ISO 27001 A.5.18 et NIS2.",
+      "origine": "Socle",
+      "type": "Prévention",
+      "sop": "SOP-04 - Vuln IoT",
+      "phase": "Droits excessifs sur IoT Hub",
+      "effet": "Améliorer #15",
+      "ref_socle": "#15",
+      "responsable": "CTO + RSSI",
+      "echeance": "T2 2026",
+      "cout": "5K",
+      "statut": "À étudier"
+    },
+    {
+      "id": "M-20",
+      "mesure": "SDLC sécurisé firmware : threat modeling, revue sécurité à chaque release MDR",
+      "details": "Formaliser un cycle de développement sécurisé (SDLC) spécifique au firmware des dispositifs médicaux, intégrant le threat modeling STRIDE à chaque release, une revue de sécurité obligatoire par le RSSI avant toute soumission à l'organisme notifié MDR, et des critères de sécurité dans les gates de validation. Le processus doit être conforme à IEC 62443-4-1 (cycle de développement sécurisé) et alimente directement le dossier technique MDR (annexe II du règlement EU 2017/745).",
+      "origine": "SOP",
+      "type": "Prévention",
+      "sop": "SOP-03 - Supply chain, SOP-04 - Vuln IoT",
+      "phase": "Vulnérabilités firmware",
+      "effet": "Formaliser processus développement sécurisé firmware",
+      "ref_socle": "#17, #41",
+      "responsable": "CTO + QA",
+      "echeance": "T2 2026",
+      "cout": "20K",
+      "statut": "En cours"
+    },
+    {
+      "id": "M-21",
+      "mesure": "Monitoring flux IoT : détection anomalies communication dispositifs",
+      "details": "Déployer une solution de monitoring spécifique aux flux IoT (MQTT, AMQP) entre les dispositifs médicaux et Azure IoT Hub, capable de détecter les anomalies de communication : volume de données anormal, tentatives de connexion depuis des IP inconnues, changements de pattern de télémétrie, messages non conformes au schéma attendu. Intégrer ces alertes dans le SIEM (M-10) avec des règles de corrélation adaptées au comportement normal des capteurs physiologiques et pompes à perfusion.",
+      "origine": "SOP",
+      "type": "Détection",
+      "sop": "SOP-04 - Vuln IoT",
+      "phase": "Communication anormale depuis dispositif compromis",
+      "effet": "Monitoring spécifique protocoles IoT (MQTT)",
+      "ref_socle": "#27",
+      "responsable": "RSSI + DevOps",
+      "echeance": "T3 2026",
+      "cout": "25K",
+      "statut": "À étudier"
+    },
+    {
+      "id": "M-22",
+      "mesure": "Bastion/PAM pour accès admin cloud et IoT",
+      "details": "Déployer une solution de bastion/PAM (Privileged Access Management) pour sécuriser et tracer tous les accès administratifs à l'infrastructure cloud AWS, Azure IoT Hub, et aux dispositifs médicaux en maintenance. Chaque session d'administration doit être enregistrée (vidéo + commandes), soumise à une approbation préalable pour les actions critiques, et limitée dans le temps (sessions de 4h maximum). Cette mesure comble une lacune critique identifiée au socle ANSSI (#29) et répond aux exigences de traçabilité HDS.",
+      "origine": "SOP",
+      "type": "Prévention",
+      "sop": "SOP-01 - Ransomware, SOP-06 - PKI",
+      "phase": "Accès admin non tracés",
+      "effet": "Améliorer #29",
+      "ref_socle": "#29",
+      "responsable": "DSI",
+      "echeance": "T3 2026",
+      "cout": "30K",
+      "statut": "En cours"
+    },
+    {
+      "id": "M-23",
+      "mesure": "Processus MAJ firmware sécurisé : validation accélérée patchs critiques",
+      "details": "Définir un processus accéléré de validation et déploiement des correctifs de sécurité critiques pour le firmware des dispositifs médicaux, réduisant le délai actuel de 3-6 mois à moins de 30 jours pour les vulnérabilités CVSS >= 9.0. Ce processus inclut une procédure de validation MDR allégée pour les correctifs de sécurité (sans modification fonctionnelle), pré-approuvée par l'organisme notifié. Le déploiement s'effectue via le serveur OTA avec vérification d'intégrité et rollback automatique en cas d'échec.",
+      "origine": "SOP",
+      "type": "Prévention",
+      "sop": "SOP-03 - Supply chain, SOP-04 - Vuln IoT",
+      "phase": "Cycle patch MDR trop long (3-6 mois)",
+      "effet": "Processus accéléré pour vulnérabilités critiques",
+      "ref_socle": "#36, #38",
+      "responsable": "CTO + QA Réglementaire",
+      "echeance": "T2 2026",
+      "cout": "15K",
+      "statut": "En cours"
+    },
+    {
+      "id": "M-24",
+      "mesure": "Plan de gestion obsolescence composants IoT",
+      "details": "Établir un plan de gestion de l'obsolescence pour les composants électroniques et logiciels embarqués des dispositifs médicaux, avec un inventaire complet des cycles de vie (EOL/EOS) des microcontrôleurs, modules radio, et bibliothèques firmware. Identifier les composants en fin de support dans les 24 mois et qualifier des alternatives compatibles. Ce plan alimente le processus de gestion des risques ISO 14971 et prévient l'exposition prolongée à des vulnérabilités non corrigées sur les dispositifs déployés.",
+      "origine": "SOP",
+      "type": "Prévention",
+      "sop": "SOP-03 - Supply chain",
+      "phase": "Composants en fin de vie non maintenus",
+      "effet": "Anticiper fin de support — #37",
+      "ref_socle": "#37",
+      "responsable": "CTO + Achats",
+      "echeance": "T3 2026",
+      "cout": "10K",
+      "statut": "À étudier"
+    },
+    {
+      "id": "M-25",
+      "mesure": "Vérification intégrité composants supply chain (SBOM + audit fournisseurs)",
+      "details": "Implémenter un processus de vérification de l'intégrité de la chaîne d'approvisionnement hardware et logicielle des dispositifs médicaux. Générer et maintenir un SBOM (Software Bill of Materials) complet pour chaque version de firmware, conforme au format CycloneDX ou SPDX. Auditer les fournisseurs de composants électroniques sur leurs pratiques de sécurité (certification ISO 27001, contrôles anti-contrefaçon). Cette mesure répond aux exigences NIS2 de sécurité de la supply chain et aux recommandations FDA pour les dispositifs médicaux connectés.",
+      "origine": "Écosystème",
+      "type": "Prévention",
+      "sop": "SOP-03 - Supply chain",
+      "phase": "Composant électronique malveillant",
+      "effet": "Supply chain hardware vérifiée",
+      "ref_socle": "#36, #37",
+      "responsable": "CTO + Achats",
+      "echeance": "T3 2026",
+      "cout": "20K",
+      "statut": "À étudier"
+    },
+    {
+      "id": "M-26",
+      "mesure": "Guide sécurité déploiement client + audit réseau pré-installation",
+      "details": "Élaborer un guide de sécurité complet à destination des établissements de santé déployant des dispositifs MedSecure, couvrant la segmentation réseau requise, les règles de pare-feu, les prérequis Wi-Fi et la politique d'accès physique aux dispositifs. Réaliser un audit réseau pré-installation systématique pour vérifier la conformité de l'infrastructure hospitalière aux exigences de sécurité. Fournir des recommandations d'architecture conformes aux référentiels ANSSI santé et HDS pour l'hébergement des flux de données patients.",
+      "origine": "Écosystème",
+      "type": "Prévention",
+      "sop": "SOP-04 - Vuln IoT",
+      "phase": "Réseau hospitalier mal segmenté",
+      "effet": "Recommandations sécurité pour les clients",
+      "ref_socle": "#21, #25",
+      "responsable": "Support + RSSI",
+      "echeance": "T2 2026",
+      "cout": "10K",
+      "statut": "À étudier"
+    },
+    {
+      "id": "M-27",
+      "mesure": "Cyber assurance RC Produit (responsabilité dispositif médical)",
+      "details": "Souscrire une police d'assurance cyber spécifique couvrant la responsabilité civile produit liée aux dispositifs médicaux connectés, incluant les dommages corporels résultant d'une cyber-attaque sur les pompes à perfusion ou capteurs. La couverture doit inclure les frais de notification RGPD, les coûts de rappel de lots MDR, les frais de défense juridique et la perte d'exploitation. Le montant de garantie cible est de 10 millions d'euros minimum, adapté au risque vital patient et aux exigences du règlement MDR pour les fabricants de classe IIb.",
+      "origine": "Complémentaire",
+      "type": "Réaction",
+      "sop": "",
+      "phase": "Tous",
+      "effet": "Transfert risque résiduel — responsabilité fabricant DM",
+      "ref_socle": "—",
+      "responsable": "Direction + Juridique",
+      "echeance": "T2 2026",
+      "cout": "50K/an",
+      "statut": "À étudier"
+    }
+  ],
+  "residuals": [
+    {
+      "mesures": "M-05 - Backups immutables, M-07 - Segmentation VPC, M-10 - SIEM centralisé, M-12 - WAF renforcé, M-22 - Bastion/PAM",
+      "v_resid": 1,
+      "decision": "Accepter"
+    },
+    {
+      "mesures": "M-06 - Chiffrement, M-10 - SIEM, M-12 - WAF/DAST, M-13 - DLP M365, M-16 - Classification",
+      "v_resid": 2,
+      "decision": "Réduire"
+    },
+    {
+      "mesures": "M-04 - SAST, M-08 - Code review, M-14 - PKI HSM, M-20 - SDLC, M-25 - SBOM supply chain",
+      "v_resid": 2,
+      "decision": "Réduire"
+    },
+    {
+      "mesures": "M-11 - Segmentation IoT, M-20 - SDLC firmware, M-21 - Monitoring IoT, M-23 - MAJ firmware, M-26 - Guide client",
+      "v_resid": 2,
+      "decision": "Réduire"
+    },
+    {
+      "mesures": "M-01 - MFA, M-02 - Defender, M-13 - DLP, M-15 - Sensibilisation, M-16 - Classification",
+      "v_resid": 1,
+      "decision": "Accepter"
+    },
+    {
+      "mesures": "M-14 - PKI HSM renforcée, M-10 - SIEM, M-22 - Bastion/PAM",
+      "v_resid": 1,
+      "decision": "Réduire"
+    },
+    {
+      "mesures": "M-08 - Code review, M-03 - SIEM, M-13 - DLP M365",
+      "v_resid": 2,
+      "decision": "Réduire"
+    }
+  ],
+  "fair": [],
+  "socle_type": "anssi"
+}

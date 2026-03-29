@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>EBIOS RM — Analyse interactive</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="css/cisotoolbox.css">
+<link rel="stylesheet" href="css/EBIOS_RM.css">
+</head>
+<body>
+
+<div class="toolbar">
+    <button class="btn-hamburger" data-click="_toggleSidebarMobile">&#9776;</button>
+    <span class="app-title">EBIOS RM</span>
+    <span class="app-subtitle" id="header-subtitle"></span>
+    <div class="toolbar-menu">
+        <button class="btn-menu" data-click="toggleMenu" data-i18n="ebios.menu.file">Fichier</button>
+        <div class="toolbar-dropdown" id="io-menu">
+            <div class="toolbar-dropdown-item" data-click="_menuAction" data-args='["openFile"]' data-i18n="ebios.menu.open">Ouvrir</div>
+            <div class="toolbar-dropdown-item" id="menu-item-save" data-click="_menuAction" data-args='["quickSaveJSON"]' data-i18n="ebios.menu.save">Enregistrer</div>
+            <div class="toolbar-dropdown-item" data-click="_menuAction" data-args='["saveJSON"]' data-i18n="ebios.menu.save_as">Enregistrer sous</div>
+            <div class="toolbar-dropdown-sep"></div>
+            <div class="toolbar-dropdown-item" data-click="_menuAction" data-args='["_triggerExcelInput"]' data-i18n="ebios.menu.import_excel">Import Excel</div>
+            <div class="toolbar-dropdown-item" data-click="_menuAction" data-args='["exportExcel"]' data-i18n="ebios.menu.export_excel">Export Excel</div>
+            <div class="toolbar-dropdown-sep"></div>
+            <div class="toolbar-dropdown-item" data-click="_menuAction" data-args='["newAnalysis"]' data-i18n="ebios.menu.new_analysis">Nouvelle analyse</div>
+        </div>
+    </div>
+    <input type="file" id="file-input" accept=".json,.enc" class="hidden" data-change="loadJSON" data-pass-event>
+    <input type="file" id="excel-input" accept=".xlsx" class="hidden" data-change="importExcel" data-pass-event>
+    <span class="status" id="status-msg"></span>
+    <span class="toolbar-right" id="toolbar-right"></span>
+</div>
+
+<div class="app-layout">
+
+<nav class="sidebar">
+    <div class="sidebar-collapse" data-click="toggleSidebar" data-i18n-title="sidebar_hide" title="Masquer le menu">&#10005;</div>
+    <div class="sidebar-item active" data-click="selectAtelier" data-args='["synth"]' data-i18n="ebios.sidebar.synth">Synthese</div>
+    <div class="sidebar-section" data-i18n="ebios.sidebar.section_cadrage">Cadrage</div>
+    <div class="sidebar-item" data-click="selectAtelier" data-args='["a1"]' data-i18n="ebios.sidebar.a1">Atelier 1 - Cadrage et socle de securite</div>
+    <div class="sidebar-section" data-i18n="ebios.sidebar.section_risques">Risques</div>
+    <div class="sidebar-item" data-click="selectAtelier" data-args='["a2"]' data-i18n="ebios.sidebar.a2">Atelier 2 - Sources de risques</div>
+    <div class="sidebar-item" data-click="selectAtelier" data-args='["a3"]' data-i18n="ebios.sidebar.a3">Atelier 3 - Scenarios strategiques</div>
+    <div class="sidebar-item" data-click="selectAtelier" data-args='["a4"]' data-i18n="ebios.sidebar.a4">Atelier 4 - Scenarios operationnels</div>
+    <div class="sidebar-section" data-i18n="ebios.sidebar.section_traitement">Traitement</div>
+    <div class="sidebar-item" data-click="selectAtelier" data-args='["a5"]' data-i18n="ebios.sidebar.a5">Atelier 5 - Traitement du risque</div>
+    <div class="flex-spacer"></div>
+    <div class="sidebar-section sidebar-divider" data-i18n="ebios.sidebar.section_aide">Aide</div>
+    <div class="sidebar-item" data-click="toggleHelp" data-args='["methodo"]' data-i18n="ebios.sidebar.methodo">Methodologie</div>
+    <div class="sidebar-item" data-click="toggleHelp" data-args='["usage"]' data-i18n="ebios.sidebar.usage">Utilisation</div>
+    <div class="sidebar-section" data-i18n="ebios.sidebar.section_historique">Historique</div>
+    <div class="sidebar-item" data-click="selectAtelier" data-args='["history"]' data-i18n="ebios.sidebar.snapshots">Snapshots</div>
+    <div class="btn-group-sm">
+        <button id="btn-undo" class="btn-undo opacity-low" data-click="undo" data-i18n-title="btn_undo_title" title="Annuler (Ctrl+Z)">&#8630;</button>
+        <button id="btn-redo" class="btn-redo opacity-low" data-click="redo" data-i18n-title="btn_redo_title" title="Retablir (Ctrl+Y)">&#8631;</button>
+    </div>
+    <a href="https://www.cisotoolbox.org" target="_blank" rel="noopener noreferrer" class="sidebar-brand">cisotoolbox.org</a>
+</nav>
+
+<div class="sidebar-expand" id="sidebar-expand" data-click="toggleSidebar" data-i18n-title="sidebar_show" title="Afficher le menu">&#8250;</div>
+<main class="main-content">
+
+<!-- Sous-onglets dynamiques -->
+<div class="subtabs" id="subtab-bar"></div>
+
+<div class="container">
+
+<!-- Synthèse -->
+<div class="tab-panel active" id="panel-synth" data-atelier="synth">
+<div class="panel-desc" data-i18n="ebios.desc.synth">Vue consolidee de l'analyse : indicateurs cles, cartographies des risques, evolution et conformite du socle.</div>
+<div class="indicators" id="indicators"></div>
+<div class="synth-grid">
+    <div class="synth-card"><h3 data-i18n="ebios.synth.initial_map">Cartographie des risques initiaux</h3><div id="synth-matrix-initial"></div></div>
+    <div class="synth-card"><h3 data-i18n="ebios.synth.residual_map">Cartographie des risques residuels</h3><div id="synth-matrix-residual"></div></div>
+</div>
+<div class="synth-grid">
+    <div class="synth-card"><h3 data-i18n="ebios.synth.socle_compliance">Conformite du socle</h3><div id="synth-socle"></div></div>
+    <div class="synth-card"><h3 data-i18n="ebios.synth.risk_dist">Distribution des risques residuels</h3><div id="synth-risk-dist"></div></div>
+</div>
+<div class="synth-card mb-20"><h3 data-i18n="ebios.synth.risk_evolution">Evolution des risques</h3><div id="synth-evolution"></div></div>
+<div class="synth-card mb-20"><h3 data-i18n="ebios.synth.measures_todo">Mesures a mettre en oeuvre</h3><div id="synth-measures"></div></div>
+</div>
+
+<!-- Atelier 1 : Cadrage -->
+<div class="tab-panel" id="panel-context" data-atelier="a1">
+<div class="panel-desc" data-i18n="ebios.desc.context">Informations generales sur l'organisation, le perimetre de l'etude et le cadre reglementaire.</div>
+<div id="context-fields"></div>
+<div id="context-gravity"></div></div>
+
+<div class="tab-panel" id="panel-vm" data-atelier="a1">
+<div class="panel-desc" data-i18n="ebios.desc.vm">Valeurs metier essentielles de l'organisation : processus ou informations critiques. Preciser la nature (Information ou Processus) et le responsable.</div>
+<div id="toggles-vm"></div>
+<div id="table-vm"></div>
+<button class="btn-add" data-click="addRow" data-args='["vm"]' data-i18n="ebios.btn.add_vm">+ Ajouter une valeur metier</button></div>
+
+<div class="tab-panel" id="panel-bs" data-atelier="a1">
+<div class="panel-desc" data-i18n="ebios.desc.bs">Composants du systeme d'information qui supportent les valeurs metier : applications, serveurs, reseaux, donnees.</div>
+<div id="toggles-bs"></div>
+<div id="table-bs"></div>
+<button class="btn-add" data-click="addRow" data-args='["bs"]' data-i18n="ebios.btn.add_bs">+ Ajouter un bien support</button></div>
+
+<div class="tab-panel" id="panel-pp" data-atelier="a3">
+<div class="panel-desc" data-i18n="ebios.desc.pp">Acteurs externes a l'objet d'etude (fournisseurs, prestataires, partenaires). Evaluer leur niveau de menace via 4 criteres : Dependance, Penetration, Maturite cyber, Confiance.</div>
+<div id="toggles-pp"></div>
+<div id="table-pp"></div>
+<button class="btn-add" data-click="addRow" data-args='["pp"]' data-i18n="ebios.btn.add_pp">+ Ajouter une partie prenante</button>
+<div id="pp-map" class="mt-8"></div></div>
+
+<div class="tab-panel" id="panel-socle" data-atelier="a1">
+<div class="panel-desc" data-i18n="ebios.desc.socle">Evaluation de la conformite au referentiel de securite (ANSSI 42 mesures ou ISO 27001 93 mesures). Saisir le pourcentage de conformite et les ecarts identifies.</div>
+<div id="toggles-socle"></div>
+<div id="table-socle"></div>
+<div id="socle-refs"></div></div>
+
+<!-- Atelier 2 : Sources de risque -->
+<div class="tab-panel" id="panel-srov" data-atelier="a2">
+<div class="panel-desc" data-i18n="ebios.desc.srov">Identification des sources de risque (acteurs de menace) et de leurs objectifs. Chaque couple SR/OV est evalue sur 3 criteres (Motivation, Ressources, Activite) pour determiner sa pertinence.</div>
+<div id="toggles-srov"></div>
+<div id="table-srov"></div>
+<button class="btn-add" data-click="addRow" data-args='["srov"]' data-i18n="ebios.btn.add_srov">+ Ajouter un couple SR/OV</button></div>
+
+<!-- Atelier 3 : Scénarios stratégiques -->
+<div class="tab-panel" id="panel-er" data-atelier="a1">
+<div class="panel-desc" id="desc-er"></div>
+<div id="toggles-er"></div>
+<div id="table-er"></div>
+<button class="btn-add" data-click="addRow" data-args='["er"]' data-i18n="ebios.btn.add_er">+ Ajouter un evenement redoute</button></div>
+
+<div class="tab-panel" id="panel-ss" data-atelier="a3">
+<div class="panel-desc" data-i18n="ebios.desc.ss">Chemins d'attaque strategiques : QUI (SR) attaque POURQUOI (OV), VIA QUI (PP), ciblant QUOI (BS), provoquant QUEL evenement (ER). La gravite est calculee automatiquement (MAX des ER).</div>
+<div id="toggles-ss"></div>
+<div id="table-ss"></div>
+<button class="btn-add" data-click="addRow" data-args='["ss"]' data-i18n="ebios.btn.add_ss">+ Ajouter un scenario strategique</button></div>
+
+<div class="tab-panel" id="panel-eco" data-atelier="a3">
+<div class="panel-desc" data-i18n="ebios.desc.eco">Mesures de securite appliquees aux parties prenantes de l'ecosysteme pour reduire leur niveau de menace. Les mesures sont referencees dans le referentiel 5a.</div>
+<div id="toggles-eco"></div>
+<div id="table-eco"></div>
+<div id="eco-map" class="mt-8"></div></div>
+
+<!-- Atelier 4 : Scénarios opérationnels -->
+<div class="tab-panel" id="panel-sop" data-atelier="a4">
+<div class="panel-desc" data-i18n="ebios.desc.sop">Detail des phases d'attaque (kill chain) pour chaque scenario operationnel. Pour chaque phase, identifier le controle existant, son efficacite, et proposer des mesures de traitement.</div>
+<div id="toggles-sop"></div>
+<div id="table-sop"></div>
+<div class="mt-8 flex-row">
+<button class="btn-add" data-click="addSOP" data-i18n="ebios.btn.add_sop">+ Nouveau SOP</button>
+</div></div>
+
+<!-- Atelier 4b : Synthèse risques initiaux -->
+<div class="tab-panel" id="panel-sop-synth" data-atelier="a4">
+<div class="panel-desc" data-i18n="ebios.desc.sop_synth">Synthese des risques initiaux : pour chaque scenario strategique, la gravite (issue des ER) croisee avec la vraisemblance operationnelle (issue des SOP) donne le niveau de risque initial.</div>
+<div id="table-sop-synth"></div></div>
+
+<!-- Atelier 5 : Traitement -->
+<div class="tab-panel" id="panel-measures" data-atelier="a5">
+<div class="panel-desc" data-i18n="ebios.desc.measures">Referentiel complet des mesures de securite : mesures du socle (appliquees et manquantes), mesures ecosysteme, mesures SOP et mesures complementaires. Chaque mesure est tracee vers son origine.</div>
+<div id="toggles-measures"></div>
+<div id="table-measures"></div>
+<button class="btn-add" data-click="addRow" data-args='["measures"]' data-i18n="ebios.btn.add_measure">+ Ajouter une mesure</button></div>
+
+<!-- Résiduels -->
+<div class="tab-panel" id="panel-residuals" data-atelier="a5">
+<div class="panel-desc" data-i18n="ebios.desc.residuals">Evaluation du risque residuel apres application des mesures. Pour chaque scenario strategique, definir la vraisemblance residuelle et la decision de traitement.</div>
+<div id="toggles-residuals"></div>
+<div id="table-residuals"></div></div>
+
+<!-- Historique -->
+<div class="tab-panel" id="panel-history" data-atelier="history">
+<div class="panel-desc" data-i18n="ebios.desc.history">Points de sauvegarde et historique des modifications. Les snapshots sont stockes dans le navigateur.</div>
+<div id="history-content"></div></div>
+
+</div><!-- container -->
+</main><!-- main-content -->
+</div><!-- app-layout -->
+
+<footer data-i18n="ebios.footer">Rapport interactif EBIOS RM — Donnees modifiables, sauvegarde JSON</footer>
+
+<!-- Panel d'aide -->
+<div class="help-overlay" id="help-overlay" data-click-self="toggleHelp">
+<div class="help-panel">
+<button class="close-help" data-click="toggleHelp">&times;</button>
+
+<div class="help-tabs">
+    <div class="help-tab active" id="help-tab-methodo" data-click="switchHelpTab" data-args='["methodo"]' data-i18n="ebios.help.tab_methodo">Methodologie EBIOS RM</div>
+    <div class="help-tab" id="help-tab-usage" data-click="switchHelpTab" data-args='["usage"]' data-i18n="ebios.help.tab_usage">Utilisation de l'application</div>
+</div>
+
+<!-- ════════ Onglet Methodologie ════════ -->
+<div class="help-content" id="help-content-methodo" data-i18n-html="ebios.help.methodo">
+
+<h1 class="heading-blue">Guide méthodologique EBIOS Risk Manager</h1>
+<p class="text-muted">Méthode d'analyse de risques publiée par l'ANSSI — 5 ateliers</p>
+
+<h2>Principe général</h2>
+<p>EBIOS RM est une méthode d'analyse de risques qui part des <strong>valeurs métier</strong> de l'organisation pour identifier les <strong>scénarios de risque</strong> les plus pertinents et définir un <strong>plan de traitement</strong> proportionné. Elle se déroule en 5 ateliers séquentiels, chacun alimentant le suivant.</p>
+
+<h2>Atelier 1 — Cadrage et socle de sécurité</h2>
+<h3>Objectif</h3>
+<p>Définir le périmètre de l'étude, identifier les actifs critiques, les événements redoutés et évaluer le niveau de sécurité existant.</p>
+<h3>Participants</h3>
+<p><strong>RSSI</strong>, <strong>DSI</strong>, <strong>Direction métier</strong>, <strong>DPO</strong> (si données personnelles)</p>
+<h3>Étapes dans l'application</h3>
+<table><thead><tr><th>Onglet</th><th>Contenu</th><th>Guide</th></tr></thead><tbody>
+<tr><td>Contexte</td><td>Périmètre, réglementation, échelle de gravité</td><td>Renseigner le nom, la date, le socle choisi, configurer les niveaux de gravité (3, 4 ou 5)</td></tr>
+<tr><td>Valeurs Métier</td><td>Processus essentiels</td><td>Identifier 5-10 VM, évaluer DICT de 1 à N (selon l'échelle)</td></tr>
+<tr><td>Biens Supports</td><td>SI qui supporte les VM</td><td>Lister les serveurs, applis, réseaux, données et les associer aux VM</td></tr>
+<tr><td>Événements Redoutés</td><td>Impacts redoutés par VM</td><td>Pour chaque VM, identifier les ER et évaluer la gravité</td></tr>
+<tr><td>Socle de sécurité</td><td>Conformité ANSSI ou ISO</td><td>Évaluer chaque mesure (0-100%%), identifier les écarts</td></tr>
+</tbody></table>
+
+<h2>Atelier 2 — Sources de risque et objectifs visés</h2>
+<h3>Objectif</h3>
+<p>Identifier <strong>qui</strong> pourrait attaquer (sources de risque) et <strong>pourquoi</strong> (objectifs visés). Évaluer la pertinence de chaque couple SR/OV.</p>
+<h3>Participants</h3>
+<p><strong>RSSI</strong>, <strong>Analyste CTI</strong> (si disponible), <strong>Direction</strong></p>
+<h3>Guide</h3>
+<ul>
+<li>Créer les sources de risque (cybercriminels, employés, états, concurrents...)</li>
+<li>Créer les objectifs visés (ransomware, vol de données, sabotage...)</li>
+<li>Combiner en couples et noter Motivation (0-4), Ressources (0-4), Activité (0-4)</li>
+<li>Pertinence = somme /12. Priorité : P1 (&gt;7), P2 (5-7), Non retenu (3-4), Écarté (&le;2)</li>
+</ul>
+
+<h2>Atelier 3 — Scénarios stratégiques</h2>
+<h3>Objectif</h3>
+<p>Identifier et évaluer les <strong>parties prenantes</strong> de l'écosystème, construire les <strong>chemins d'attaque stratégiques</strong> et définir les mesures de réduction de la menace écosystème.</p>
+<h3>Participants</h3>
+<p><strong>RSSI</strong>, <strong>Direction métier</strong>, <strong>Responsable des achats/partenariats</strong></p>
+<h3>Étapes</h3>
+<table><thead><tr><th>Onglet</th><th>Contenu</th><th>Guide</th></tr></thead><tbody>
+<tr><td>Parties Prenantes</td><td>Acteurs de l'écosystème</td><td>Fournisseurs (prestataires), partenaires, clients — évaluer D/P/M/C (1-4), catégorie</td></tr>
+<tr><td>Scénarios Stratégiques</td><td>Chemins d'attaque</td><td>Lier SR/OV + PP + BS + ER. La gravité est calculée automatiquement (MAX des ER)</td></tr>
+<tr><td>Mesures Écosystème</td><td>Réduction menace PP</td><td>Pour chaque PP, lister les mesures et réévaluer D/P/M/C résiduels. Cartographie de l'écosystème</td></tr>
+</tbody></table>
+<div class="help-tip"><strong>Règle PP</strong> : si l'objet de l'étude est l'entreprise entière, les collaborateurs internes ne sont PAS des PP. Seuls les acteurs externes sont des PP.</div>
+
+<h2>Atelier 4 — Scénarios opérationnels</h2>
+<h3>Objectif</h3>
+<p>Détailler chaque scénario stratégique en <strong>kill chain technique</strong> : phases d'attaque, contrôles existants, efficacité. Calculer la <strong>vraisemblance opérationnelle</strong> et le <strong>risque initial</strong>.</p>
+<h3>Participants</h3>
+<p><strong>RSSI</strong>, <strong>Équipe technique/SOC</strong>, <strong>Architecte sécurité</strong>, <strong>DevOps/Admin sys</strong></p>
+<h3>Étapes</h3>
+<table><thead><tr><th>Onglet</th><th>Contenu</th><th>Guide</th></tr></thead><tbody>
+<tr><td>Scénarios Opérationnels</td><td>Kill chain par SOP</td><td>4-8 phases par SOP, contrôles, efficacité (Absent/Partiel/Efficace), mesures proposées</td></tr>
+<tr><td>Risques initiaux</td><td>Synthèse des risques</td><td>Pour chaque SS : gravité, efficacité des contrôles, taux de faiblesse, V opérationnelle, risque initial</td></tr>
+</tbody></table>
+<div class="help-tip"><strong>Formule</strong> : Taux de faiblesse = MAX(0, (Absent&times;2 + Partiel - Efficace&times;2)) / (Total&times;2). Chaque phase Efficace compense un Absent dans la kill chain.</div>
+
+<h2>Atelier 5 — Traitement du risque</h2>
+<h3>Objectif</h3>
+<p>Définir le <strong>plan de traitement</strong> : mesures de sécurité, responsables, échéances. Évaluer les <strong>risques résiduels</strong> et prendre les décisions de traitement.</p>
+<h3>Participants</h3>
+<p><strong>RSSI</strong>, <strong>Direction</strong>, <strong>DSI</strong>, <strong>Responsables métier</strong>, <strong>DPO</strong></p>
+<h3>Étapes</h3>
+<table><thead><tr><th>Onglet</th><th>Contenu</th><th>Guide</th></tr></thead><tbody>
+<tr><td>Référentiel Mesures</td><td>Toutes les mesures</td><td>Consolider : socle appliqué (Terminé), socle à renforcer, écosystème, SOP, complémentaires</td></tr>
+<tr><td>Risques Résiduels</td><td>Risque après traitement</td><td>Pour chaque SS, évaluer la V résiduelle (1-4) et choisir la décision (Accepter/Réduire/Transférer)</td></tr>
+</tbody></table>
+<div class="help-tip"><strong>Priorité des mesures</strong> : proposer d'abord les mesures du socle manquantes, puis les mesures écosystème, puis des mesures complémentaires uniquement si nécessaire.</div>
+
+<h2>Glossaire</h2>
+<table><thead><tr><th>Acronyme</th><th>Signification</th><th>Description</th></tr></thead><tbody>
+<tr><td><strong>VM</strong></td><td>Valeur Métier</td><td>Processus ou activité essentielle de l'organisation (ex : gestion des commandes, R&amp;D)</td></tr>
+<tr><td><strong>BS</strong></td><td>Bien Support</td><td>Composant du SI qui supporte une VM (serveur, application, réseau, données)</td></tr>
+<tr><td><strong>PP</strong></td><td>Partie Prenante</td><td>Acteur externe à l'objet d'étude (fournisseur, prestataire, partenaire, client)</td></tr>
+<tr><td><strong>SR</strong></td><td>Source de Risque</td><td>Acteur de menace potentiel (cybercriminel, employé malveillant, concurrent, état)</td></tr>
+<tr><td><strong>OV</strong></td><td>Objectif Visé</td><td>But poursuivi par la source de risque (extorsion, vol de données, sabotage)</td></tr>
+<tr><td><strong>SR/OV</strong></td><td>Couple Source/Objectif</td><td>Combinaison d'une SR et d'un OV évaluée en pertinence</td></tr>
+<tr><td><strong>ER</strong></td><td>Événement Redouté</td><td>Impact métier craint en termes de DICT (ex : fuite de données clients)</td></tr>
+<tr><td><strong>SS</strong></td><td>Scénario Stratégique</td><td>Chemin d'attaque : QUI (SR) attaque POURQUOI (OV) VIA QUI (PP) ciblant QUOI (BS) provoquant QUEL impact (ER)</td></tr>
+<tr><td><strong>SOP</strong></td><td>Scénario Opérationnel</td><td>Kill chain technique détaillant les phases d'attaque d'un SS</td></tr>
+<tr><td><strong>DICT</strong></td><td>Disponibilité, Intégrité, Confidentialité, Traçabilité</td><td>Les 4 critères de sécurité pour évaluer les besoins et les atteintes</td></tr>
+<tr><td><strong>PACS</strong></td><td>Plan d'Amélioration Continue de la Sécurité</td><td>Plan de traitement issu de l'analyse EBIOS RM</td></tr>
+</tbody></table>
+
+</div>
+
+<!-- ════════ Onglet Utilisation ════════ -->
+<div class="help-content hidden" id="help-content-usage" data-i18n-html="ebios.help.usage">
+
+<h1 class="heading-blue">Guide d'utilisation</h1>
+<p class="text-muted">Comment utiliser l'application interactive EBIOS RM</p>
+
+<h2>Vue d'ensemble</h2>
+<p>L'application est organisée en <strong>3 zones</strong> : la <strong>barre d'outils</strong> en haut (menu Fichier), le <strong>menu latéral</strong> à gauche (navigation par atelier) et la <strong>zone de travail</strong> au centre (tableaux éditables).</p>
+<div class="help-tip">Toutes les données restent dans votre navigateur. Aucune information n'est envoyée à un serveur (sauf si l'assistant IA est actif). Pensez à sauvegarder régulièrement en JSON.</div>
+
+<h2>Navigation</h2>
+<table><thead><tr><th>Élément</th><th>Description</th></tr></thead><tbody>
+<tr><td><strong>Menu latéral</strong></td><td>Cliquer sur un atelier pour afficher ses sous-onglets. Le menu se replie automatiquement sur mobile.</td></tr>
+<tr><td><strong>Sous-onglets</strong></td><td>Les ateliers avec plusieurs sections (ex : Atelier 1) affichent des sous-onglets en haut de la zone de travail.</td></tr>
+<tr><td><strong>Synthèse</strong></td><td>Vue d'ensemble avec indicateurs, matrices de risque et cartographies. Se met à jour automatiquement.</td></tr>
+</tbody></table>
+
+<h2>Édition des tableaux</h2>
+<h3>Modifier une cellule</h3>
+<p>Les cellules éditables contiennent un <strong>champ de saisie</strong> (texte ou nombre) ou une <strong>liste déroulante</strong>. Les modifications sont prises en compte dès que vous quittez le champ (tab, clic ailleurs).</p>
+<h3>Ajouter une ligne</h3>
+<p>Cliquer sur le bouton <strong class="text-green">+ Ajouter</strong> en bas du tableau. L'identifiant (VM-XX, BS-XX, etc.) est généré automatiquement.</p>
+<h3>Supprimer une ligne</h3>
+<p>Cliquer sur le bouton <strong class="text-red">X</strong> à droite de la ligne. Une confirmation est demandée si la ligne contient des données.</p>
+<h3>Valeurs calculées</h3>
+<p>Les colonnes sur fond gris sont calculées automatiquement et ne sont pas éditables :</p>
+<ul>
+<li><strong>Menace PP</strong> = (Pénétration &times; Dépendance) / (Maturité &times; Confiance)</li>
+<li><strong>Exposition PP</strong> = seuils sur la menace (&ge;4 Critique, &ge;2 Élevée, &ge;1 Modérée, &lt;1 Faible)</li>
+<li><strong>Pertinence SR/OV</strong> = (Motivation + Ressources + Activité) / 12</li>
+<li><strong>Gravité SS</strong> = maximum des gravités des ER associés</li>
+<li><strong>Taux de faiblesse SOP</strong> = MAX(0, (Absent&times;2 + Partiel - Efficace&times;2)) / (Total&times;2)</li>
+<li><strong>Vraisemblance SOP</strong> = dérivée du taux de faiblesse (1 à 4)</li>
+<li><strong>Risque initial/résiduel</strong> = croisement Gravité &times; Vraisemblance dans la matrice</li>
+</ul>
+
+<h2>Gestion des colonnes</h2>
+<table><thead><tr><th>Action</th><th>Comment</th></tr></thead><tbody>
+<tr><td><strong>Masquer une colonne</strong></td><td>Cliquer sur le <strong>&times;</strong> à droite du nom de la colonne dans l'en-tête du tableau</td></tr>
+<tr><td><strong>Restaurer une colonne</strong></td><td>Un bouton <strong>Colonnes masquées (N)</strong> apparaît au-dessus du tableau — cliquer pour choisir les colonnes à restaurer</td></tr>
+<tr><td><strong>Redimensionner</strong></td><td>Glisser le bord droit d'un en-tête de colonne</td></tr>
+</tbody></table>
+
+<h2>Références entre éléments</h2>
+<p>Les champs qui référencent d'autres éléments (VM dans les BS, PP dans les SS, ER dans les SS, etc.) utilisent un <strong>sélecteur avec recherche</strong> :</p>
+<ul>
+<li>Cliquer sur le champ pour ouvrir le sélecteur</li>
+<li>Taper pour filtrer les éléments disponibles</li>
+<li>Cocher/décocher pour sélectionner (multi-sélection possible)</li>
+<li>Cliquer en dehors pour fermer</li>
+</ul>
+<div class="help-tip">Quand vous renommez un élément (VM, BS, PP, ER...), toutes les références dans les autres tableaux sont mises à jour automatiquement.</div>
+
+<h2>Gestion des fichiers</h2>
+<p>Le menu <strong>Fichier</strong> en haut à droite donne accès à toutes les options :</p>
+<table><thead><tr><th>Action</th><th>Format</th><th>Description</th></tr></thead><tbody>
+<tr><td><strong>Ouvrir</strong></td><td>.json / .json.enc</td><td>Charge un fichier JSON (ou chiffré) depuis le disque et remplace toutes les données. Validation automatique du format.</td></tr>
+<tr><td><strong>Enregistrer</strong></td><td>.json</td><td>Sauvegarde rapide du fichier actuellement ouvert. Incompatible avec le chiffrement (utiliser Enregistrer sous pour chiffrer).</td></tr>
+<tr><td><strong>Enregistrer sous</strong></td><td>.json / .json.enc</td><td>Sauvegarde en JSON avec option de chiffrement AES-256 par mot de passe.</td></tr>
+<tr><td><strong>Import Excel</strong></td><td>.xlsx</td><td>Lit un fichier Excel EBIOS RM existant et charge les données. Compatible avec les fichiers générés par l\u0027application ou créés manuellement.</td></tr>
+<tr><td><strong>Export Excel</strong></td><td>.xlsx</td><td>Génère un fichier Excel avec formules, mise en forme conditionnelle et feuilles structurées. Nécessite une connexion internet (chargement ExcelJS).</td></tr>
+</tbody></table>
+
+<h2>Historique et annulation</h2>
+<h3>Annuler / Rétablir</h3>
+<p>Chaque modification est enregistrée dans l'historique (50 niveaux maximum). Utilisez les boutons du menu latéral ou les raccourcis :</p>
+<ul>
+<li><strong>Ctrl+Z</strong> (ou Cmd+Z sur Mac) : annuler la dernière modification</li>
+<li><strong>Ctrl+Y</strong> (ou Cmd+Y sur Mac) : rétablir la modification annulée</li>
+</ul>
+<h3>Snapshots</h3>
+<p>Les snapshots sont des points de sauvegarde nommés stockés dans le navigateur :</p>
+<ul>
+<li><strong>Créer un snapshot</strong> : cliquer sur "+ Créer un point de sauvegarde" dans l'onglet Snapshots</li>
+<li><strong>Restaurer</strong> : revenir à l'état exact du snapshot (l'état actuel est sauvegardé dans l'undo)</li>
+<li><strong>Exporter</strong> : télécharger un snapshot en fichier JSON indépendant</li>
+<li><strong>Chiffrer</strong> : activer le chiffrement de tous les snapshots dans le navigateur</li>
+</ul>
+<div class="help-tip"><strong>Attention</strong> : les snapshots sont stockés dans localStorage. Si vous videz les données du navigateur, ils seront perdus. Exportez régulièrement vos snapshots importants en fichier.</div>
+
+<h2>Réglages</h2>
+<p>Cliquer sur l'icône <strong>roue crantée</strong> (&#9881;) dans la barre d'outils pour accéder aux réglages :</p>
+<ul>
+<li><strong>Langue</strong> : basculer entre français et anglais</li>
+<li><strong>Assistant IA</strong> : activer/désactiver, choisir le fournisseur (Anthropic/OpenAI), le modèle et la clé API</li>
+<li><strong>Instructions méthodologiques</strong> : charger un fichier Markdown pour guider les suggestions de l'IA</li>
+</ul>
+
+<h2>Assistant IA</h2>
+<p>L'assistant IA est un module optionnel qui propose des suggestions contextualisées à chaque étape de l'analyse. Il est <strong>désactivé par défaut</strong>.</p>
+<h3>Utilisation</h3>
+<p>Une fois activé dans les Réglages, un bouton <strong>&#10024; IA</strong> apparaît sur chaque onglet (Valeurs Métier, Biens Supports, Scénarios, Mesures, etc.). En cliquant dessus :</p>
+<ul>
+<li>L'assistant analyse les données déjà saisies dans l'analyse en cours</li>
+<li>Il propose des éléments supplémentaires (VM, BS, SR/OV, scénarios, mesures, kill chains...)</li>
+<li>Chaque suggestion peut être <strong>acceptée</strong> (ajoutée à l'analyse) ou <strong>ignorée</strong></li>
+<li>Les suggestions sont adaptées au contexte de l'organisation et aux données existantes</li>
+</ul>
+<h3>Instructions méthodologiques</h3>
+<p>Un fichier Markdown peut être chargé dans les Réglages pour enrichir le contexte de l'IA :</p>
+<ul>
+<li>Référentiel interne de l'organisation</li>
+<li>Consignes de rédaction ou de nommage</li>
+<li>Méthodologie spécifique ou compléments à EBIOS RM</li>
+<li>Politique de sécurité ou charte applicable</li>
+</ul>
+<p>Ce fichier est ajouté au prompt système de chaque requête IA.</p>
+<h3>Risques et précautions</h3>
+<div class="help-tip"><strong>Avertissement</strong> :
+<ul style="margin-top:6px">
+<li><strong>Partage de données</strong> : les données de l'analyse (contexte, exigences, mesures, scénarios) sont envoyées au fournisseur IA pour générer les suggestions. Vérifiez que votre politique de confidentialité et vos engagements contractuels le permettent.</li>
+<li><strong>Clé API dans les headers HTTP</strong> : l'application fonctionne sans serveur backend. La clé API est transmise directement depuis le navigateur dans les en-têtes HTTP des requêtes. Elle est donc visible dans les outils de développement (onglet Network), peut être capturée par les extensions navigateur, et peut être journalisée par un proxy d'entreprise. Utilisez un profil navigateur dédié, sans extensions.</li>
+<li><strong>Clé API dans localStorage</strong> : la clé est stockée dans le navigateur. Toute personne ayant accès au navigateur peut la lire via les DevTools. Elle n'est jamais incluse dans les fichiers JSON sauvegardés.</li>
+<li><strong>Suggestions non garanties</strong> : les propositions de l'IA sont des suggestions à valider par l'analyste. Elles ne se substituent pas à l'expertise humaine.</li>
+</ul></div>
+
+<h2>Sécurité des données</h2>
+<ul>
+<li><strong>Aucun envoi serveur</strong> : toutes les données restent dans votre navigateur (sauf si l'assistant IA est actif)</li>
+<li><strong>Chiffrement JSON</strong> : AES-256-GCM avec clé dérivée par PBKDF2 (250 000 itérations)</li>
+<li><strong>Chiffrement snapshots</strong> : option de chiffrement des données localStorage</li>
+<li><strong>Validation import</strong> : chaque fichier JSON importé est validé avant chargement (structure, types, bornes)</li>
+<li><strong>Clés API</strong> : stockées uniquement dans localStorage, jamais dans les fichiers sauvegardés</li>
+</ul>
+
+<h2>Raccourcis clavier</h2>
+<table><thead><tr><th>Raccourci</th><th>Action</th></tr></thead><tbody>
+<tr><td><strong>Ctrl+S</strong> / <strong>Cmd+S</strong></td><td>Enregistrer</td></tr>
+<tr><td><strong>Ctrl+Z</strong> / <strong>Cmd+Z</strong></td><td>Annuler</td></tr>
+<tr><td><strong>Ctrl+Y</strong> / <strong>Cmd+Y</strong></td><td>Rétablir</td></tr>
+<tr><td><strong>Tab</strong></td><td>Passer au champ suivant dans un tableau</td></tr>
+<tr><td><strong>Échap</strong></td><td>Fermer le panneau d'aide ou un sélecteur ouvert</td></tr>
+</tbody></table>
+
+<h2>Bonnes pratiques</h2>
+<ul>
+<li><strong>Sauvegarder souvent</strong> : utilisez Fichier &rarr; Enregistrer régulièrement, surtout avant de fermer le navigateur</li>
+<li><strong>Utiliser les snapshots</strong> : créez un snapshot avant chaque session de travail ou modification importante</li>
+<li><strong>Suivre l'ordre des ateliers</strong> : les données des ateliers suivants dépendent des précédents (VM &rarr; BS &rarr; PP &rarr; SR/OV &rarr; ER &rarr; SS &rarr; SOP &rarr; Mesures)</li>
+<li><strong>Vérifier la synthèse</strong> : l'onglet Synthèse donne une vue globale — les indicateurs et matrices se mettent à jour automatiquement</li>
+<li><strong>Export Excel</strong> : pour un livrable formel, utilisez Fichier &rarr; Export Excel — le fichier contient les formules et la mise en forme professionnelle</li>
+</ul>
+
+</div>
+
+</div>
+</div>
+
+<!-- Modale mot de passe -->
+<div class="pwd-overlay" id="pwd-overlay">
+<div class="pwd-panel">
+    <div class="pwd-title" id="pwd-title"></div>
+    <input type="password" class="pwd-input" id="pwd-input" placeholder="Mot de passe" data-i18n-placeholder="pwd_placeholder" autocomplete="off">
+    <input type="password" class="pwd-input hidden" id="pwd-input2" placeholder="Confirmer le mot de passe" data-i18n-placeholder="pwd_confirm_placeholder" autocomplete="off">
+    <div class="pwd-error" id="pwd-error"></div>
+    <div class="btn-group-end">
+        <button class="pwd-btn pwd-cancel" id="pwd-cancel" data-i18n="btn_cancel">Annuler</button>
+        <button class="pwd-btn pwd-ok" id="pwd-ok" data-i18n="btn_validate">Valider</button>
+    </div>
+</div>
+</div>
+
+<div class="pwd-overlay" id="confirm-overlay">
+<div class="pwd-panel">
+    <div class="pwd-title" id="confirm-title"></div>
+    <div id="confirm-body" class="help-subtitle"></div>
+    <div class="btn-group-end">
+        <button class="pwd-btn pwd-cancel" id="confirm-non" data-i18n="btn_no">Non</button>
+        <button class="pwd-btn pwd-ok" id="confirm-oui" data-i18n="btn_yes">Oui</button>
+    </div>
+</div>
+</div>
+
+<script src="js/i18n.js"></script>
+<script src="js/cisotoolbox.js"></script>
+<script src="js/referentiels_catalog.js"></script>
+<script src="js/EBIOS_RM_data.js"></script>
+<script src="js/EBIOS_RM_i18n_fr.js"></script>
+<script src="js/EBIOS_RM_app.js"></script>
+<script src="js/ai_common.js"></script>
+<script src="js/EBIOS_RM_ai_assistant.js"></script>
+</body>
+</html>
