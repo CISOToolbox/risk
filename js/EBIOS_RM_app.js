@@ -1423,7 +1423,7 @@ function _buildEcoSVG(ppList, title) {
             const fill = fc < 4 ? "#e74c3c" : fc < 7 ? "#f39c12" : fc < 10 ? "#f1c40f" : "#1abc9c";
             const stroke = fc < 4 ? "#c0392b" : fc < 7 ? "#e67e22" : fc < 10 ? "#d4ac0d" : "#16a085";
             const isLeft = px < CX;
-            const labelText = p.id + " - " + p.nom;
+            const labelText = esc(p.id + " - " + p.nom);
             // Label aligné sur le bord du rectangle du quadrant
             const lx = isLeft ? q.rx + 8 : q.rx + q.rw - 8;
             allPP.push({ px, py, cr, fill, stroke, isLeft, lx, ly: py, labelText, quad: catName });
