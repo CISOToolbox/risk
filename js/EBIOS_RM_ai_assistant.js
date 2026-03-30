@@ -129,7 +129,8 @@ var SYSTEM_PROMPT = [
 "- Security measures: prioritize baseline measures first, then ecosystem, then complementary",
 "",
 "IMPORTANT: Always respond in the language specified in the user prompt (French or English).",
-"IMPORTANT: Always respond with valid JSON matching the requested schema. No markdown, no explanation — JSON only."
+"IMPORTANT: Always respond with valid JSON matching the requested schema. No markdown, no explanation — JSON only.",
+"IMPORTANT: NEVER propose elements that already exist in the analysis. The user prompt includes existing elements — check them carefully and only suggest NEW, DIFFERENT items. Avoid duplicates or near-duplicates (same concept with slightly different wording)."
 ].join("\n");
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -448,7 +449,7 @@ var ACCEPT_HANDLERS = {
     },
     sop: function(s) {
         // s has {ss, phases:[...]}
-        var sopId = "SOP-" + String((D.sop_summary.length || 0) + 1).padStart(2, "0");
+        var sopId = "SOP-" + String((D.sop_summary.length || 0) + 1).padStart(3, "0");
         D.sop_summary.push({sop: sopId, ss: s.ss});
         (s.phases || []).forEach(function(p) {
             var mesureRef = "";

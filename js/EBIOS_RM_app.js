@@ -636,7 +636,7 @@ function nextId(section) {
         const m = id.match(/(\d+)/);
         if (m) max = Math.max(max, parseInt(m[1]));
     }
-    const num = String(max + 1).padStart(2, "0");
+    const num = String(max + 1).padStart(3, "0");
     return prefix + "-" + num;
 }
 
@@ -1193,7 +1193,7 @@ function newSR() {
     if (!desc) return null;
     let max = 0;
     (D.sr_list||[]).forEach(s => { const m = s.id.match(/(\d+)/); if (m) max = Math.max(max, parseInt(m[1])); });
-    const id = "SR-" + String(max + 1).padStart(2, "0");
+    const id = "SR-" + String(max + 1).padStart(3, "0");
     D.sr_list.push({id: id, nom: desc});
     showStatus(t("ebios.status.sr_created", {id: id}));
     return id;
@@ -1204,7 +1204,7 @@ function newOV() {
     if (!desc) return null;
     let max = 0;
     (D.ov_list||[]).forEach(o => { const m = o.id.match(/(\d+)/); if (m) max = Math.max(max, parseInt(m[1])); });
-    const id = "OV-" + String(max + 1).padStart(2, "0");
+    const id = "OV-" + String(max + 1).padStart(3, "0");
     D.ov_list.push({id: id, nom: desc});
     showStatus(t("ebios.status.ov_created", {id: id}));
     return id;
@@ -1658,7 +1658,7 @@ function addSOP() {
         const m = (s.sop||"").match(/(\d+)/);
         if (m) maxNum = Math.max(maxNum, parseInt(m[1]));
     });
-    const sopId = "SOP-" + String(maxNum + 1).padStart(2, "0");
+    const sopId = "SOP-" + String(maxNum + 1).padStart(3, "0");
     D.sop_detail.push({
         sop: sopId, ss: "", phase: t("ebios.sop.initial_phase"), action: "",
         bs: "", controle: "", ref: "", efficacite: "", commentaire: "",
