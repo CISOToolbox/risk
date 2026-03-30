@@ -45,7 +45,7 @@ function _loadI18nFile(lang, cb) {
     var base = (typeof _ASSET_BASE !== "undefined") ? _ASSET_BASE : "";
     var file = base + "_i18n_" + lang + ".js";
     var s = document.createElement("script");
-    s.src = "js/" + file;
+    s.src = file;
     s.onload = function() { _i18nLoaded[lang] = true; if (cb) cb(); };
     s.onerror = function() { if (cb) cb(); }; // proceed even if file not found
     document.head.appendChild(s);
@@ -53,7 +53,6 @@ function _loadI18nFile(lang, cb) {
 
 function switchLang(lang) {
     if (!lang) lang = _locale === "fr" ? "en" : "fr";
-    // Lazy-load the target language translations if not yet loaded
     _loadI18nFile(lang, function() {
         _locale = lang;
         localStorage.setItem("ct_lang", lang);
@@ -264,11 +263,14 @@ _registerTranslations("en", {
     "err_not_encrypted": "File not encrypted"
 });
 
-// Init locale on load — FR i18n file is loaded synchronously by default in the HTML
+// Init locale on load — FR is loaded synchronously via <script> tag
 _i18nLoaded["fr"] = true;
 _initLocale();
 
-// If initial locale is EN, load EN translations immediately
+// If saved locale is EN, lazy-load EN translations at startup
 if (_locale === "en") {
-    _loadI18nFile("en", function() { _applyStaticTranslations(); });
+    _loadI18nFile("en", function() {
+        _applyStaticTranslations();
+        if (typeof renderAll === "function") renderAll();
+    });
 }
