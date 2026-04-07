@@ -155,7 +155,7 @@ window.catalogCreate = function() {
 
     // Reset D silently (no confirm dialog)
     var init = window[_ct().initDataVar || "EBIOS_INIT_DATA"];
-    if (init) D = JSON.parse(JSON.stringify(init));
+    if (init) { Object.keys(D).forEach(function(k){ delete D[k]; }); Object.assign(D, JSON.parse(JSON.stringify(init))); }
     if (typeof ensureKeys === "function") ensureKeys();
     if (typeof _initDataAndRender === "function") {
         _initDataAndRender(function() { _renderCatalog(); });
@@ -172,7 +172,7 @@ window.catalogOpen = function(id) {
         _activeId = id;
         localStorage.setItem("ebios_catalog_active", id);
         try {
-            D = JSON.parse(record.data);
+            var _parsed = JSON.parse(record.data); Object.keys(D).forEach(function(k){ delete D[k]; }); Object.assign(D, _parsed);
             if (typeof ensureKeys === "function") ensureKeys();
             if (typeof _initDataAndRender === "function") {
                 _initDataAndRender(function() {

@@ -607,9 +607,9 @@ let _currentPanel = "synth";
 var _PANEL_RENDER = {
     synth: function() { renderSynthesis(); },
     context: function() { renderContext(); },
-    vm: function() {},
-    bs: function() {},
-    er: function() {},
+    vm: function() { renderVM(); },
+    bs: function() { renderBS(); },
+    er: function() { renderER(); },
     socle: function() { renderSocle(); },
     srov: function() { renderSROV(); },
     pp: function() { renderPP(); },
@@ -2898,7 +2898,11 @@ try {
     // Toolbar right: language toggle + GitHub link
     var tr = document.getElementById("toolbar-right");
     if (tr) tr.innerHTML = _getSettingsButtonHTML() + _getGithubLinkHTML("https://github.com/CollectiveMakers/ebios_rm_webapp");
-    _initDataAndRender();
+    if (typeof window._appInitCallback === "function") {
+        window._appInitCallback();
+    } else {
+        _initDataAndRender();
+    }
     _applyStaticTranslations();
     // Masquer "Enregistrer" si le File System Access API n'est pas disponible
     if (!window.showSaveFilePicker && !window.showOpenFilePicker) {

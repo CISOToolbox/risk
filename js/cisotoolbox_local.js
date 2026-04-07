@@ -116,6 +116,10 @@ async function _loadBuffer(buffer, filename) {
     if (jsonStr.length > 10000000) throw new Error("File too large (>10MB)");
     var parsed = JSON.parse(jsonStr);
     delete parsed.__proto__; delete parsed.constructor; delete parsed.prototype;
+    // Detect Pilot backup format: {"module":"...","data":[{"id":"...","data":{...}}]}
+    if (parsed.module && Array.isArray(parsed.data) && parsed.data.length > 0 && parsed.data[0].data) {
+        parsed = parsed.data[0].data;
+    }
     // Clear D and merge parsed data (preserves the let D reference in app code)
     Object.keys(D).forEach(function(k) { delete D[k]; });
     Object.assign(D, parsed);
