@@ -1277,7 +1277,6 @@ function _initAI() {
     if (typeof renderAll === "function") {
         try { renderAll(); } catch(e) {}
     }
-    console.log("EBIOS RM AI Assistant loaded");
 }
 
 if (document.readyState === "loading") {
