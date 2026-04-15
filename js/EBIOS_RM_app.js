@@ -71,11 +71,13 @@ function _refSliderChange(fwId, idx, val) {
 function _setContextField(key, val) {
     D.context[key] = val;
     renderContext();
+    _autoSave();
 }
 
 function _setGravityField(idx, field, rerender, val) {
     D.gravity_scale[idx][field] = val;
     if (rerender) renderAll();
+    _autoSave();
 }
 
 // Canonical risk level keys (always stored in FR)
@@ -94,6 +96,7 @@ function _setRiskMatrix(ri, vi, val) {
     D.risk_matrix[ri].levels[vi] = _toCanonicalRisk(val);
     renderContext();
     renderSynthesis();
+    _autoSave();
 }
 
 function _effBadgeClick(el) {
@@ -334,6 +337,7 @@ function _refOnToggle(uid, section, idx, field, ids, el, single) {
     } else {
         if (section === "eco") _ecoSyncColumns(idx, field, el ? el.value : "", el ? el.checked : false);
     }
+    _autoSave();
 }
 
 function _refOnRemove(section, idx, field, removeId) {
@@ -346,12 +350,14 @@ function _refOnRemove(section, idx, field, removeId) {
             D.socle_complementaires[fwId][refKey][field] = parts.join(", ");
         }
         renderSocleRefs();
+        _autoSave();
         return;
     }
     const current = D[section][idx][field] || "";
     const parts = current.split(",").map(s => s.trim()).filter(s => !s.startsWith(removeId));
     D[section][idx][field] = parts.join(", ");
     _reRenderForField(section, field);
+    _autoSave();
 }
 
 function _refOnFlush(section, field) {
@@ -595,6 +601,7 @@ function addRow(section) {
         D[section].push({...templates[section]});
         renderAll();
         showStatus(t("ebios.status.line_added", {id: id}));
+        _autoSave();
     }
 }
 function delRow(section, idx) {
@@ -830,6 +837,7 @@ function setGravityLevels(n) {
         D.risk_matrix = matrices[n];
     }
     renderAll();
+    _autoSave();
 }
 
 function setSocleType(type) {
@@ -1171,6 +1179,7 @@ function addSocleMeasure(socleIdx) {
     renderMeasures();
     renderIndicators();
     showStatus(t("ebios.status.measure_created", {id: id}));
+    _autoSave();
 }
 
 // ── SR/OV : listes séparées SR, OV, couples ──
@@ -1191,6 +1200,7 @@ function newSR() {
     const id = "SR-" + String(max + 1).padStart(3, "0");
     D.sr_list.push({id: id, nom: desc});
     showStatus(t("ebios.status.sr_created", {id: id}));
+    _autoSave();
     return id;
 }
 function newOV() {
@@ -1202,6 +1212,7 @@ function newOV() {
     const id = "OV-" + String(max + 1).padStart(3, "0");
     D.ov_list.push({id: id, nom: desc});
     showStatus(t("ebios.status.ov_created", {id: id}));
+    _autoSave();
     return id;
 }
 
@@ -1225,6 +1236,7 @@ function updateSROVRef(idx, field, val) {
     }
     renderSROV();
     showStatus(t("ebios.status.modified"));
+    _autoSave();
 }
 
 function srSelectWidget(idx, val) {
@@ -1585,6 +1597,7 @@ function addEcoMeasure(ecoIdx) {
     renderMeasures();
     renderIndicators();
     showStatus(t("ebios.status.measure_created", {id: id}));
+    _autoSave();
 }
 
 function renderSOP() {
@@ -1664,6 +1677,7 @@ function addSOP() {
     renderSOP();
     renderIndicators();
     showStatus(t("ebios.status.sop_added", {id: sopId}));
+    _autoSave();
 }
 
 function addSOPPhase(firstIdx) {
@@ -1684,6 +1698,7 @@ function addSOPPhase(firstIdx) {
     });
     renderSOP();
     showStatus(t("ebios.status.phase_added", {id: sopId}));
+    _autoSave();
 }
 
 function _findSOPGroup(idx) {
@@ -1718,6 +1733,7 @@ function moveSOPPhase(idx, dir) {
     [D.sop_detail[idx], D.sop_detail[target]] = [D.sop_detail[target], D.sop_detail[idx]];
     renderSOP();
     showStatus(t("ebios.status.phase_moved"));
+    _autoSave();
 }
 
 function delSOPPhase(idx) {
@@ -1741,6 +1757,7 @@ function delSOPPhase(idx) {
     renderSOP();
     renderIndicators();
     showStatus(t("ebios.status.deleted"));
+    _autoSave();
 }
 
 function cycleEfficacite(idx) {
@@ -1751,6 +1768,7 @@ function cycleEfficacite(idx) {
     D.sop_detail[idx].efficacite = next;
     renderSOP();
     showStatus(t("ebios.status.efficacite", {val: next || "—"}));
+    _autoSave();
 }
 
 function addSOPMeasure(sopIdx) {
@@ -1774,6 +1792,7 @@ function addSOPMeasure(sopIdx) {
     renderMeasures();
     renderIndicators();
     showStatus(t("ebios.status.measure_created", {id: id}));
+    _autoSave();
 }
 
 function _computeSOPVop() {
