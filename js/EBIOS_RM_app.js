@@ -1131,7 +1131,7 @@ function renderSocle() {
         const sliderId = "slbl-" + section + "-" + i;
         const desc = isAnssi ? _getAnssDesc(s.num) : _getIsoDesc(s.ref || s.num);
         h += `<tr><td>${esc(s[idCol])}</td><td${hd("theme")}>${esc(_rt(s, themeCol))}</td><td${hd("mesure")}><div class="fw-600 mb-4">${esc(_rt(s, "mesure"))}</div>${desc ? `<div class="desc-text">${esc(desc)}</div>` : ""}</td>
-            <td${hd("conf")}><div id="${sliderId}" style="text-align:center;font-weight:700;font-size:0.85em;color:${confColor}">${conf !== "" && conf !== null ? confVal + "%" : "—"}</div><input type="range" min="0" max="100" step="1" value="${confVal}" style="width:100%;cursor:pointer;accent-color:${confColor}" data-s="${section}" data-i="${i}" data-f="conformite" data-lbl="${sliderId}" data-input="_sliderInput" data-pass-el data-change="_sliderChange" data-pass-el /></td>
+            <td${hd("conf")}><div id="${sliderId}" style="text-align:center;font-weight:700;font-size:0.85em;color:${confColor}">${conf !== "" && conf !== null ? confVal + "%" : "—"}</div><input type="range" min="0" max="100" step="1" value="${confVal}" style="width:100%;cursor:pointer;accent-color:${confColor}" data-s="${section}" data-i="${i}" data-f="conformite" data-t="number" data-lbl="${sliderId}" data-input="_sliderInput" data-pass-el data-change="_updateFieldFromEl" data-pass-el /></td>
             <td${hd("statut")} class="computed">${_socleBadge(statut)}</td>
             <td${hd("ecart")}>${ta(section,i,"ecart",s.ecart)}</td>
             <td${hd("prio")} class="computed">${_prioBadge(prio)}</td>
