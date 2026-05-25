@@ -427,8 +427,6 @@
         ".btn-ai { background:linear-gradient(135deg,#6366f1 0%,#7c3aed 100%); color:#fff; border:none; padding:5px 12px; border-radius:5px; cursor:pointer; font-size:0.8em; font-weight:600; margin-left:auto; white-space:nowrap; }",
         ".btn-ai-sm { padding:2px 6px !important; font-size:0.75em !important; margin-left:4px; border-radius:4px; }",
         ".btn-ai:hover { opacity:0.9; }",
-        ".ai-btn-suggest { background:#8b5cf6 !important; color:white !important; padding:2px 6px; margin-left:4px; }",
-        ".ai-btn-suggest:hover { opacity:0.85; }",
     ].join("\n");
     document.head.appendChild(style);
 
