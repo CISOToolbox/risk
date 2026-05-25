@@ -530,6 +530,11 @@ document.addEventListener("DOMContentLoaded", function() {
 // ═══════════════════════════════════════════════════════════════════════
 
 function _demoSettingsHTML() {
+    // In Pilot-managed (suite) mode, hide the demo loader so users
+    // cannot accidentally seed MedSecure test data into the backend
+    // DB — those rows would then leak up to Pilot's consolidated
+    // action plan via /api/internal/measures.
+    if (window._aiRuntime && window._aiRuntime.managed) return "";
     return '<div class="settings-section" style="margin-top:24px;border-top:1px solid var(--border);padding-top:16px">' +
         '<div class="settings-label">' + t("settings.demo_section") + '</div>' +
         '<p class="fs-xs text-muted" style="margin-bottom:8px">' + t("settings.demo_note") + '</p>' +
@@ -538,6 +543,7 @@ function _demoSettingsHTML() {
 }
 
 function _wireDemoSettings() {
+    if (window._aiRuntime && window._aiRuntime.managed) return;
     var btn = document.getElementById("settings-load-demo");
     if (!btn) return;
     btn.onclick = function() {

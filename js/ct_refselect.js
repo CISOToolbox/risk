@@ -5,12 +5,14 @@ function ctRefSelect(uid, value, options, opts) {
     opts = opts || {};
     var selected = (value || "").split(",").map(function(s) { return s.trim().split(" - ")[0].trim(); }).filter(Boolean);
 
+    var hideId = !!opts.hideId;
+
     // Tags
     var tags = "";
     for (var i = 0; i < options.length; i++) {
         var opt = options[i];
         if (selected.indexOf(opt.id) < 0) continue;
-        var display = esc(opt.id) + " - " + esc(opt.label);
+        var display = hideId ? esc(opt.label || opt.id) : (esc(opt.id) + " - " + esc(opt.label));
         var tagContent = "";
         if (opts.tagClick) {
             tagContent = '<span style="cursor:pointer" data-click="ctRefTagClick" data-args=\'' + _da(uid, opt.id) + '\' data-stop>' + display + '</span>';
@@ -27,7 +29,8 @@ function ctRefSelect(uid, value, options, opts) {
     for (var j = 0; j < options.length; j++) {
         var o = options[j];
         var checked = selected.indexOf(o.id) >= 0 ? "checked" : "";
-        oh += '<label class="ref-option"><input type="' + inputType + '" name="' + uid + '" value="' + esc(o.id) + '" ' + checked + ' data-change="ctRefToggle" data-args=\'' + _da(uid) + '\' data-pass-el>' + esc(o.id) + ' - ' + esc(o.label) + '</label>';
+        var optDisp = hideId ? esc(o.label || o.id) : (esc(o.id) + ' - ' + esc(o.label));
+        oh += '<label class="ref-option"><input type="' + inputType + '" name="' + uid + '" value="' + esc(o.id) + '" ' + checked + ' data-change="ctRefToggle" data-args=\'' + _da(uid) + '\' data-pass-el>' + optDisp + '</label>';
     }
 
     var placeholder = opts.placeholder || "";
@@ -80,9 +83,11 @@ function ctRefToggle(uid, el) {
     // Call onToggle callback with selected IDs
     if (cfg.onToggle) cfg.onToggle(uid, ids, el);
 
-    // Single select: close immediately
+    // Single select: refresh the tag, close immediately, and flush.
     if (cfg.single) {
+        _ctRefUpdateTags(uid, ids, cfg);
         dd.classList.remove("open");
+        if (cfg.onFlush) cfg.onFlush(uid);
         return;
     }
 
@@ -119,7 +124,9 @@ function _ctRefUpdateTags(uid, selectedIds, cfg) {
     for (var i = 0; i < selectedIds.length; i++) {
         var id = selectedIds[i];
         var label = cfg.labelFor ? cfg.labelFor(id) : "";
-        var display = label ? esc(id) + " - " + esc(label) : esc(id);
+        var display;
+        if (cfg.hideId) display = esc(label || id);
+        else display = label ? (esc(id) + " - " + esc(label)) : esc(id);
         var tagContent = "";
         if (cfg.tagClick) {
             tagContent = '<span style="cursor:pointer" data-click="ctRefTagClick" data-args=\'' + _da(uid, id) + '\' data-stop>' + display + '</span>';

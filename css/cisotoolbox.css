@@ -72,6 +72,43 @@ body.ct-app-shell { overflow: hidden; height: 100vh; }
 .btn-hamburger { display: none; background: none !important; border: none; color: white; font-size: 1.8em !important; cursor: pointer; padding: 4px 10px 4px 0 !important; }
 @media (max-width: 768px) { .btn-hamburger { display: inline-block; } .btn-sidebar-toggle { display: none; } }
 
+/* ── Buttons — canonical .btn family (shared by every module) ─────
+   Generic button system. The toolbar/sidebar buttons above
+   (.btn-settings, .btn-menu, .btn-github…) are layout-specific and
+   intentionally kept separate. .btn-ai is owned by ai_common.js. */
+.btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    border: 1px solid transparent; border-radius: 6px;
+    padding: 6px 14px; font-size: 0.88em; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; line-height: 1.2;
+    background: var(--bg-hover, #eef2f7); color: var(--blue, #1e293b);
+    text-decoration: none;
+}
+.btn:hover { opacity: 0.9; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary   { background: var(--light-blue, #3b82f6); color: white; }
+.btn-primary:hover { background: #2563eb; opacity: 1; }
+.btn-success   { background: var(--green, #16a34a); color: white; }
+.btn-success:hover { background: #15803d; opacity: 1; }
+.btn-danger    { background: var(--red, #dc2626); color: white; }
+.btn-danger:hover { background: #b91c1c; opacity: 1; }
+.btn-warning   { background: var(--orange, #f59e0b); color: white; }
+.btn-warning:hover { background: #d97706; opacity: 1; }
+.btn-secondary { background: var(--gray-dark, #475569); color: white; }
+.btn-secondary:hover { background: #334155; opacity: 1; }
+.btn-ghost {
+    background: transparent; color: var(--blue, #1e293b);
+    border: 1px solid var(--border, #cbd5e1);
+}
+.btn-ghost:hover { background: var(--bg-hover, #eef2f7); opacity: 1; }
+.btn-link {
+    background: transparent; color: var(--light-blue, #3b82f6);
+    border: none; padding: 4px 6px; text-decoration: underline;
+}
+.btn-link:hover { color: #2563eb; opacity: 1; }
+.btn-sm { padding: 3px 9px; font-size: 0.76em; }
+.btn-xs { padding: 2px 6px; font-size: 0.7em; }
+
 /* ── Restore banner ───────────────────────────────────────────── */
 .restore-banner {
     position: fixed; top: 40px; left: 0; right: 0; z-index: 190;
@@ -286,6 +323,37 @@ td .ref-select, td .ref-select * { box-shadow: none; }
 .ct-table tbody tr:hover { background:var(--hover-bg,#f8fafc); }
 .ct-table tbody tr.selected { background:rgba(37,99,235,0.06); }
 .ct-table .ct-bulk-col { width:32px; text-align:center; }
+
+/* ── Help overlay — canonical, shared by every module ─────────────
+   .help-overlay backdrop > .help-panel box, with optional .help-tabs
+   and .help-content panes. Content elements are styled under
+   .help-panel so the markup works with OR without a .help-content
+   wrapper. Per-module accent colour via --help-accent — override it
+   on .help-panel in the app CSS (e.g. AppSec sets it to red). */
+.help-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:400; overflow-y:auto; }
+.help-overlay.open { display:flex; justify-content:center; align-items:flex-start; padding:40px 20px; }
+.help-panel { --help-accent:var(--light-blue,#3b82f6); background:white; border-radius:12px; max-width:900px; width:100%; max-height:90vh; overflow-y:auto; padding:32px; position:relative; box-shadow:0 8px 32px rgba(0,0,0,0.2); }
+.close-help, .help-close { position:absolute; top:12px; right:16px; background:none; border:none; font-size:1.5em; line-height:1; cursor:pointer; color:var(--text-muted); padding:4px 8px; }
+.close-help:hover, .help-close:hover { color:var(--text); }
+.help-tabs { display:flex; gap:0; border-bottom:2px solid var(--border); margin-bottom:20px; }
+.help-tab { padding:8px 16px; cursor:pointer; font-weight:600; font-size:0.85em; color:var(--text-muted); border-bottom:2px solid transparent; margin-bottom:-2px; transition:all 0.15s; }
+.help-tab:hover { color:var(--text); }
+.help-tab.active { color:var(--help-accent); border-bottom-color:var(--help-accent); }
+.help-content { display:none; }
+.help-content.active { display:block; }
+.help-subtitle { font-size:0.9em; color:var(--text-muted); margin-bottom:16px; }
+.help-panel h1 { font-size:1.3em; color:var(--blue); margin:0 0 12px; }
+.help-panel h2 { font-size:1.1em; color:var(--blue); margin:20px 0 8px; padding-bottom:4px; border-bottom:2px solid var(--help-accent); }
+.help-panel h3 { font-size:0.95em; color:var(--help-accent); margin:14px 0 6px; }
+.help-panel p { margin:8px 0; font-size:0.9em; line-height:1.6; }
+.help-panel ul, .help-panel ol { margin:8px 0 12px 20px; font-size:0.9em; line-height:1.6; }
+.help-panel li { margin:4px 0; }
+.help-panel table { width:100%; border-collapse:collapse; font-size:0.85em; margin:10px 0; }
+.help-panel th { background:var(--blue); color:white; text-align:left; padding:6px 10px; }
+.help-panel td { padding:6px 10px; border-bottom:1px solid var(--border); }
+.help-panel code { background:var(--bg-hover,#f3f4f6); padding:1px 6px; border-radius:3px; font-size:0.88em; }
+.help-panel strong { color:var(--blue); }
+.help-panel .help-tip, .help-tip { background:var(--bg-hover); border-left:3px solid var(--help-accent); padding:8px 12px; margin:10px 0; border-radius:0 6px 6px 0; font-size:0.85em; }
 
 /* ── ct_bulkbar ──────────────────────────── */
 .ct-bulkbar { position:fixed; bottom:0; left:0; right:0; z-index:999; background:white; border-top:1px solid var(--border,#e2e8f0); box-shadow:0 -4px 12px rgba(0,0,0,0.08); padding:10px 20px; display:flex; align-items:center; gap:12px; }
