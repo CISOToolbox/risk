@@ -523,6 +523,7 @@ _registerTranslations("fr", {
     "matrix.extreme": "Extrême",
     "matrix.x": "Impact",
     "matrix.y": "Vraisemblance",
+    "settings.custom_needs_endpoint": "Veuillez renseigner l'URL de l'endpoint personnalisé.",
 });
 
 // ═══════════════════════════════════════════════════════════════════════

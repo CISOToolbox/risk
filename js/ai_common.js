@@ -29,7 +29,9 @@
         anthropic: {
             label: "Anthropic (Claude)",
             models: [
+                { id: "claude-opus-4-8", label: "Claude Opus 4.8" },
                 { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
+                { id: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5" },
                 { id: "claude-opus-4-6", label: "Claude Opus 4.6" }
             ],
             defaultModel: "claude-sonnet-4-6",
@@ -39,16 +41,20 @@
         openai: {
             label: "OpenAI (GPT)",
             models: [
+                { id: "gpt-5.5", label: "GPT-5.5" },
+                { id: "gpt-5.5-pro", label: "GPT-5.5 Pro" },
+                { id: "gpt-5.4-mini", label: "GPT-5.4 mini" },
                 { id: "gpt-4o", label: "GPT-4o" },
                 { id: "gpt-4o-mini", label: "GPT-4o mini" }
             ],
-            defaultModel: "gpt-4o",
+            defaultModel: "gpt-5.5",
             placeholder: "sk-...",
             endpoint: "https://api.openai.com/v1/chat/completions"
         },
         bedrock: {
             label: "AWS Bedrock",
             models: [
+                { id: "anthropic.claude-opus-4-8", label: "Claude Opus 4.8 (Bedrock)" },
                 { id: "anthropic.claude-sonnet-4-6-20250514-v1:0", label: "Claude Sonnet 4.6 (Bedrock)" },
                 { id: "anthropic.claude-haiku-4-5-20251001-v1:0", label: "Claude Haiku 4.5 (Bedrock)" },
                 { id: "anthropic.claude-opus-4-6-20250515-v1:0", label: "Claude Opus 4.6 (Bedrock)" }

@@ -519,4 +519,5 @@ _registerTranslations("en", {
     "matrix.extreme": "Extreme",
     "matrix.x": "Impact",
     "matrix.y": "Likelihood",
+    "settings.custom_needs_endpoint": "Please provide the custom endpoint URL.",
 });
