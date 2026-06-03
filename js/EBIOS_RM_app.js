@@ -1295,22 +1295,53 @@ function renderER() {
     var maxG = D.gravity_scale.length > 0 ? D.gravity_scale[0].niveau : 4;
     var descEl = document.getElementById("desc-er");
     if (descEl) descEl.textContent = t("ebios.desc.er", {max: maxG});
+    const byCat = !!(D.context && D.context.gravite_par_categorie);
+    const cats = [["financier", t("ebios.gravity.col_impact_financier")], ["reputation", t("ebios.gravity.col_impact_reputation")], ["reglementaire", t("ebios.gravity.col_impact_reglementaire")], ["donnees_perso", t("ebios.gravity.col_impact_donnees_perso")], ["operationnel", t("ebios.gravity.col_impact_operationnel")]];
     const tc = [{key:"vm",label:t("ebios.col.er_vm"),on:true},{key:"dict",label:t("ebios.col.er_dict"),on:true},{key:"impacts",label:t("ebios.col.er_impacts"),on:true},{key:"grav",label:t("ebios.col.er_gravite"),on:true},{key:"label",label:t("ebios.col.er_label"),on:true}];
-    document.getElementById("toggles-er").innerHTML = colsButton("er-table");
+    const optHtml = `<label style="font-size:0.85em;cursor:pointer;display:inline-flex;align-items:center;gap:4px;margin-right:12px"><input type="checkbox" id="er-grav-cat-toggle" ${byCat ? "checked" : ""} data-change="_toggleErGraviteCat"> ${t("ebios.er.gravite_par_cat")}</label>`;
+    document.getElementById("toggles-er").innerHTML = optHtml + colsButton("er-table");
     const gOpts = D.gravity_scale.map(g => g.niveau);
-    let h = `<table id="er-table"><thead><tr><th class="w-65">${t("ebios.col.er_id")}</th><th class="minw-200">${t("ebios.col.er_evenement")}</th><th${hd("vm")}>${t("ebios.col.er_vm")}</th><th${hd("dict")} class="w-100">${t("ebios.col.er_dict")}</th><th${hd("impacts")}>${t("ebios.col.er_impacts")}</th><th${hd("grav")}>${t("ebios.col.er_gravite")}</th><th${hd("label")}>${t("ebios.col.er_label")}</th><th class="col-actions"></th></tr></thead><tbody>`;
+    const gravHead = byCat ? cats.map(c => `<th${hd("grav")} class="w-80">${esc(c[1])}</th>`).join("") : `<th${hd("grav")}>${t("ebios.col.er_gravite")}</th>`;
+    let h = `<table id="er-table"><thead><tr><th class="w-65">${t("ebios.col.er_id")}</th><th class="minw-200">${t("ebios.col.er_evenement")}</th><th${hd("vm")}>${t("ebios.col.er_vm")}</th><th${hd("dict")} class="w-100">${t("ebios.col.er_dict")}</th><th${hd("impacts")}>${t("ebios.col.er_impacts")}</th>${gravHead}<th${hd("label")}>${t("ebios.col.er_label")}</th><th class="col-actions"></th></tr></thead><tbody>`;
     D.er.forEach((e, i) => {
         const lbl = gravLabel(e.gravite);
+        const gravCells = byCat ? cats.map(c => `<td${hd("grav")}>${_selErCat(i, c[0], (e.gravite_cat || {})[c[0]])}</td>`).join("") : `<td${hd("grav")}>${sel("er",i,"gravite",e.gravite,gOpts)}</td>`;
         h += `<tr><td><strong>${esc(e.id)}</strong></td><td>${ta("er",i,"evenement",e.evenement)}</td>
             <td${hd("vm")}>${refSelect("er",i,"vm",e.vm,vmOptions(),true)}</td><td${hd("dict")}>${dictToggle("er",i,"dict",e.dict)}</td>
             <td${hd("impacts")}>${ta("er",i,"impacts",e.impacts)}</td>
-            <td${hd("grav")}>${sel("er",i,"gravite",e.gravite,gOpts)}</td>
+            ${gravCells}
             <td${hd("label")} class="computed">${lbl ? _gravBadge(lbl, e.gravite) : ""}</td>
             <td>${delBtn("er",i)}</td></tr>`;
     });
     h += '</tbody></table>';
     document.getElementById("table-er").innerHTML = h;
     _setupTable("er-table", tc.filter(c=>!c.on).map(c=>c.key));
+}
+// Gravité par catégorie de l'échelle (option page Événements redoutés)
+function _selErCat(idx, catKey, val) {
+    const field = "impact_" + catKey;
+    let h = `<select data-i="${idx}" data-cat="${catKey}" data-change="_updateErGraviteCat" data-pass-el><option value=""></option>`;
+    D.gravity_scale.forEach(g => {
+        const desc = (g[field] && String(g[field]).trim()) || ("Niveau " + g.niveau + (g.label ? " — " + g.label : ""));
+        h += `<option value="${g.niveau}" ${String(val) === String(g.niveau) ? "selected" : ""}>${esc(desc)}</option>`;
+    });
+    return h + "</select>";
+}
+function _updateErGraviteCat(el) {
+    const i = parseInt(el.getAttribute("data-i"));
+    const cat = el.getAttribute("data-cat");
+    const e = D.er[i]; if (!e) return;
+    e.gravite_cat = e.gravite_cat || {};
+    e.gravite_cat[cat] = el.value ? parseInt(el.value) : "";
+    const vals = Object.keys(e.gravite_cat).map(k => Number(e.gravite_cat[k])).filter(n => n >= 1);
+    updateField("er", i, "gravite", vals.length ? Math.max.apply(null, vals) : "");
+}
+function _toggleErGraviteCat() {
+    const cb = document.getElementById("er-grav-cat-toggle");
+    D.context = D.context || {};
+    D.context.gravite_par_categorie = !!(cb && cb.checked);
+    if (typeof _autoSave === "function") _autoSave();
+    renderER();
 }
 
 function renderSS() {

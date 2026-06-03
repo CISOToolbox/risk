@@ -162,14 +162,23 @@ var PROMPTS = {
     er: function() {
         var lang = typeof _locale !== "undefined" ? _locale : "fr";
         var maxG = D.gravity_scale.length > 0 ? D.gravity_scale[0].niveau : 4;
-        return {
-            user: "Context: " + JSON.stringify(D.context) +
-                "\n\nBusiness assets: " + JSON.stringify(D.vm.map(function(v) { return {id:v.id, nom:v.nom}; })) +
-                "\n\nExisting feared events: " + JSON.stringify(D.er.map(function(e) { return {id:e.id, evenement:e.evenement, vm:e.vm, gravite:e.gravite}; })) +
-                "\n\nGravity scale: 1 (low) to " + maxG + " (critical)." +
-                "\n\nPropose 3-5 additional feared events (ER) for business assets not yet covered or with missing DICT dimensions. Specify the VM (using ID - Name format), DICT criteria, impacts and severity. To update an existing ER, include its id field." +
-                "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
-                '\n\nJSON schema: [{"id":"ER-XX (only if updating existing)","evenement":"...","vm":"VM-01 - Name","dict":"D|I|C|T","impacts":"...","gravite":1-' + maxG + '}]'
+        var byCat = !!(D.context && D.context.gravite_par_categorie);
+        var base = "Context: " + JSON.stringify(D.context) +
+            "\n\nBusiness assets: " + JSON.stringify(D.vm.map(function(v) { return {id:v.id, nom:v.nom}; })) +
+            "\n\nExisting feared events: " + JSON.stringify(D.er.map(function(e) { return {id:e.id, evenement:e.evenement, vm:e.vm, gravite:e.gravite}; }));
+        var common = "\n\nPropose 3-5 additional feared events (ER) for business assets not yet covered or with missing DICT dimensions. Specify the VM (using ID - Name format), DICT criteria and impacts. To update an existing ER, include its id field." +
+            "\n\nRespond in " + (lang === "fr" ? "French" : "English") + ".";
+        if (byCat) {
+            var scale = D.gravity_scale.map(function(g) { return {niveau:g.niveau, label:g.label, financier:g.impact_financier||"", reputation:g.impact_reputation||"", reglementaire:g.impact_reglementaire||"", donnees_perso:g.impact_donnees_perso||"", operationnel:g.impact_operationnel||""}; });
+            return { user: base +
+                "\n\nSeverity is assessed PER CATEGORY across five impact criteria: financier, reputation, reglementaire, donnees_perso, operationnel. Severity scale per category (level 1 to " + maxG + ", with the meaning of each level): " + JSON.stringify(scale) +
+                "\n\nFor each feared event, give a level from 1 to " + maxG + " for every category in gravite_cat (the overall severity is the maximum of the five)." + common +
+                '\n\nJSON schema: [{"id":"ER-XX (only if updating existing)","evenement":"...","vm":"VM-01 - Name","dict":"D|I|C|T","impacts":"...","gravite_cat":{"financier":1-' + maxG + ',"reputation":1-' + maxG + ',"reglementaire":1-' + maxG + ',"donnees_perso":1-' + maxG + ',"operationnel":1-' + maxG + '}}]'
+            };
+        }
+        return { user: base +
+            "\n\nGravity scale: 1 (low) to " + maxG + " (critical). Specify a single severity." + common +
+            '\n\nJSON schema: [{"id":"ER-XX (only if updating existing)","evenement":"...","vm":"VM-01 - Name","dict":"D|I|C|T","impacts":"...","gravite":1-' + maxG + '}]'
         };
     },
     srov: function() {
@@ -411,9 +420,21 @@ var ACCEPT_HANDLERS = {
         return id;
     },
     er: function(s) {
-        if (_updateIfExists(D.er, s, ["evenement","vm","dict","impacts","gravite"])) return s.id + " ✓";
+        var maxG = D.gravity_scale.length > 0 ? D.gravity_scale[0].niveau : 4;
+        if (s.gravite_cat && typeof s.gravite_cat === "object") {
+            var gc = {};
+            ["financier","reputation","reglementaire","donnees_perso","operationnel"].forEach(function(k) {
+                var n = parseInt(s.gravite_cat[k]); if (n >= 1 && n <= maxG) gc[k] = n;
+            });
+            s.gravite_cat = gc;
+            var vals = Object.keys(gc).map(function(k) { return gc[k]; });
+            if (vals.length) s.gravite = Math.max.apply(null, vals);
+        }
+        if (_updateIfExists(D.er, s, ["evenement","vm","dict","impacts","gravite","gravite_cat"])) return s.id + " ✓";
         var id = nextId("er");
-        D.er.push({id:id, evenement:s.evenement||"", vm:s.vm||"", dict:s.dict||"", impacts:s.impacts||"", gravite:s.gravite||""});
+        var obj = {id:id, evenement:s.evenement||"", vm:s.vm||"", dict:s.dict||"", impacts:s.impacts||"", gravite:s.gravite||""};
+        if (s.gravite_cat) obj.gravite_cat = s.gravite_cat;
+        D.er.push(obj);
         return id;
     },
     pp: function(s) {

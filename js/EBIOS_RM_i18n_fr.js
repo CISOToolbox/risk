@@ -301,6 +301,7 @@ _registerTranslations("fr", {
     "ebios.col.er_impacts": "Impacts",
     "ebios.col.er_gravite": "Gravité",
     "ebios.col.er_label": "Label",
+    "ebios.er.gravite_par_cat": "Gravité par catégorie",
 
     // ── Column headers: SS ──
     "ebios.col.ss_id": "ID",

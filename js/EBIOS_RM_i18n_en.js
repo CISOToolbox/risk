@@ -297,6 +297,7 @@ _registerTranslations("en", {
     "ebios.col.er_impacts": "Impacts",
     "ebios.col.er_gravite": "Severity",
     "ebios.col.er_label": "Label",
+    "ebios.er.gravite_par_cat": "Severity per category",
 
     // ── Column headers: SS ──
     "ebios.col.ss_id": "ID",
