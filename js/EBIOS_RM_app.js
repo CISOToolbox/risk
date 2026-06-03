@@ -3034,6 +3034,544 @@ try {
 ${esc(e.stack||"")}</pre></section>`;
 }
 
+// ===== Synthèse managériale (PPTX) + Rapport de sortie EBIOS RM (Word) =====
+// Porté depuis backend-clients/demo-docker/risk (source de vérité).
+
+function _synthesisData() {
+    const sopVop = _computeSOPVop().sopVop;
+    const sopToSS = _sopToSS();
+    const ssVinit = {};
+    for (const sopId in sopToSS) {
+        const v = sopVop[sopId] || 0;
+        sopToSS[sopId].forEach(function(ssId) { if (v > (ssVinit[ssId] || 0)) ssVinit[ssId] = v; });
+    }
+    const EL = t("ebios.risk.eleve"), MO = t("ebios.risk.moyen"), FA = t("ebios.risk.faible");
+    const dist = { eleve: 0, moyen: 0, faible: 0, nonEval: 0 };
+    const positions = [], rows = [];
+    D.ss.forEach(function(s, i) {
+        const gNum = computeSSGravity(s.er);
+        const res = D.residuals[i] || {};
+        const vInit = ssVinit[s.id] || 0;
+        const vResid = res.v_resid ? parseInt(res.v_resid) : 0;
+        positions.push({ id: s.id, gNum: gNum, vInit: vInit, vResid: vResid });
+        const riskResid = vResid ? riskLevel(gNum, vResid) : "";
+        if (riskResid === EL) dist.eleve++;
+        else if (riskResid === MO) dist.moyen++;
+        else if (riskResid === FA) dist.faible++;
+        else dist.nonEval++;
+        rows.push({
+            id: s.id, scenario: s.scenario || "", gNum: gNum, vInit: vInit, vResid: vResid,
+            riskInit: riskLevel(gNum, vInit), riskResid: riskResid, decision: res.decision || ""
+        });
+    });
+    const isAnssi = D.socle_type !== "iso";
+    const socleRows = (isAnssi ? D.socle_anssi : D.socle_iso) || [];
+    const socle = { applique: 0, partiel: 0, nonApp: 0, nonEvalue: 0, avg: 0, count: 0,
+                    total: socleRows.length, type: isAnssi ? "anssi" : "iso" };
+    let totalConf = 0;
+    socleRows.forEach(function(s) {
+        const c = s.conformite;
+        if (c !== "" && c !== null && !isNaN(c)) {
+            totalConf += parseFloat(c); socle.count++;
+            if (c >= 80) socle.applique++; else if (c > 0) socle.partiel++; else socle.nonApp++;
+        } else socle.nonEvalue++;
+    });
+    socle.avg = socle.count > 0 ? Math.round(totalConf / socle.count) : 0;
+    const toDo = D.measures.filter(function(m) { return m.statut && m.statut !== "Terminé" && m.statut !== "À étudier"; });
+    const NY = (D.risk_matrix && D.risk_matrix.length) || (D.gravity_scale && D.gravity_scale.length) || 4;
+    const NX = (D.risk_matrix && D.risk_matrix[0] && D.risk_matrix[0].levels && D.risk_matrix[0].levels.length) || 4;
+    return { ssVinit: ssVinit, dist: dist, positions: positions, rows: rows, socle: socle,
+             measures: { todo: toDo, all: D.measures, toDoCount: toDo.length, total: D.measures.length },
+             NX: NX, NY: NY };
+}
+
+
+let _pptxLoaded = false;
+function _loadPptxGenJS() {
+    return new Promise((resolve, reject) => {
+        if (_pptxLoaded) { resolve(); return; }
+        showStatus(t("ebios.status.loading_pptx"));
+        const s = document.createElement("script");
+        s.src = "js/vendor/pptxgen.bundle.js";  // self-hosted (CSP script-src 'self')
+        s.onload = () => { _pptxLoaded = true; resolve(); };
+        s.onerror = () => reject(new Error(t("ebios.alert.pptx_load_error")));
+        document.head.appendChild(s);
+    });
+}
+function _synthFileName() {
+    var societe = D.context.societe || _ct().filePrefix || "EBIOS_RM";
+    var scope = _ct().getScope ? _ct().getScope(D) : "";
+    return (societe + (scope ? "-" + scope : "")).replace(/[\/\\:*?"<>|]/g, "_").substring(0, 60);
+}
+
+// Risk level → hex (no '#'), shared by PPTX + PDF
+function _riskHex(level) {
+    if (level === t("ebios.risk.eleve")) return "FCA5A5";
+    if (level === t("ebios.risk.moyen")) return "FED7AA";
+    if (level === t("ebios.risk.faible")) return "DCFCE7";
+    return "F1F5F9";
+}
+function _hexRgb(h) { return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
+
+// {v-g: [ids]} grid for one matrix, from synthesis positions
+function _synthGrid(sd, getV) {
+    const grid = {};
+    sd.positions.forEach(function(sp) {
+        const v = getV(sp);
+        if (!sp.gNum || !v || v < 1 || v > sd.NX || sp.gNum < 1 || sp.gNum > sd.NY) return;
+        const key = v + "-" + sp.gNum;
+        (grid[key] = grid[key] || []).push(sp.id);
+    });
+    return grid;
+}
+
+async function exportSynthesisPPTX() {
+    try {
+        await _loadPptxGenJS();
+        showStatus(t("ebios.status.generating_pptx"));
+        const sd = _synthesisData();
+        const pptx = new PptxGenJS();
+        pptx.layout = "LAYOUT_WIDE";
+        const W = 13.33, ACCENT = "1E3A5F";
+        const societe = D.context.societe || "EBIOS RM";
+        const dateStr = new Date().toLocaleDateString();
+        function header(s, title) {
+            s.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: W, h: 0.7, fill: { color: ACCENT } });
+            s.addText(title, { x: 0.5, y: 0.12, w: W - 1, h: 0.46, fontSize: 20, bold: true, color: "FFFFFF" });
+        }
+        function matrixSlide(title, getV, intro, reading) {
+            const s = pptx.addSlide(); header(s, title);
+            if (intro) s.addText(intro, { x: 0.5, y: 0.78, w: W - 1, h: 0.55, fontSize: 13, color: "374151" });
+            const grid = _synthGrid(sd, getV);
+            const cw = Math.min(1.1, 5 / sd.NX), ch = Math.min(0.92, 4.3 / sd.NY), x0 = 1.7, y0 = 1.6;
+            for (let g = sd.NY; g >= 1; g--) {
+                const row = sd.NY - g;
+                s.addText(gravLabel(g) || ("G" + g), { x: 0.25, y: y0 + row * ch, w: 1.35, h: ch, fontSize: 9, align: "right", valign: "middle", color: "374151" });
+                for (let v = 1; v <= sd.NX; v++) {
+                    const x = x0 + (v - 1) * cw;
+                    s.addShape(pptx.ShapeType.rect, { x: x, y: y0 + row * ch, w: cw, h: ch, fill: { color: _riskHex(riskLevel(g, v)) }, line: { color: "FFFFFF", width: 1 } });
+                    const ids = grid[v + "-" + g];
+                    if (ids && ids.length) s.addText(String(ids.length), { x: x, y: y0 + row * ch, w: cw, h: ch, fontSize: 18, bold: true, align: "center", valign: "middle", color: "1F2937" });
+                }
+            }
+            for (let v = 1; v <= sd.NX; v++) s.addText("V" + v, { x: x0 + (v - 1) * cw, y: y0 + sd.NY * ch, w: cw, h: 0.3, fontSize: 9, align: "center", color: "6B7280" });
+            s.addText(t("ebios.synth.col_vraisemblance") || "Vraisemblance", { x: x0, y: y0 + sd.NY * ch + 0.3, w: sd.NX * cw, h: 0.3, fontSize: 10, align: "center", color: "374151" });
+            if (reading) { const px = x0 + sd.NX * cw + 0.5; s.addText(reading, { x: px, y: 1.6, w: Math.max(3, W - px - 0.4), h: 4.6, fontSize: 13, color: "374151", valign: "top" }); }
+            return s;
+        }
+        function tableSlide(title, head, rows, intro) {
+            const s = pptx.addSlide(); header(s, title);
+            let ty = 0.9;
+            if (intro) { s.addText(intro, { x: 0.5, y: 0.8, w: W - 1, h: 0.7, fontSize: 13, color: "374151" }); ty = 1.7; }
+            const body = [head.map(function(h) { return { text: h, options: { bold: true, color: "FFFFFF", fill: { color: ACCENT } } }; })]
+                .concat(rows.map(function(r) { return r.map(function(c) { return (c && typeof c === "object") ? c : String(c == null ? "" : c); }); }));
+            s.addTable(body, { x: 0.5, y: ty, w: W - 1, fontSize: 10, border: { type: "solid", color: "E5E7EB", pt: 0.5 }, autoPage: true, autoPageRepeatHeader: true, newSlideStartY: ty });
+            return s;
+        }
+
+        const sev = function(lvl) { var c = _riskColorName(lvl); return c === "red" ? 3 : c === "orange" ? 2 : c === "green" ? 1 : 0; };
+        const distOf = function(key) { var d = { eleve: 0, moyen: 0, faible: 0 }; sd.rows.forEach(function(r) { var c = _riskColorName(r[key]); if (c === "red") d.eleve++; else if (c === "orange") d.moyen++; else if (c === "green") d.faible++; }); return d; };
+        const dInit = distOf("riskInit"), dResid = distOf("riskResid");
+        const riskCell = function(lvl) { return { text: lvl || "—", options: { fill: { color: _riskHex(lvl) }, color: "1F2937", bold: true, align: "center" } }; };
+        const objet = (D.context && (D.context.objet_etude || D.context.societe)) || societe;
+        const socleRef = (D.socle_type === "iso") ? t("ebios.synth.socle_iso") : t("ebios.synth.socle_anssi");
+        const socleMeasures = (D.measures || []).filter(function(m) { return (m.origine || "") === "Socle"; }).length;
+
+        // 1. Titre
+        let s = pptx.addSlide();
+        s.background = { color: ACCENT };
+        s.addText(t("ebios.synth.export_title") || "Synthèse managériale des risques", { x: 0.5, y: 2.6, w: W - 1, h: 1, fontSize: 34, bold: true, color: "FFFFFF", align: "center" });
+        s.addText(societe, { x: 0.5, y: 3.7, w: W - 1, h: 0.6, fontSize: 22, color: "DCE6F2", align: "center" });
+        s.addText((t("ebios.synth.export_subtitle") || "Analyse EBIOS RM") + " · " + dateStr, { x: 0.5, y: 4.4, w: W - 1, h: 0.5, fontSize: 14, color: "9FB3C8", align: "center" });
+
+        // 2. Périmètre et socle de sécurité
+        s = pptx.addSlide(); header(s, t("ebios.synth.scope_title") || "Périmètre et socle de sécurité");
+        s.addText([
+            { text: t("ebios.synth.scope_perimeter") + "  ", options: { bold: true, color: "1E3A5F" } }, { text: objet + "\n\n", options: { color: "374151" } },
+            { text: t("ebios.synth.scope_referentiel") + "  ", options: { bold: true, color: "1E3A5F" } }, { text: socleRef, options: { color: "374151" } }
+        ], { x: 0.6, y: 0.95, w: W - 1.2, h: 1.3, fontSize: 15 });
+        s.addText((t("ebios.synth.scope_coverage") || "Couverture du socle de sécurité :") + "  " + sd.socle.avg + "%", { x: 0.6, y: 2.4, w: W - 1.2, h: 0.6, fontSize: 22, bold: true, color: ACCENT, align: "center" });
+        [{ n: sd.socle.nonApp, l: t("ebios.misc.non_applique_label"), c: "FCA5A5" }, { n: sd.socle.partiel, l: t("ebios.misc.partiel_label"), c: "FED7AA" }, { n: sd.socle.applique, l: t("ebios.misc.applique_label"), c: "DCFCE7" }].forEach(function(k, i) {
+            const x = 1.4 + i * 3.6;
+            s.addShape(pptx.ShapeType.roundRect, { x: x, y: 3.1, w: 3, h: 1.6, fill: { color: k.c }, rectRadius: 0.1 });
+            s.addText(String(k.n), { x: x, y: 3.25, w: 3, h: 0.9, fontSize: 40, bold: true, align: "center", color: "1F2937" });
+            s.addText(k.l, { x: x, y: 4.15, w: 3, h: 0.45, fontSize: 14, align: "center", color: "374151" });
+        });
+        s.addText(t("ebios.synth.scope_measures", { n: socleMeasures }), { x: 0.6, y: 5.2, w: W - 1.2, h: 0.8, fontSize: 15, color: "374151", align: "center" });
+        s.addNotes(t("ebios.synth.scope_measures", { n: socleMeasures }));
+
+        // 3. Synthèse : risques initiaux vs résiduels + socle / mesures
+        s = pptx.addSlide(); header(s, t("ebios.synth.exec_summary") || "Synthèse exécutive");
+        s.addText(t("ebios.synth.intro_synthese"), { x: 0.5, y: 0.78, w: W - 1, h: 0.55, fontSize: 13, color: "374151" });
+        const distRow = function(d, y, label) {
+            s.addText(label, { x: 0.5, y: y - 0.38, w: W - 1, h: 0.32, fontSize: 13, bold: true, color: ACCENT, align: "center" });
+            [{ n: d.eleve, l: t("ebios.misc.eleve_label"), c: "FCA5A5" }, { n: d.moyen, l: t("ebios.misc.moyen_label"), c: "FED7AA" }, { n: d.faible, l: t("ebios.misc.faible_label"), c: "DCFCE7" }].forEach(function(k, i) {
+                var x = 2.7 + i * 2.9;
+                s.addShape(pptx.ShapeType.roundRect, { x: x, y: y, w: 2.3, h: 1.3, fill: { color: k.c }, rectRadius: 0.08 });
+                s.addText(String(k.n), { x: x, y: y + 0.05, w: 2.3, h: 0.8, fontSize: 36, bold: true, align: "center", color: "1F2937" });
+                s.addText(k.l, { x: x, y: y + 0.9, w: 2.3, h: 0.35, fontSize: 12, align: "center", color: "374151" });
+            });
+        };
+        distRow(dInit, 1.85, t("ebios.synth.dist_initial"));
+        distRow(dResid, 3.85, t("ebios.synth.dist_residual"));
+        s.addText((t("ebios.synth.socle_avg") || "Conformité du socle") + " : " + sd.socle.avg + "%   ·   " + t("ebios.misc.measures_todo_count", { todo: sd.measures.toDoCount, total: sd.measures.total }), { x: 1, y: 5.5, w: W - 2, h: 0.5, fontSize: 15, align: "center", color: "374151" });
+        s.addNotes(t("ebios.synth.intro_synthese"));
+
+        // 3. Cartographie initiale (avant traitement)
+        matrixSlide(t("ebios.synth.map_initial") || "Cartographie initiale", function(sp) { return sp.vInit; }, t("ebios.synth.intro_carto_init"), t("ebios.synth.reading_matrix")).addNotes(t("ebios.synth.intro_carto_init"));
+
+        // 4. Cartographie résiduelle (après traitement)
+        matrixSlide(t("ebios.synth.map_residual") || "Cartographie résiduelle", function(sp) { return sp.vResid; }, t("ebios.synth.intro_carto_resid"), t("ebios.synth.reading_matrix")).addNotes(t("ebios.synth.intro_carto_resid"));
+
+        // 5. Top risques à traiter (résiduels non faibles, triés par sévérité)
+        let topRows = sd.rows.slice().sort(function(a, b) { return (sev(b.riskResid) - sev(a.riskResid)) || (sev(b.riskInit) - sev(a.riskInit)); });
+        const prioritaires = topRows.filter(function(r) { return sev(r.riskResid) >= 2; });
+        if (prioritaires.length) topRows = prioritaires;
+        tableSlide(t("ebios.synth.top_risks") || "Top risques à traiter",
+            [t("ebios.synth.col_ss"), t("ebios.synth.col_scenario"), t("ebios.synth.col_risque_initial"), t("ebios.synth.col_risque_residuel")],
+            topRows.map(function(r) { return [r.id, r.scenario, riskCell(r.riskInit), riskCell(r.riskResid)]; }),
+            t("ebios.synth.intro_top_risks")).addNotes(t("ebios.synth.intro_top_risks"));
+
+        // 6. Plan de traitement (mesures à mettre en œuvre)
+        tableSlide(t("ebios.synth.measures_title") || "Plan de traitement", [t("ebios.synth.col_id"), t("ebios.synth.col_mesure"), t("ebios.synth.col_origine"), t("ebios.synth.col_responsable"), t("ebios.synth.col_echeance"), t("ebios.synth.col_statut")],
+            sd.measures.todo.map(function(m) { return [m.id, m.mesure, m.origine || "", m.responsable || "", m.echeance || "", m.statut || ""]; }),
+            t("ebios.synth.intro_pacs")).addNotes(t("ebios.synth.intro_pacs"));
+
+        // 7. Acceptation des risques résiduels
+        s = pptx.addSlide(); header(s, t("ebios.synth.acceptance_title") || "Acceptation des risques résiduels");
+        s.addText(t("ebios.synth.acceptance_text", { eleve: dResid.eleve, moyen: dResid.moyen, faible: dResid.faible }), { x: 0.6, y: 1.0, w: W - 1.2, h: 1.1, fontSize: 16, color: "374151" });
+        s.addText(t("ebios.synth.acceptance_note"), { x: 0.6, y: 2.2, w: W - 1.2, h: 1.1, fontSize: 14, color: "374151" });
+        s.addText(t("ebios.synth.val_date") || "Date :", { x: 1, y: 3.7, w: 2, h: 0.4, fontSize: 15, bold: true, color: "1F2937" });
+        s.addShape(pptx.ShapeType.line, { x: 3, y: 4.05, w: 4.5, h: 0, line: { color: "9CA3AF", width: 1 } });
+        s.addText(t("ebios.synth.val_sign") || "Nom / signature :", { x: 1, y: 4.6, w: 3, h: 0.4, fontSize: 15, bold: true, color: "1F2937" });
+        s.addShape(pptx.ShapeType.line, { x: 4, y: 4.95, w: 7, h: 0, line: { color: "9CA3AF", width: 1 } });
+        s.addNotes(t("ebios.synth.acceptance_text", { eleve: dResid.eleve, moyen: dResid.moyen, faible: dResid.faible }) + " " + t("ebios.synth.acceptance_note"));
+
+        await pptx.writeFile({ fileName: _synthFileName() + ".pptx" });
+        showStatus(t("ebios.status.pptx_downloaded"));
+    } catch (e) {
+        console.error("Erreur export PPTX:", e);
+        alert(t("ebios.alert.pptx_export_error", { msg: e.message }));
+    }
+}
+
+// ── Rapport de sortie EBIOS RM (Word / docxtemplater) ───────────
+let _docxLibsLoaded = false;
+function _loadDocxLibs() {
+    return new Promise((resolve, reject) => {
+        if (_docxLibsLoaded) { resolve(); return; }
+        showStatus(t("ebios.status.loading_docx"));
+        const load = (src) => new Promise((res, rej) => {
+            const s = document.createElement("script");
+            s.src = src; s.onload = res; s.onerror = () => rej(new Error("load " + src));
+            document.head.appendChild(s);
+        });
+        load("js/vendor/pizzip.min.js")
+            .then(() => load("js/vendor/docxtemplater.js"))
+            .then(() => { _docxLibsLoaded = true; resolve(); })
+            .catch(() => reject(new Error(t("ebios.alert.docx_load_error"))));
+    });
+}
+
+// Render an SVG string to a PNG ArrayBuffer (for the docx image module).
+function _svgToPng(svg, targetW, scale) {
+    scale = scale || 2;  // render the canvas at higher pixel density → sharper text
+    return new Promise((resolve, reject) => {
+        // SVGs in the app are inline (no xmlns) → required for the Image to load.
+        svg = svg.replace(/<svg(?![^>]*\bxmlns=)/i, '<svg xmlns="http://www.w3.org/2000/svg" ');
+        // Preserve the SVG's natural aspect ratio (from viewBox) to avoid distortion.
+        let ratio = 0.75;
+        const vb = svg.match(/viewBox="\s*[-\d.]+\s+[-\d.]+\s+([\d.]+)\s+([\d.]+)/i);
+        if (vb && parseFloat(vb[1]) > 0) ratio = parseFloat(vb[2]) / parseFloat(vb[1]);
+        const w = targetW, h = Math.round(targetW * ratio);  // display size (px → EMU)
+        const pw = w * scale, ph = h * scale;                // canvas pixel size
+        const img = new Image();
+        img.onload = function() {
+            const cv = document.createElement("canvas"); cv.width = pw; cv.height = ph;
+            const ctx = cv.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, pw, ph);
+            ctx.drawImage(img, 0, 0, pw, ph);
+            cv.toBlob(b => { b ? b.arrayBuffer().then(ab => resolve({ buf: ab, w: w, h: h })) : reject(new Error("toBlob")); }, "image/png");
+        };
+        img.onerror = reject;
+        // data: URL (CSP allows 'data:' for img-src, but not blob:)
+        img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+    });
+}
+
+// Build a risk cartography matrix SVG (initial/residual) via ctRenderMatrix,
+// mirroring renderSynthesis' buildMatrix. Returns the <svg> string (or null).
+function _riskMatrixSVG(getV) {
+    if (typeof ctRenderMatrix !== "function") return null;
+    const sd = _synthesisData(); const grid = {};
+    sd.positions.forEach(sp => {
+        const v = getV(sp);
+        if (!sp.gNum || !v || v < 1 || v > sd.NX || sp.gNum < 1 || sp.gNum > sd.NY) return;
+        const k = v + "-" + sp.gNum; (grid[k] = grid[k] || []).push({ id: sp.id, label: sp.id });
+    });
+    const gLabels = [];
+    for (let g = 1; g <= sd.NY; g++) gLabels.push((typeof gravLabel === "function" && gravLabel(g)) || ("G" + g));
+    const html = ctRenderMatrix({
+        levels: Math.max(sd.NX, sd.NY), xLevels: sd.NX, yLevels: sd.NY,
+        xLabel: t("ebios.synth.col_vraisemblance") || "Vraisemblance", yLabel: t("ebios.synth.col_gravite") || "Gravité",
+        yLabels: gLabels, grid: grid,
+        colorFn: (v, g) => _riskBg(riskLevel(g, v)),
+        legend: [{ label: t("ebios.risk.faible"), color: "#dcfce7" }, { label: t("ebios.risk.moyen"), color: "#fed7aa" }, { label: t("ebios.risk.eleve"), color: "#fca5a5" }]
+    });
+    const m = html.match(/<svg[\s\S]*?<\/svg>/i);
+    return m ? m[0] : null;
+}
+
+// Build the risk *acceptability* matrix (Annexe B): the empty colored grid
+// (gravité × vraisemblance → niveau), no scenarios placed. Same renderer as the
+// cartographies, just an empty grid so each cell shows only its risk level color.
+function _riskMatrixRefSVG() {
+    if (typeof ctRenderMatrix !== "function") return null;
+    const sd = _synthesisData();
+    const gLabels = [];
+    for (let g = 1; g <= sd.NY; g++) gLabels.push((typeof gravLabel === "function" && gravLabel(g)) || ("G" + g));
+    const html = ctRenderMatrix({
+        levels: Math.max(sd.NX, sd.NY), xLevels: sd.NX, yLevels: sd.NY,
+        xLabel: t("ebios.synth.col_vraisemblance") || "Vraisemblance", yLabel: t("ebios.synth.col_gravite") || "Gravité",
+        yLabels: gLabels, grid: {},
+        colorFn: (v, g) => _riskBg(riskLevel(g, v)),
+        legend: [{ label: t("ebios.risk.faible"), color: "#dcfce7" }, { label: t("ebios.risk.moyen"), color: "#fed7aa" }, { label: t("ebios.risk.eleve"), color: "#fca5a5" }]
+    });
+    const m = html.match(/<svg[\s\S]*?<\/svg>/i);
+    if (!m) return null;
+    // ctRenderMatrix colours the cells but draws no in-cell text (its legend is an
+    // HTML div outside the <svg>, lost on capture) → overlay the level name per cell.
+    const cellW = 55, cellH = 50, MT = 4;
+    let maxYLen = 0; gLabels.forEach(l => { if (String(l).length > maxYLen) maxYLen = String(l).length; });
+    const ML = Math.max(58, 28 + maxYLen * 5.5);
+    let overlay = "";
+    for (let col = 1; col <= sd.NX; col++) {
+        for (let row = 1; row <= sd.NY; row++) {
+            const lvl = riskLevel(row, col);
+            if (!lvl) continue;
+            const cx = ML + (col - 1) * cellW + cellW / 2;
+            const cy = MT + (sd.NY - row) * cellH + cellH / 2 + 4;
+            overlay += '<text x="' + cx + '" y="' + cy + '" text-anchor="middle" font-size="11" font-weight="600" fill="#1e293b">' + esc(lvl) + '</text>';
+        }
+    }
+    return m[0].replace("</svg>", overlay + "</svg>");
+}
+
+// Capture the report images (écosystème cartographies + risk matrices) as PNG
+// buffers, reusing the app's own SVG renderers. Each capture is isolated so one
+// failure doesn't drop the others; missing ones fall back to a blank image.
+async function _reportImages() {
+    const imgs = {};
+    try {
+        if (window._buildEcoSVG && (D.pp || []).length) {
+            const init = D.pp.map(p => { const d = p.dependance || 0, pe = p.penetration || 0, m = p.maturite || 0, c = p.confiance || 0;
+                return { id: p.id, nom: p.nom, cat: p.categorie || "", menace: computeMenace(d, pe, m, c) || 0, fiab: m * c, expo: d * pe }; });
+            const resid = D.pp.map(p => { const eco = (D.eco || []).find(e => (e.pp_id || "").split(" - ")[0].trim() === p.id) || {};
+                const d = eco.dep_resid || p.dependance || 0, pe = eco.pen_resid || p.penetration || 0, m = eco.mat_resid || p.maturite || 0, c = eco.conf_resid || p.confiance || 0;
+                return { id: p.id, nom: p.nom, cat: p.categorie || "", menace: computeMenace(d, pe, m, c) || 0, fiab: m * c, expo: d * pe }; });
+            // Crop the eco SVG's white top/bottom margins and enlarge the PP labels
+            // for the report only (the on-screen cartography is left untouched).
+            // Crop the white top/bottom margins, widen left/right so the PP labels
+            // (anchored on the quadrant edges, extending outward) are not clipped,
+            // and enlarge the labels — report capture only, on-screen map untouched.
+            const _eco = s => s.replace('viewBox="0 0 1000 900"', 'viewBox="-140 90 1280 650"').replace(/font-size="9"/g, 'font-size="12"');
+            imgs.pp_map_initial = await _svgToPng(_eco(_buildEcoSVG(init, t("ebios.eco.map_initial"))), 720, 3);
+            imgs.pp_map_residual = await _svgToPng(_eco(_buildEcoSVG(resid, t("ebios.eco.map_after"))), 720, 3);
+        }
+    } catch (e) { console.warn("Capture cartographie écosystème:", e); }
+    try {
+        const si = _riskMatrixSVG(sp => sp.vInit), sr = _riskMatrixSVG(sp => sp.vResid);
+        if (si) imgs.risk_map_initial = await _svgToPng(si, 380, 2);
+        if (sr) imgs.risk_map_residual = await _svgToPng(sr, 380, 2);
+    } catch (e) { console.warn("Capture matrice de risque:", e); }
+    try {
+        const ref = _riskMatrixRefSVG();
+        if (ref) imgs.risk_matrix_ref = await _svgToPng(ref, 440, 2);
+    } catch (e) { console.warn("Capture matrice d'acceptabilité:", e); }
+    return imgs;
+}
+
+// Resolve the report's "Rédacteur": logged-in user (backend suite) → analyste →
+// remembered name → prompt (standalone frontend fallback, cached in localStorage).
+function _resolveRedacteur() {
+    const u = window._currentUser;
+    if (u && (u.name || u.email)) return u.name || u.email;
+    const c = D.context || {};
+    if (c.analyste) return c.analyste;
+    let saved = "";
+    try { saved = localStorage.getItem("ct_report_redacteur") || ""; } catch (e) {}
+    const name = ((typeof window.prompt === "function" ? window.prompt(t("ebios.report.ask_redacteur"), saved) : "") || "").trim();
+    if (name) { try { localStorage.setItem("ct_report_redacteur", name); } catch (e) {} return name; }
+    return saved;
+}
+
+// Map D + _synthesisData() → the report template tags (all values coerced to
+// strings; sr_id/ov_id resolved to names via sr_list/ov_list).
+function _reportData() {
+    const sd = _synthesisData();
+    const c = D.context || {};
+    const srName = {}; (D.sr_list || []).forEach(x => srName[x.id] = x.nom);
+    const ovName = {}; (D.ov_list || []).forEach(x => ovName[x.id] = x.nom);
+    const isAnssi = D.socle_type !== "iso";
+    const socleRows = (isAnssi ? D.socle_anssi : D.socle_iso) || [];
+    const S = v => (v == null ? "" : String(v));
+    // Risk distribution by level, initial vs residual (for the 5.2 / 5.4 bullets)
+    const di = { eleve: 0, moyen: 0, faible: 0 }, dr = { eleve: 0, moyen: 0, faible: 0 };
+    const bucket = lvl => { const cn = _riskColorName(lvl); return cn === "red" ? "eleve" : cn === "orange" ? "moyen" : cn === "green" ? "faible" : null; };
+    sd.rows.forEach(r => { const bi = bucket(r.riskInit); if (bi) di[bi]++; const br = bucket(r.riskResid); if (br) dr[br]++; });
+    // Atelier 4 — operational scenarios grouped by strategic scenario (nested loop)
+    const { sopVop, sopTaux } = _computeSOPVop();
+    const sopSS = {}, stepsBySop = {};
+    (D.sop_detail || []).forEach(x => {
+        if (x.sop && x.ss) {
+            const ids = String(x.ss).split(",").map(s => (s.trim().match(/^SS-\d+/) || [""])[0]).filter(Boolean);
+            (sopSS[x.sop] = sopSS[x.sop] || new Set()); ids.forEach(id => sopSS[x.sop].add(id));
+        }
+        if (x.sop) (stepsBySop[x.sop] = stepsBySop[x.sop] || []).push({ phase: S(x.phase), action: S(x.action), controle: S(x.controle), efficacite: S(x.efficacite) });
+    });
+    // Resolve SS-linked couples (SR/OV) and événements redoutés to readable labels.
+    const coupleTxt = {}; (D.srov || []).forEach(x => { coupleTxt[x.couple] = S(srName[x.sr_id] || x.sr_id) + " / " + S(ovName[x.ov_id] || x.ov_id); });
+    const erEvt = {}; (D.er || []).forEach(x => { erEvt[x.id] = S(x.evenement); });
+    const _idsFrom = str => String(str || "").split(",").map(tok => { tok = tok.trim(); if (!tok) return ""; const k = tok.indexOf(" - "); return (k >= 0 ? tok.slice(0, k) : tok).trim(); }).filter(Boolean);
+    const ss_groups = (D.ss || []).map((s, i) => {
+        const sopIds = Object.keys(sopSS).filter(sp => sopSS[sp].has(s.id));
+        let vmax = 0; sopIds.forEach(sp => { if ((sopVop[sp] || 0) > vmax) vmax = sopVop[sp] || 0; });
+        const sops = sopIds.map((sp, j) => ({
+            sop_num: "4." + (i + 1) + "." + (j + 1), sop_label: S(sp),
+            taux_phrase: "Taux de faiblesse : " + Math.round((sopTaux[sp] || 0) * 100) + " % — vraisemblance opérationnelle : " + (sopVop[sp] || 0) + "/4.",
+            steps: stepsBySop[sp] || []
+        }));
+        const coupleList = _idsFrom(s.couple_id).map(id => coupleTxt[id] || id);
+        const erList = _idsFrom(s.er).map(id => erEvt[id] || id);
+        const cTxt = coupleList.length
+            ? (coupleList.length === 1 ? "au couple source de risque / objectif visé « " + coupleList[0] + " »"
+                : "aux couples source de risque / objectif visé « " + coupleList.join(" » ; « ") + " »")
+            : "aux couples source de risque / objectif visé retenus";
+        return {
+            num: "4." + (i + 1), ss_label: S(s.id) + (s.scenario ? " — " + S(s.scenario) : ""),
+            ss_intro_pre: "Ce scénario stratégique — « " + S(s.scenario) + " » — est associé " + cTxt + ".",
+            er_multi: erList.length >= 2,        // ≥ 2 ER → bullet list
+            er_single: erList.length === 1,      // exactly 1 ER → inline sentence
+            er_one: erList.length === 1 ? erList[0] : "",
+            er_list: erList.map(e => ({ er: e })),
+            ss_intro_post: "Compte tenu de l'évaluation des scénarios opérationnels détaillés dans les sections qui suivent, la vraisemblance est estimée à " + vmax + "/4.",
+            sops: sops
+        };
+    });
+    const _conf = v => (v === "" || v == null) ? "" : S(v) + " %";
+    return {
+        // scalars — cover / managerial synthesis / context (blanks via nullGetter)
+        contexte_objet: S(c.objet_etude || c.societe), contexte_societe: S(c.societe),
+        contexte_date: S(c.date), contexte_analyste: S(c.analyste),
+        contexte_reglementation: S(c.reglementation), contexte_socle: S(c.socle),
+        // cover document-control block (cartouche)
+        cart_redacteur: S(_resolveRedacteur()),
+        cart_contributeurs: S(c.contributeurs || ""),
+        cart_version: "1",
+        cart_date: (new Date()).toLocaleDateString("fr-FR"),
+        cart_classification: "Confidentiel",
+        dist_eleve: dr.eleve, dist_moyen: dr.moyen, dist_faible: dr.faible,
+        dist_init_eleve: di.eleve, dist_init_moyen: di.moyen, dist_init_faible: di.faible,
+        ss_count: (D.ss || []).length,
+        socle_avg: sd.socle.avg, mes_todo: sd.measures.toDoCount, mes_total: sd.measures.total,
+        // loops — field names MUST match the tags in tools/tag-original-template.py
+        vm: (D.vm || []).map(x => ({ id: S(x.id), nom: S(x.nom), nature: S(x.nature), description: S(x.description), responsable: S(x.responsable) })),
+        bs: (D.bs || []).map(x => ({ id: S(x.id), nom: S(x.nom), type: S(x.type), vm: S(x.vm), localisation: S(x.localisation), proprietaire: S(x.proprietaire) })),
+        er: (D.er || []).map(x => ({ id: S(x.id), vm: S(x.vm), evenement: S(x.evenement), impacts: S(x.impacts), gravite: S(x.gravite) })),
+        sr_list: (D.sr_list || []).map(x => ({ id: S(x.id), nom: S(x.nom) })),
+        ov_list: (D.ov_list || []).map(x => ({ id: S(x.id), nom: S(x.nom) })),
+        srov: (D.srov || []).map(x => {
+            const pert = (Number(x.motivation) || 0) + (Number(x.ressources) || 0) + (Number(x.activite) || 0);
+            const prio = pert > 7 ? t("ebios.srov.p1") : pert > 4 ? t("ebios.srov.p2") : pert >= 3 ? t("ebios.srov.non_retenu") : pert > 0 ? t("ebios.srov.ecarte") : "";
+            return { couple: S(x.couple), sr: S(srName[x.sr_id] || x.sr_id), ov: S(ovName[x.ov_id] || x.ov_id), motivation: S(x.motivation), ressources: S(x.ressources), activite: S(x.activite), pertinence: S(pert || ""), priorite: S(prio), justification: S(x.justification) };
+        }),
+        pp: (D.pp || []).map(x => ({ id: S(x.id), nom: S(x.nom), categorie: S(x.categorie) })),
+        pp_eval: (D.pp || []).map(x => {
+            const men = computeMenace(x.dependance, x.penetration, x.maturite, x.confiance);
+            return { nom: S(x.nom), dependance: S(x.dependance), penetration: S(x.penetration), maturite: S(x.maturite), confiance: S(x.confiance), menace: men == null ? "" : S(men), exposition: men == null ? "" : computeExposition(men) };
+        }),
+        ss_groups: ss_groups,
+        ss: (D.ss || []).map(x => ({ id: S(x.id), scenario: S(x.scenario), pp: S(x.pp), bs: S(x.bs), er: S(x.er) })),
+        risks_init: sd.rows.map(r => ({ id: S(r.id), scenario: S(r.scenario), gravite: S(r.gNum), vInit: S(r.vInit), riskInit: S(r.riskInit || "—") })),
+        risks_resid: sd.rows.map(r => ({ id: S(r.id), scenario: S(r.scenario), reduction: S(r.riskInit || "—") + " → " + S(r.riskResid || "—") })),
+        measures: (D.measures || []).filter(x => !/termin|done/i.test(String(x.statut || ""))).map(x => ({ id: S(x.id), mesure: S(x.mesure), origine: S(x.origine), cout: S(x.cout), responsable: S(x.responsable), echeance: S(x.echeance), statut: S(x.statut) })),
+        socle: socleRows.map(s => isAnssi
+            ? ({ ref: S(s.num), theme: S(s.thematique), mesure: S(s.mesure), conformite: _conf(s.conformite), ecart: S(s.ecart) })
+            : ({ ref: S(s.ref), theme: S(s.theme), mesure: S(s.mesure), conformite: _conf(s.conformite), ecart: S(s.ecart) })),
+        gravity_scale: (D.gravity_scale || []).map(g => ({ niveau: S(g.niveau), label: S(g.label), description: S(g.description), impact_financier: S(g.impact_financier), impact_reputation: S(g.impact_reputation), impact_reglementaire: S(g.impact_reglementaire), impact_donnees_perso: S(g.impact_donnees_perso), impact_operationnel: S(g.impact_operationnel) })),
+        socle_planned: socleRows.filter(s => (s.mesures_prevues || "").trim()).map(s => ({ ref: S(isAnssi ? s.num : s.ref), mesure: S(s.mesure), mesures_prevues: S(s.mesures_prevues) })),
+        // image tags (resolved by the docx image module → see exportWordReport)
+        pp_map_initial: "pp_map_initial", pp_map_residual: "pp_map_residual",
+        risk_map_initial: "risk_map_initial", risk_map_residual: "risk_map_residual",
+    };
+}
+
+// Inject PNG images into a rendered docx (PizZip) by replacing @@IMG:key@@ text
+// markers with inline drawings. Pure OOXML — avoids the buggy image module.
+// imgs: { key: { buf: ArrayBuffer, w, h } } — w/h (px) set the display size.
+function _injectImages(zip, imgs) {
+    const EMU = 9525;
+    let docXml = zip.file("word/document.xml").asText();
+    let ct = zip.file("[Content_Types].xml").asText();
+    if (!/Extension="png"/i.test(ct)) {
+        ct = ct.replace("</Types>", '<Default Extension="png" ContentType="image/png"/></Types>');
+        zip.file("[Content_Types].xml", ct);
+    }
+    const relsPath = "word/_rels/document.xml.rels";
+    let rels = zip.file(relsPath) ? zip.file(relsPath).asText()
+        : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>';
+    let rid = (rels.match(/Id="rId(\d+)"/g) || []).reduce((m, s) => Math.max(m, parseInt(s.replace(/\D/g, ""), 10)), 0);
+    Object.keys(imgs || {}).forEach(key => {
+        const marker = "@@IMG:" + key + "@@";
+        const item = imgs && imgs[key];
+        if (item && item.buf) {
+            rid++; const id = "rId" + rid;
+            const cx = item.w * EMU, cy = item.h * EMU;
+            zip.file("word/media/" + key + ".png", item.buf);
+            rels = rels.replace("</Relationships>",
+                '<Relationship Id="' + id + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/' + key + '.png"/></Relationships>');
+            const drawing = '<w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">' +
+                '<wp:extent cx="' + cx + '" cy="' + cy + '"/><wp:docPr id="' + rid + '" name="' + key + '"/>' +
+                '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+                '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="' + rid + '" name="' + key + '"/><pic:cNvPicPr/></pic:nvPicPr>' +
+                '<pic:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="' + id + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+                '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+                '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing>';
+            docXml = docXml.replace(new RegExp('<w:t[^>]*>' + marker + '</w:t>'), drawing);
+        }
+    });
+    // Strip any marker left without an image (capture failed for that one)
+    docXml = docXml.replace(/<w:t[^>]*>@@IMG:[a-z_]+@@<\/w:t>/g, '<w:t/>');
+    zip.file(relsPath, rels);
+    zip.file("word/document.xml", docXml);
+    return zip;
+}
+
+async function exportWordReport() {
+    try {
+        await _loadDocxLibs();
+        showStatus(t("ebios.status.generating_docx"));
+        const resp = await fetch("templates/ebios-report.docx");
+        if (!resp.ok) throw new Error("template HTTP " + resp.status);
+        const doc = new window.docxtemplater(new PizZip(await resp.arrayBuffer()),
+            { paragraphLoop: true, linebreaks: true, nullGetter: function() { return ""; } });
+        doc.render(_reportData());
+        const zip = doc.getZip();
+        try { _injectImages(zip, await _reportImages()); }
+        catch (imgErr) { console.warn("Cartographies non intégrées:", imgErr);
+            zip.file("word/document.xml", zip.file("word/document.xml").asText().replace(/<w:t[^>]*>@@IMG:[a-z_]+@@<\/w:t>/g, '<w:t/>')); }
+        const blob = zip.generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = _synthFileName() + ".docx";
+        a.click(); URL.revokeObjectURL(a.href);
+        showStatus(t("ebios.status.docx_downloaded"));
+    } catch (e) {
+        console.error("Erreur export Word:", e);
+        alert(t("ebios.alert.docx_export_error", { msg: e.message }));
+    }
+}
+
+
 // AI module config (read by ai_common.js)
 window.AI_APP_CONFIG = {
     storagePrefix: "ebios",
