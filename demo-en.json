@@ -1,11 +1,12 @@
 {
   "context": {
-    "societe": "MedSecure SAS — Connected medical devices (IoMT)",
+    "societe": "MedSecure SAS",
     "date": "March 2026",
     "analyste": "MedSecure CISO + Healthcare cybersecurity consulting firm",
     "reglementation": "GDPR, MDR (EU 2017/745), HDS (Health Data Hosting), NIS2 (important entity — healthcare sector)",
     "socle": "ANSSI Cyber Hygiene Guide — 42 controls",
-    "commentaires": "Analysis conducted as part of the ISO 27001 initiative and NIS2 compliance effort. Medical devices (sensors, pumps) communicate via Azure IoT Hub to the AWS cloud telemonitoring platform. Health data (HDS) hosted by a certified HDS provider. Critical concern: patient safety."
+    "commentaires": "Analysis conducted as part of the ISO 27001 initiative and NIS2 compliance effort. Medical devices (sensors, pumps) communicate via Azure IoT Hub to the AWS cloud telemonitoring platform. Health data (HDS) hosted by a certified HDS provider. Critical concern: patient safety.",
+    "objet_etude": "Connected medical devices (IoMT)"
   },
   "gravity_scale": [
     {
@@ -95,7 +96,9 @@
       "d": 4,
       "i": 4,
       "c": 4,
-      "t": 4
+      "t": 4,
+      "nature": "Processus",
+      "responsable": "Clinical Operations Director"
     },
     {
       "id": "VM-02",
@@ -104,7 +107,9 @@
       "d": 3,
       "i": 4,
       "c": 4,
-      "t": 4
+      "t": 4,
+      "nature": "Information",
+      "responsable": "Data Protection Officer (DPO)"
     },
     {
       "id": "VM-03",
@@ -113,7 +118,9 @@
       "d": 3,
       "i": 4,
       "c": 4,
-      "t": 4
+      "t": 4,
+      "nature": "Information",
+      "responsable": "Embedded Software R&D Lead"
     },
     {
       "id": "VM-04",
@@ -122,7 +129,9 @@
       "d": 4,
       "i": 4,
       "c": 3,
-      "t": 3
+      "t": 3,
+      "nature": "Processus",
+      "responsable": "Chief Information Officer (CIO)"
     },
     {
       "id": "VM-05",
@@ -131,7 +140,9 @@
       "d": 3,
       "i": 4,
       "c": 3,
-      "t": 4
+      "t": 4,
+      "nature": "Information",
+      "responsable": "Regulatory Affairs & Quality Manager"
     },
     {
       "id": "VM-06",
@@ -140,7 +151,9 @@
       "d": 3,
       "i": 3,
       "c": 3,
-      "t": 3
+      "t": 3,
+      "nature": "Processus",
+      "responsable": "Customer Support & Relations Director"
     },
     {
       "id": "VM-07",
@@ -149,7 +162,9 @@
       "d": 2,
       "i": 4,
       "c": 4,
-      "t": 3
+      "t": 3,
+      "nature": "Information",
+      "responsable": "R&D Director"
     },
     {
       "id": "VM-08",
@@ -158,7 +173,9 @@
       "d": 3,
       "i": 3,
       "c": 3,
-      "t": 3
+      "t": 3,
+      "nature": "Processus",
+      "responsable": "Chief Financial Officer (CFO)"
     }
   ],
   "bs": [

@@ -1,11 +1,12 @@
 {
   "context": {
-    "societe": "MedSecure SAS — Dispositifs médicaux connectés (IoMT)",
+    "societe": "MedSecure SAS",
     "date": "Mars 2026",
     "analyste": "RSSI MedSecure + Cabinet conseil cybersécurité santé",
     "reglementation": "RGPD, MDR (EU 2017/745), HDS (Hébergement Données de Santé), NIS2 (entité importante — secteur santé)",
     "socle": "Guide d'hygiène ANSSI — 42 mesures",
-    "commentaires": "Analyse réalisée dans le cadre de la démarche ISO 27001 et de la mise en conformité NIS2. Les dispositifs médicaux (capteurs, pompes) communiquent via Azure IoT Hub vers la plateforme cloud AWS de télésurveillance. Données de santé (HDS) hébergées chez un hébergeur certifié HDS. Enjeu critique : sécurité des patients."
+    "commentaires": "Analyse réalisée dans le cadre de la démarche ISO 27001 et de la mise en conformité NIS2. Les dispositifs médicaux (capteurs, pompes) communiquent via Azure IoT Hub vers la plateforme cloud AWS de télésurveillance. Données de santé (HDS) hébergées chez un hébergeur certifié HDS. Enjeu critique : sécurité des patients.",
+    "objet_etude": "Dispositifs médicaux connectés (IoMT)"
   },
   "gravity_scale": [
     {
@@ -95,7 +96,9 @@
       "d": 4,
       "i": 4,
       "c": 4,
-      "t": 4
+      "t": 4,
+      "nature": "Processus",
+      "responsable": "Directeur des opérations cliniques"
     },
     {
       "id": "VM-02",
@@ -104,7 +107,9 @@
       "d": 3,
       "i": 4,
       "c": 4,
-      "t": 4
+      "t": 4,
+      "nature": "Information",
+      "responsable": "Délégué à la protection des données (DPO)"
     },
     {
       "id": "VM-03",
@@ -113,7 +118,9 @@
       "d": 3,
       "i": 4,
       "c": 4,
-      "t": 4
+      "t": 4,
+      "nature": "Information",
+      "responsable": "Responsable R&D logiciel embarqué"
     },
     {
       "id": "VM-04",
@@ -122,7 +129,9 @@
       "d": 4,
       "i": 4,
       "c": 3,
-      "t": 3
+      "t": 3,
+      "nature": "Processus",
+      "responsable": "Directeur des systèmes d'information (DSI)"
     },
     {
       "id": "VM-05",
@@ -131,7 +140,9 @@
       "d": 3,
       "i": 4,
       "c": 3,
-      "t": 4
+      "t": 4,
+      "nature": "Information",
+      "responsable": "Responsable Affaires Réglementaires & Qualité"
     },
     {
       "id": "VM-06",
@@ -140,7 +151,9 @@
       "d": 3,
       "i": 3,
       "c": 3,
-      "t": 3
+      "t": 3,
+      "nature": "Processus",
+      "responsable": "Directeur Support & Relation Client"
     },
     {
       "id": "VM-07",
@@ -149,7 +162,9 @@
       "d": 2,
       "i": 4,
       "c": 4,
-      "t": 3
+      "t": 3,
+      "nature": "Information",
+      "responsable": "Directeur R&D"
     },
     {
       "id": "VM-08",
@@ -158,7 +173,9 @@
       "d": 3,
       "i": 3,
       "c": 3,
-      "t": 3
+      "t": 3,
+      "nature": "Processus",
+      "responsable": "Directeur Administratif et Financier (DAF)"
     }
   ],
   "bs": [
