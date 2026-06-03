@@ -3232,7 +3232,7 @@ async function exportSynthesisPPTX() {
         s.addNotes(t("ebios.synth.scope_measures", { n: socleMeasures }));
 
         // 3. Synthèse : risques initiaux vs résiduels + socle / mesures
-        s = pptx.addSlide(); header(s, t("ebios.synth.exec_summary") || "Synthèse exécutive");
+        s = pptx.addSlide(); header(s, t("ebios.synth.exec_summary") || "Synthèse managériale");
         s.addText(t("ebios.synth.intro_synthese"), { x: 0.5, y: 0.78, w: W - 1, h: 0.55, fontSize: 13, color: "374151" });
         const distRow = function(d, y, label) {
             s.addText(label, { x: 0.5, y: y - 0.38, w: W - 1, h: 0.32, fontSize: 13, bold: true, color: ACCENT, align: "center" });
@@ -3468,23 +3468,23 @@ function _reportData() {
         let vmax = 0; sopIds.forEach(sp => { if ((sopVop[sp] || 0) > vmax) vmax = sopVop[sp] || 0; });
         const sops = sopIds.map((sp, j) => ({
             sop_num: "4." + (i + 1) + "." + (j + 1), sop_label: S(sp),
-            taux_phrase: "Taux de faiblesse : " + Math.round((sopTaux[sp] || 0) * 100) + " % — vraisemblance opérationnelle : " + (sopVop[sp] || 0) + "/4.",
+            taux_phrase: t("ebios.report.taux_phrase", { pct: Math.round((sopTaux[sp] || 0) * 100), vop: (sopVop[sp] || 0) }),
             steps: stepsBySop[sp] || []
         }));
         const coupleList = _idsFrom(s.couple_id).map(id => coupleTxt[id] || id);
         const erList = _idsFrom(s.er).map(id => erEvt[id] || id);
         const cTxt = coupleList.length
-            ? (coupleList.length === 1 ? "au couple source de risque / objectif visé « " + coupleList[0] + " »"
-                : "aux couples source de risque / objectif visé « " + coupleList.join(" » ; « ") + " »")
-            : "aux couples source de risque / objectif visé retenus";
+            ? (coupleList.length === 1 ? t("ebios.report.couple_one", { c: coupleList[0] })
+                : t("ebios.report.couple_many", { list: coupleList.join(" ; ") }))
+            : t("ebios.report.couple_none");
         return {
             num: "4." + (i + 1), ss_label: S(s.id) + (s.scenario ? " — " + S(s.scenario) : ""),
-            ss_intro_pre: "Ce scénario stratégique — « " + S(s.scenario) + " » — est associé " + cTxt + ".",
+            ss_intro_pre: t("ebios.report.ss_intro_pre", { scenario: S(s.scenario), couples: cTxt }),
             er_multi: erList.length >= 2,        // ≥ 2 ER → bullet list
             er_single: erList.length === 1,      // exactly 1 ER → inline sentence
             er_one: erList.length === 1 ? erList[0] : "",
             er_list: erList.map(e => ({ er: e })),
-            ss_intro_post: "Compte tenu de l'évaluation des scénarios opérationnels détaillés dans les sections qui suivent, la vraisemblance est estimée à " + vmax + "/4.",
+            ss_intro_post: t("ebios.report.ss_intro_post", { vmax: vmax }),
             sops: sops
         };
     });
@@ -3581,7 +3581,8 @@ async function exportWordReport() {
     try {
         await _loadDocxLibs();
         showStatus(t("ebios.status.generating_docx"));
-        const resp = await fetch("templates/ebios-report.docx");
+        const _wlang = (typeof _locale !== "undefined" && _locale === "en") ? "en" : "fr";
+        const resp = await fetch("templates/ebios-report-" + _wlang + ".docx");
         if (!resp.ok) throw new Error("template HTTP " + resp.status);
         const doc = new window.docxtemplater(new PizZip(await resp.arrayBuffer()),
             { paragraphLoop: true, linebreaks: true, nullGetter: function() { return ""; } });
