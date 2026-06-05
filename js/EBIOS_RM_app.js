@@ -3190,14 +3190,29 @@ async function exportSynthesisPPTX() {
             if (reading) { const px = x0 + sd.NX * cw + 0.5; s.addText(reading, { x: px, y: 1.6, w: Math.max(3, W - px - 0.4), h: 4.6, fontSize: 13, color: "374151", valign: "top" }); }
             return s;
         }
-        function tableSlide(title, head, rows, intro) {
-            const s = pptx.addSlide(); header(s, title);
-            let ty = 0.9;
-            if (intro) { s.addText(intro, { x: 0.5, y: 0.8, w: W - 1, h: 0.7, fontSize: 13, color: "374151" }); ty = 1.7; }
-            const body = [head.map(function(h) { return { text: h, options: { bold: true, color: "FFFFFF", fill: { color: ACCENT } } }; })]
-                .concat(rows.map(function(r) { return r.map(function(c) { return (c && typeof c === "object") ? c : String(c == null ? "" : c); }); }));
-            s.addTable(body, { x: 0.5, y: ty, w: W - 1, fontSize: 10, border: { type: "solid", color: "E5E7EB", pt: 0.5 }, autoPage: true, autoPageRepeatHeader: true, newSlideStartY: ty });
-            return s;
+        // Build one or more slides for a table, at most maxRows data rows
+        // per slide (PptxGenJS' autoPage overflowed wrapped cells and gave
+        // continuation slides no header band). Each page gets the header
+        // band, a "(i/n)" suffix and the repeated table header; the intro
+        // is shown on the first page only.
+        function tableSlide(title, head, rows, intro, maxRows) {
+            const FS = 10, tableW = W - 1, per = Math.max(1, maxRows || 15);
+            rows = rows || [];
+            const pages = [];
+            for (let i = 0; i < rows.length; i += per) pages.push(rows.slice(i, i + per));
+            if (!pages.length) pages.push([]);
+            const headRow = head.map(function(h) { return { text: h, options: { bold: true, color: "FFFFFF", fill: { color: ACCENT } } }; });
+            let firstSlide = null;
+            pages.forEach(function(pg, idx) {
+                const s = pptx.addSlide();
+                header(s, pages.length > 1 ? (title + " (" + (idx + 1) + "/" + pages.length + ")") : title);
+                let ty = 0.9;
+                if (idx === 0 && intro) { s.addText(intro, { x: 0.5, y: 0.8, w: tableW, h: 0.7, fontSize: 13, color: "374151" }); ty = 1.7; }
+                const body = [headRow].concat(pg.map(function(r) { return r.map(function(c) { return (c && typeof c === "object") ? c : String(c == null ? "" : c); }); }));
+                s.addTable(body, { x: 0.5, y: ty, w: tableW, fontSize: FS, valign: "top", border: { type: "solid", color: "E5E7EB", pt: 0.5 } });
+                if (!firstSlide) firstSlide = s;
+            });
+            return firstSlide;
         }
 
         const sev = function(lvl) { var c = _riskColorName(lvl); return c === "red" ? 3 : c === "orange" ? 2 : c === "green" ? 1 : 0; };
@@ -3261,12 +3276,12 @@ async function exportSynthesisPPTX() {
         tableSlide(t("ebios.synth.top_risks") || "Top risques à traiter",
             [t("ebios.synth.col_ss"), t("ebios.synth.col_scenario"), t("ebios.synth.col_risque_initial"), t("ebios.synth.col_risque_residuel")],
             topRows.map(function(r) { return [r.id, r.scenario, riskCell(r.riskInit), riskCell(r.riskResid)]; }),
-            t("ebios.synth.intro_top_risks")).addNotes(t("ebios.synth.intro_top_risks"));
+            t("ebios.synth.intro_top_risks"), 15).addNotes(t("ebios.synth.intro_top_risks"));
 
         // 6. Plan de traitement (mesures à mettre en œuvre)
         tableSlide(t("ebios.synth.measures_title") || "Plan de traitement", [t("ebios.synth.col_id"), t("ebios.synth.col_mesure"), t("ebios.synth.col_origine"), t("ebios.synth.col_responsable"), t("ebios.synth.col_echeance"), t("ebios.synth.col_statut")],
             sd.measures.todo.map(function(m) { return [m.id, m.mesure, m.origine || "", m.responsable || "", m.echeance || "", m.statut || ""]; }),
-            t("ebios.synth.intro_pacs")).addNotes(t("ebios.synth.intro_pacs"));
+            t("ebios.synth.intro_pacs"), 12).addNotes(t("ebios.synth.intro_pacs"));
 
         // 7. Acceptation des risques résiduels
         s = pptx.addSlide(); header(s, t("ebios.synth.acceptance_title") || "Acceptation des risques résiduels");
