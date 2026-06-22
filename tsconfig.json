@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "lib": ["ES2021", "DOM", "DOM.Iterable"],
+    "outDir": "js",
+    "rootDir": "ts",
+    "strict": true,
+    "alwaysStrict": false,
+    "ignoreDeprecations": "6.0",
+    "removeComments": false,
+    "newLine": "lf",
+    "skipLibCheck": true,
+    "types": []
+  },
+  "include": ["ts/**/*.ts", "ts/types/*.d.ts"]
+}

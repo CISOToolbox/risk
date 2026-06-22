@@ -1935,7 +1935,7 @@
     {
       "sop": "SOP-01",
       "ss": "SS-01 - Telemonitoring ransomware",
-      "phase": "1. Reconnaissance",
+      "phase": "TA0043",
       "action": "Scan exposed infrastructure, identify healthcare API endpoints",
       "bs": "BS-01 AWS Platform",
       "controle": "AWS WAF, rate limiting",
@@ -1948,7 +1948,7 @@
     {
       "sop": "SOP-01",
       "ss": "SS-01 - Telemonitoring ransomware",
-      "phase": "2. Initial intrusion",
+      "phase": "TA0001",
       "action": "Targeted phishing of MedSecure staff or VPN exploitation",
       "bs": "BS-06 M365, BS-07 Entra ID",
       "controle": "MFA Entra ID, Defender for Office 365",
@@ -1961,7 +1961,7 @@
     {
       "sop": "SOP-01",
       "ss": "SS-01 - Telemonitoring ransomware",
-      "phase": "3. Privilege escalation",
+      "phase": "TA0004",
       "action": "Exploitation of misconfigured AWS IAM to obtain admin access",
       "bs": "BS-01 AWS",
       "controle": "AWS IAM, least privilege principle",
@@ -1974,7 +1974,7 @@
     {
       "sop": "SOP-01",
       "ss": "SS-01 - Telemonitoring ransomware",
-      "phase": "4. Lateral movement",
+      "phase": "TA0008",
       "action": "Access to patient databases via cross-account roles",
       "bs": "BS-02 Patient DB",
       "controle": "VPC segmentation, security groups",
@@ -1987,7 +1987,7 @@
     {
       "sop": "SOP-01",
       "ss": "SS-01 - Telemonitoring ransomware",
-      "phase": "5. Exfiltration",
+      "phase": "TA0010",
       "action": "Copy patient data before encryption (double extortion)",
       "bs": "BS-02 Patient DB",
       "controle": "DLP not implemented, AES-256 encryption at rest",
@@ -2000,7 +2000,7 @@
     {
       "sop": "SOP-01",
       "ss": "SS-01 - Telemonitoring ransomware",
-      "phase": "6. Impact",
+      "phase": "TA0040",
       "action": "RDS + EBS encryption, snapshot deletion",
       "bs": "BS-01, BS-02",
       "controle": "S3 versioning backups + immutability, recovery plan",
@@ -2013,7 +2013,7 @@
     {
       "sop": "SOP-02",
       "ss": "SS-02 - Health data exfiltration",
-      "phase": "1. Reconnaissance",
+      "phase": "TA0043",
       "action": "Map the telemonitoring platform API",
       "bs": "BS-01 AWS Platform",
       "controle": "Private API documentation, JWT authentication",
@@ -2026,7 +2026,7 @@
     {
       "sop": "SOP-02",
       "ss": "SS-02 - Health data exfiltration",
-      "phase": "2. API exploitation",
+      "phase": "TA0001",
       "action": "SQL injection / IDOR on patient data endpoints",
       "bs": "BS-01, BS-02",
       "controle": "SonarQube SAST, annual penetration tests, WAF",
@@ -2039,7 +2039,7 @@
     {
       "sop": "SOP-02",
       "ss": "SS-02 - Health data exfiltration",
-      "phase": "3. Patient data access",
+      "phase": "TA0009",
       "action": "Extraction via API with compromised token or IDOR vulnerability",
       "bs": "BS-02 Patient DB",
       "controle": "Application RBAC, sensitive field encryption",
@@ -2052,7 +2052,7 @@
     {
       "sop": "SOP-02",
       "ss": "SS-02 - Health data exfiltration",
-      "phase": "4. Exfiltration",
+      "phase": "TA0010",
       "action": "Data transfer via HTTPS to attacker infrastructure",
       "bs": "BS-01 AWS",
       "controle": "No DLP, partial network egress monitoring",
@@ -2065,7 +2065,7 @@
     {
       "sop": "SOP-03",
       "ss": "SS-03 - Firmware supply chain",
-      "phase": "1. Upstream compromise",
+      "phase": "TA0001",
       "action": "Insertion of malicious component or modification of third-party firmware",
       "bs": "BS-04 Devices",
       "controle": "Component reception audit (partial), no systematic third-party firmware verification",
@@ -2078,7 +2078,7 @@
     {
       "sop": "SOP-03",
       "ss": "SS-03 - Firmware supply chain",
-      "phase": "2. CI/CD injection",
+      "phase": "TA0002",
       "action": "Modification of GitLab CI pipeline to inject malicious code into firmware",
       "bs": "BS-05 GitLab",
       "controle": "Branch protection, mandatory code review, SAST SonarQube",
@@ -2091,7 +2091,7 @@
     {
       "sop": "SOP-03",
       "ss": "SS-03 - Firmware supply chain",
-      "phase": "3. Signing and deployment",
+      "phase": "TA0003",
       "action": "Malicious firmware signed with compromised key or signing process bypassed",
       "bs": "BS-13 PKI, BS-09 OTA",
       "controle": "PKI with HSM, multi-approval signing process",
@@ -2104,7 +2104,7 @@
     {
       "sop": "SOP-03",
       "ss": "SS-03 - Firmware supply chain",
-      "phase": "4. Activation",
+      "phase": "TA0002",
       "action": "Malicious firmware active on deployed devices",
       "bs": "BS-04 Devices",
       "controle": "Device behavior monitoring (partial), IoT anomaly alerts",
@@ -2117,7 +2117,7 @@
     {
       "sop": "SOP-03",
       "ss": "SS-03 - Firmware supply chain",
-      "phase": "5. Impact",
+      "phase": "TA0040",
       "action": "Mass compromise of devices, patient data exposed",
       "bs": "BS-04, BS-02",
       "controle": "IoT network segmentation, device recall plan",
@@ -2130,7 +2130,7 @@
     {
       "sop": "SOP-04",
       "ss": "SS-04 - IoT vuln exploitation",
-      "phase": "1. Hospital network scan",
+      "phase": "TA0043",
       "action": "Discovery of MedSecure devices on poorly segmented hospital network",
       "bs": "BS-04 Devices",
       "controle": "IoT network segmentation recommendation to clients",
@@ -2143,7 +2143,7 @@
     {
       "sop": "SOP-04",
       "ss": "SS-04 - IoT vuln exploitation",
-      "phase": "2. Vulnerability exploitation",
+      "phase": "TA0001",
       "action": "Firmware vulnerability exploitation (buffer overflow, auth bypass)",
       "bs": "BS-04 Devices",
       "controle": "Annual firmware fuzzing, long MDR patch cycle (3-6 months)",
@@ -2156,7 +2156,7 @@
     {
       "sop": "SOP-04",
       "ss": "SS-04 - IoT vuln exploitation",
-      "phase": "3. Lateral movement",
+      "phase": "TA0008",
       "action": "From compromised device, access to hospital network",
       "bs": "BS-12 VPN",
       "controle": "Device isolated by VLAN (if recommendation followed by hospital)",
@@ -2169,7 +2169,7 @@
     {
       "sop": "SOP-04",
       "ss": "SS-04 - IoT vuln exploitation",
-      "phase": "4. Data manipulation",
+      "phase": "TA0040",
       "action": "Alteration of physiological data transmitted to the cloud",
       "bs": "BS-03 Azure IoT",
       "controle": "Cloud-side data integrity verification (checksum), mutual TLS certificate",
@@ -2182,7 +2182,7 @@
     {
       "sop": "SOP-04",
       "ss": "SS-04 - IoT vuln exploitation",
-      "phase": "5. Impact",
+      "phase": "TA0040",
       "action": "Erroneous diagnosis / infusion pump rate modification",
       "bs": "BS-04 Devices",
       "controle": "Dual-channel alarms (device + cloud), nurse physical check",
@@ -2195,7 +2195,7 @@
     {
       "sop": "SOP-05",
       "ss": "SS-05 - Phishing M365",
-      "phase": "1. Targeted phishing",
+      "phase": "TA0001",
       "action": "Email impersonating health authority (ARS, ANSM) with malicious attachment",
       "bs": "BS-06 M365",
       "controle": "Defender for Office 365, annual awareness training",
@@ -2208,7 +2208,7 @@
     {
       "sop": "SOP-05",
       "ss": "SS-05 - Phishing M365",
-      "phase": "2. Session compromise",
+      "phase": "TA0006",
       "action": "M365 session cookie theft via adversary-in-the-middle",
       "bs": "BS-07 Entra ID",
       "controle": "MFA Entra ID, conditional access",
@@ -2221,7 +2221,7 @@
     {
       "sop": "SOP-05",
       "ss": "SS-05 - Phishing M365",
-      "phase": "3. SharePoint access",
+      "phase": "TA0009",
       "action": "Browsing MDR technical files and patient data",
       "bs": "BS-06 M365",
       "controle": "Data classification, DLP M365 (partial)",
@@ -2234,7 +2234,7 @@
     {
       "sop": "SOP-05",
       "ss": "SS-05 - Phishing M365",
-      "phase": "4. Exfiltration",
+      "phase": "TA0010",
       "action": "Mass download of sensitive files",
       "bs": "BS-06 M365",
       "controle": "DLP M365, SIEM",
@@ -2247,7 +2247,7 @@
     {
       "sop": "SOP-06",
       "ss": "SS-06 - PKI attack",
-      "phase": "1. PKI reconnaissance",
+      "phase": "TA0043",
       "action": "Identification of PKI infrastructure and firmware signing process",
       "bs": "BS-13 PKI",
       "controle": "PKI documented internally only",
@@ -2260,7 +2260,7 @@
     {
       "sop": "SOP-06",
       "ss": "SS-06 - PKI attack",
-      "phase": "2. Key compromise",
+      "phase": "TA0006",
       "action": "Exploitation of AWS admin access to reach HSM or signing key",
       "bs": "BS-13 PKI, BS-01 AWS",
       "controle": "CloudHSM HSM, restricted key access",
@@ -2273,7 +2273,7 @@
     {
       "sop": "SOP-06",
       "ss": "SS-06 - PKI attack",
-      "phase": "3. Malicious firmware signing",
+      "phase": "TA0003",
       "action": "Signing of modified firmware with stolen key",
       "bs": "BS-09 OTA",
       "controle": "Multi-approval (partial), signature logging",
@@ -2286,7 +2286,7 @@
     {
       "sop": "SOP-06",
       "ss": "SS-06 - PKI attack",
-      "phase": "4. OTA deployment",
+      "phase": "TA0008",
       "action": "Push malicious firmware to devices via OTA",
       "bs": "BS-04 Devices",
       "controle": "Device-side firmware validation (signature verified)",
@@ -2299,7 +2299,7 @@
     {
       "sop": "SOP-07",
       "ss": "SS-07 - Developer IP theft",
-      "phase": "1. Legitimate access",
+      "phase": "TA0001",
       "action": "Developer accesses source code and algorithms via their GitLab account",
       "bs": "BS-05 GitLab",
       "controle": "Project-based access restrictions, mandatory code review",
@@ -2312,7 +2312,7 @@
     {
       "sop": "SOP-07",
       "ss": "SS-07 - Developer IP theft",
-      "phase": "2. Sensitive data collection",
+      "phase": "TA0009",
       "action": "Clone of repos containing detection algorithms and patents",
       "bs": "BS-05 GitLab",
       "controle": "GitLab audit logs, mass clone alerts absent",
@@ -2325,7 +2325,7 @@
     {
       "sop": "SOP-07",
       "ss": "SS-07 - Developer IP theft",
-      "phase": "3. Exfiltration",
+      "phase": "TA0010",
       "action": "Copy to USB drive or sent to personal account (email, personal cloud)",
       "bs": "BS-11 Workstations",
       "controle": "DLP not deployed on dev workstations, USB partially restricted",
@@ -2338,7 +2338,7 @@
     {
       "sop": "SOP-07",
       "ss": "SS-07 - Developer IP theft",
-      "phase": "4. Concealment",
+      "phase": "TA0005",
       "action": "Deletion of download traces, normal-looking activity",
       "bs": "BS-05 GitLab, BS-10 SIEM",
       "controle": "Centralized SIEM but no IP theft use case",
@@ -2351,7 +2351,7 @@
     {
       "sop": "SOP-07",
       "ss": "SS-07 - Developer IP theft",
-      "phase": "5. Exploitation",
+      "phase": "TA0040",
       "action": "Resale of algorithms to a competitor or creation of competing startup",
       "bs": "—",
       "controle": "Non-compete clauses, NDA",

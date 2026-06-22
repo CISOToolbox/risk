@@ -123,7 +123,8 @@ js/
   referentiels_catalog.js        Catalogue partagé des référentiels (9 référentiels FR/EN)
   ai_common.js                   Module IA partagé (fournisseurs, réglages, appels API, UI du panneau)
   EBIOS_RM_data.js               Données initiales (analyse vide)
-  EBIOS_RM_i18n.js               Traductions FR/EN (~300 clés + contenu d'aide)
+  EBIOS_RM_i18n_fr.js            Traductions FR (chargées au démarrage)
+  EBIOS_RM_i18n_en.js            Traductions EN (chargées à la demande)
   EBIOS_RM_app.js                Logique applicative principale (~3000 lignes)
   EBIOS_RM_ai_assistant.js       Suggestions IA pour chaque atelier
   EBIOS_RM_descriptions.js       Descriptions ANSSI/ISO (chargement différé)
@@ -148,7 +149,7 @@ Les scripts sont chargés de manière synchrone dans un ordre strict en bas de `
 2. cisotoolbox.js            Bibliothèque partagée, utilise t() pour les chaînes UI
 3. referentiels_catalog.js   Définit window._REFERENTIELS_CATALOG
 4. EBIOS_RM_data.js          Définit D par défaut (objet analyse vide)
-5. EBIOS_RM_i18n.js          Enregistre les clés de traduction FR/EN
+5. EBIOS_RM_i18n_fr.js       Enregistre les clés de traduction FR (EN chargé à la demande)
 6. EBIOS_RM_app.js           App principale -- lit CT_CONFIG, D, REFERENTIELS_META
 7. ai_common.js              Lit AI_APP_CONFIG, fournit les fonctions IA partagées
 8. EBIOS_RM_ai_assistant.js  Enveloppe les fonctions de rendu avec les hooks IA

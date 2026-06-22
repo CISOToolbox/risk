@@ -1,3 +1,7 @@
+// ─────────────────────────────────────────────────────────────
+// GENERATED from shared/ts/ — do NOT edit here.
+// Edit the shared TypeScript source and run shared/ts-build.sh.
+// ─────────────────────────────────────────────────────────────
 /**
  * CISO Toolbox — Référentiels complémentaires (catalogue)
  *
@@ -7,6 +11,7 @@
  * Label, description FR/EN, couleur pour chaque référentiel.
  * Les mesures détaillées sont chargées à la demande via _ensureFramework().
  */
+/* ── Types locaux ─────────────────────────────────────────────── */
 window._REFERENTIELS_CATALOG = {
     "anssi": {
         "label": "ANSSI Hygi\u00e8ne",
