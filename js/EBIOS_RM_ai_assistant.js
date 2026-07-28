@@ -371,7 +371,7 @@
             // Detect if this is an update (existing ID) or a new element
             var isUpdate = s.id && _aiIdExists(type, s.id);
             if (isUpdate) {
-                h += '<div style="font-size:0.75em;color:var(--orange);font-weight:600;margin-bottom:4px">&#9998; ' + t("ai.update_existing", { id: s.id }) + '</div>';
+                h += '<div style="font-size:0.75em;color:var(--orange);font-weight:600;margin-bottom:4px">&#9998; ' + t("ai.update_existing", { id: esc(s.id) }) + '</div>';
             }
             h += '<div class="ai-card-actions">';
             h += '<button class="ai-btn-accept"' + (isUpdate ? ' style="background:var(--orange)"' : '') + ' data-click="_aiAccept" data-args=\'' + _da(type, i) + '\'>' + (isUpdate ? t("ai.update") : t("ai.accept")) + '</button>';
