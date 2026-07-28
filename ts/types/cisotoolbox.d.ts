@@ -39,6 +39,10 @@ declare function _ct(): CtConfig;
 declare function esc(v: unknown): string;
 declare function _da(...args: unknown[]): string;
 declare function badge(text: string | null | undefined, color: string): string;
+declare function badgeTone(text: string | null | undefined, tone: string, opts?: {
+    fill?: boolean;
+    size?: string;
+}): string;
 declare var CT_ICONS: Record<string, string>;
 declare function _icon(name: string, size?: number, extraClass?: string): string;
 declare var CT_COLORS: {
@@ -154,6 +158,7 @@ declare function ctBadge(text: string | null | undefined, colorName: string): st
  * @param {number} maxLevel — max level (3, 4, 5)
  * @returns {string} HTML
  */
+declare function ctToneLevel(level: number, maxLevel?: number): string;
 declare function ctBadgeLevel(text: string | null | undefined, level: number, maxLevel?: number): string;
 declare function confColor(v: string | number | null | undefined): string;
 declare function _noop(): void;
@@ -237,6 +242,8 @@ interface CtBreakdown {
 interface CtBreakdownOpts extends CtBarOpts, CtHeatmapOpts, CtTimelineOpts {
 }
 declare function _svgEsc(v: unknown): string;
+declare var _SVG_VAR_COLORS: Record<string, string>;
+declare function _svgSeriesColor(name?: string): string;
 declare function _svgGauge(value: number, max: number, opts?: CtGaugeOpts): string;
 declare function _svgSparkline(points?: number[] | null, opts?: CtSparklineOpts): string;
 declare function _svgBar(data?: CtBarData | null, opts?: CtBarOpts): string;
@@ -257,6 +264,7 @@ declare function _updateSidebarAccordion(panelId: string): void;
  * Used via data-click="toggleGroup" data-pass-el on sidebar-toggle elements.
  */
 declare function toggleGroup(el: Element | null): void;
+declare function _sliderStops(): number[][];
 declare function _sliderColor(val: number, max: number): string;
 declare function _applySliderStyle(el: HTMLInputElement): void;
 declare function _initSliders(): void;
@@ -368,3 +376,39 @@ interface CtMatrixOpts {
  * @returns {string} HTML string (SVG + legend + tooltip div)
  */
 declare function ctRenderMatrix(opts: CtMatrixOpts): string;
+declare function _ctIconSize(el: HTMLElement): number;
+/** Fill every empty [data-icon] element with its inline SVG. Idempotent —
+ *  safe to call after each render. Keeps 400-char SVGs out of templates. */
+declare function ct_hydrateIcons(root?: ParentNode): void;
+declare function ct_initTheme(): void;
+declare function ct_toggleTheme(): void;
+declare function _ctSyncThemeIcon(): void;
+declare function ct_toggleLang(): void;
+declare function ct_go(view: string): void;
+declare function ct_toggleRailGroup(el: HTMLElement): void;
+declare function ct_toggleModuleMenu(): void;
+/** Build the appbar markup for the current edition (SPEC §0/§10). Returns an
+ *  HTML string; the caller injects it and then calls ct_hydrateIcons(). */
+declare function ct_renderAppbar(opts?: {
+    context?: string;
+    savedAt?: string;
+}): string;
+interface CtRailItem {
+    view: string;
+    label: string;
+    count?: number;
+    current?: boolean;
+}
+interface CtRailSection {
+    group?: string;
+    expanded?: boolean;
+    items: CtRailItem[];
+}
+/** Build the rail markup from a per-module spec (SPEC §10). */
+declare function ct_renderRail(spec: {
+    sections: CtRailSection[];
+    foot?: string;
+}): string;
+declare var _w: Record<string, unknown>;
+declare function ct_initModulePicker(): void;
+declare function _ctChromeBoot(): void;

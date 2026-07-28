@@ -380,7 +380,7 @@ function _renderCards(type: string, suggestions: any[], acceptFn?: (s: any) => s
         // Detect if this is an update (existing ID) or a new element
         var isUpdate = s.id && _aiIdExists(type, s.id);
         if (isUpdate) {
-            h += '<div style="font-size:0.75em;color:var(--orange);font-weight:600;margin-bottom:4px">&#9998; ' + t("ai.update_existing", {id: s.id}) + '</div>';
+            h += '<div style="font-size:0.75em;color:var(--orange);font-weight:600;margin-bottom:4px">&#9998; ' + t("ai.update_existing", {id: esc(s.id)}) + '</div>';
         }
         h += '<div class="ai-card-actions">';
         h += '<button class="ai-btn-accept"' + (isUpdate ? ' style="background:var(--orange)"' : '') + ' data-click="_aiAccept" data-args=\'' + _da(type, i) + '\'>' + (isUpdate ? t("ai.update") : t("ai.accept")) + '</button>';
@@ -530,7 +530,7 @@ function _aiRerender(type: string) {
 function _checkEmptyPanel() {
     var p = _aiEnsurePanel();
     if (p.body.querySelectorAll(".ai-card").length > 0) return;
-    p.body.innerHTML = '<div style="text-align:center;padding:20px 16px;color:#6c757d">' +
+    p.body.innerHTML = '<div style="text-align:center;padding:20px 16px;color:var(--ct-ink-2)">' +
         '<div style="font-size:2em;margin-bottom:8px">✓</div>' +
         '<div style="font-size:0.9em;margin-bottom:8px">' + t("ai.all_done") + '</div>' +
         '</div>';
@@ -804,10 +804,10 @@ window._aiRunSOP = async function(ssId: string, mode: string) {
             h += '<div class="ai-card-title">' + esc(sop._title || "SOP") + '</div>';
             if (sop.phases && sop.phases.length) {
                 h += '<table style="width:100%;font-size:0.78em;border-collapse:collapse;margin:6px 0">';
-                h += '<tr style="background:#e8f4fd"><th style="padding:3px 6px;text-align:left">Phase</th><th style="padding:3px 6px;text-align:left">Action</th><th style="padding:3px 6px;text-align:left">BS</th><th style="padding:3px 6px;text-align:left">Eff.</th></tr>';
+                h += '<tr style="background:var(--ct-info-tint)"><th style="padding:3px 6px;text-align:left">Phase</th><th style="padding:3px 6px;text-align:left">Action</th><th style="padding:3px 6px;text-align:left">BS</th><th style="padding:3px 6px;text-align:left">Eff.</th></tr>';
                 sop.phases.forEach(function(ph: any) {
                     var effColor = ph.efficacite === "Efficace" ? "#27ae60" : ph.efficacite === "Partiel" ? "#f39c12" : "#e74c3c";
-                    h += '<tr style="border-bottom:1px solid #dee2e6">';
+                    h += '<tr style="border-bottom:1px solid var(--ct-line)">';
                     h += '<td style="padding:3px 6px;white-space:nowrap">' + esc(_attackLabel(ph.phase) || "") + '</td>';
                     h += '<td style="padding:3px 6px">' + esc(ph.action || "") + '</td>';
                     h += '<td style="padding:3px 6px;white-space:nowrap">' + esc((ph.bs || "").split(" - ")[0]) + '</td>';
@@ -1284,10 +1284,10 @@ function _injectButtons() {
 
 var style = document.createElement("style");
 style.textContent = [
-    ".ai-card-field { font-size:0.8em; color:#6c757d; margin-bottom:3px; }",
-    ".ai-card-field strong { color:#212529; }",
-    ".ai-loading { text-align:center; padding:40px 20px; color:#6c757d; }",
-    ".ai-loading .spinner { display:inline-block; width:32px; height:32px; border:3px solid #dee2e6; border-top-color:#667eea; border-radius:50%; animation:ai-spin 0.8s linear infinite; }"
+    ".ai-card-field { font-size:0.8em; color:var(--ct-ink-2); margin-bottom:3px; }",
+    ".ai-card-field strong { color:var(--ct-ink); }",
+    ".ai-loading { text-align:center; padding:40px 20px; color:var(--ct-ink-2); }",
+    ".ai-loading .spinner { display:inline-block; width:32px; height:32px; border:3px solid var(--ct-line); border-top-color:#667eea; border-radius:50%; animation:ai-spin 0.8s linear infinite; }"
 ].join("\n");
 document.head.appendChild(style);
 

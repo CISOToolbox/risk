@@ -34,8 +34,11 @@
         return h;
     }
     window.openSettings = function () {
-        if (typeof toggleMenu === "function")
-            toggleMenu();
+        // Close the Fichier dropdown if open (never toggle it open — BUG: a
+        // toggle would open the menu when switching language re-opens settings).
+        var _io = document.getElementById("io-menu");
+        if (_io)
+            _io.classList.remove("open");
         var AI_PROVIDERS = window._AI_PROVIDERS || {};
         var cfg = window.AI_APP_CONFIG || {};
         // BUG-11: ai_common.js may be absent (e.g. Pilot uses pilot_ai_panel.js
@@ -317,6 +320,12 @@
         "settings.title": "Réglages",
         "settings.language": "Langue",
         "settings.ai_section": "Assistant IA",
+        // Shared posture labels (used by _postureLabel) — registered here so every
+        // module that loads ct_settings has them in both languages.
+        "ct.posture.weak": "Faible",
+        "ct.posture.moderate": "Modéré",
+        "ct.posture.good": "Bon",
+        "ct.posture.excellent": "Excellent",
         "settings.ai_enable": "Activer l'assistant IA",
         "settings.provider": "Fournisseur IA",
         "settings.model": "Modèle",
@@ -348,6 +357,10 @@
         "settings.title": "Settings",
         "settings.language": "Language",
         "settings.ai_section": "AI Assistant",
+        "ct.posture.weak": "Weak",
+        "ct.posture.moderate": "Moderate",
+        "ct.posture.good": "Good",
+        "ct.posture.excellent": "Excellent",
         "settings.ai_enable": "Enable AI assistant",
         "settings.provider": "AI Provider",
         "settings.model": "Model",
@@ -379,16 +392,16 @@
     style.textContent = [
         ".settings-section { margin-bottom:20px; }",
         ".settings-label { font-weight:600; font-size:0.85em; margin-bottom:8px; color:var(--text); }",
-        ".settings-lang-btn { padding:6px 16px; border:1px solid var(--border); border-radius:4px; background:white; cursor:pointer; font-size:0.85em; }",
-        ".settings-lang-btn.active { background:var(--blue); color:white; border-color:var(--blue); }",
+        ".settings-lang-btn { padding:6px 16px; border:1px solid var(--border); border-radius:4px; background:var(--ct-surface); color:var(--ct-ink); cursor:pointer; font-size:0.85em; }",
+        ".settings-lang-btn.active { background:var(--ct-accent); color:#fff; border-color:var(--ct-accent); }",
         ".settings-lang-btn:hover:not(.active) { background:var(--bg); }",
         ".settings-input { padding:6px 10px; border:1px solid var(--border); border-radius:4px; font-size:0.85em; font-family:monospace; }",
         ".settings-btn-eye { background:none; border:1px solid var(--border); border-radius:4px; padding:4px 8px; cursor:pointer; font-size:1em; }",
         ".settings-toggle { position:relative; display:inline-block; width:40px; height:22px; }",
         ".settings-toggle input { opacity:0; width:0; height:0; }",
-        ".settings-toggle-slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:#ccc; transition:.3s; border-radius:22px; }",
+        ".settings-toggle-slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:var(--ct-line-strong); transition:.3s; border-radius:22px; }",
         ".settings-toggle-slider:before { content:''; position:absolute; height:16px; width:16px; left:3px; bottom:3px; background:white; transition:.3s; border-radius:50%; }",
-        ".settings-toggle input:checked + .settings-toggle-slider { background:var(--green); }",
+        ".settings-toggle input:checked + .settings-toggle-slider { background:var(--ct-accent); }",
         ".settings-toggle input:checked + .settings-toggle-slider:before { transform:translateX(18px); }"
     ].join("\n");
     document.head.appendChild(style);

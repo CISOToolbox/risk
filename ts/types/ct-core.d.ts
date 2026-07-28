@@ -25,6 +25,10 @@ interface CtConfig {
     getSociete?: (d: any) => string | undefined;
     getDate?: (d: any) => string | undefined;
     getScope?: (d: any) => string | undefined;
+    edition?: "opensource" | "standalone" | "suite";
+    module?: string;
+    modules?: Array<{ id: string; name: string; url: string; mark: string; alerts?: number }>;
+    deployed?: string[];
 }
 
 interface AiAppConfig {

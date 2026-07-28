@@ -93,7 +93,7 @@ L'application n'enferme pas les données. Tout peut être importé et exporté d
 
 Le fichier Excel généré contient un onglet par atelier avec des formules automatiques (criticité, pertinence, vraisemblance, risque résiduel) qui permettent d'utiliser le fichier Excel de façon totalement autonome. **L'analyse reste exploitable sans l'application.**
 
-> **Note :** l'import/export Excel nécessite la bibliothèque [ExcelJS](https://github.com/exceljs/exceljs), chargée à la demande depuis un CDN (`cdn.jsdelivr.net`). Une connexion Internet est donc requise lors du premier import ou export Excel. Toutes les autres fonctionnalités (JSON, chiffrement, analyse) fonctionnent entièrement hors-ligne.
+> **Note :** l'import/export Excel utilise la bibliothèque [ExcelJS](https://github.com/exceljs/exceljs), livrée avec l'application sous `js/vendor/` et chargée à la demande depuis la même origine. Aucune connexion Internet n'est requise : l'application fonctionne intégralement hors-ligne.
 
 ---
 
@@ -249,7 +249,7 @@ Chaque application vit dans son propre dépôt git. Les fichiers partagés sont 
 
 | Mesure | Détail |
 |--------|--------|
-| **CSP** | `script-src 'self' https://cdn.jsdelivr.net` -- pas de script inline, pas de `eval` |
+| **CSP** | `script-src 'self'` -- pas de script inline, pas de `eval`, aucun CDN externe |
 | **X-Frame-Options** | `DENY` -- empêche le clickjacking via iframe |
 | **X-Content-Type-Options** | `nosniff` -- empêche le navigateur de deviner le Content-Type |
 | **Permissions-Policy** | Désactive caméra, micro, géolocalisation, paiement, USB, capteurs |
@@ -257,7 +257,7 @@ Chaque application vit dans son propre dépôt git. Les fichiers partagés sont 
 | **Clés API** | Stockées uniquement en localStorage, jamais incluses dans les fichiers sauvegardés |
 | **Blocklist de dispatch** | `_safeDispatch` refuse d'appeler les fonctions internes/dangereuses |
 | **Assainissement HTML** | Les saisies utilisateur sont échappées avant insertion dans le DOM |
-| **SRI** | Intégrité vérifiée pour les bibliothèques chargées depuis un CDN (ExcelJS) |
+| **SRI** | Sans objet : toutes les bibliothèques sont servies depuis la même origine (`js/vendor/`), plus aucun chargement tiers |
 | **HTTPS** | HTTPS doit être imposé au niveau du serveur/hébergement |
 | **Pas de serveur** | Aucune donnée ne transite par un serveur tiers (sauf assistant IA si activé) |
 
@@ -331,7 +331,7 @@ L'application est un ensemble de fichiers statiques. Aucun serveur applicatif n'
 
 L'application fonctionne hors-ligne une fois chargée, avec deux exceptions :
 
-- **Import/export Excel** nécessite la bibliothèque ExcelJS depuis le CDN lors de la première utilisation
+- **Import/export Excel** charge ExcelJS depuis `js/vendor/` lors de la première utilisation (aucun accès réseau)
 - **Assistant IA** nécessite une connexion Internet pour communiquer avec l'API du fournisseur
 
 ### Instances en ligne
