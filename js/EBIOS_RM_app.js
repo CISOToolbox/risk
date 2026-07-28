@@ -131,6 +131,16 @@ function computeExposition(menace) {
     return t("ebios.expo.faible");
 }
 // ── Color helpers using CT_COLORS from cisotoolbox.js ──
+// Dark mode : CT_COLORS émet des hex pastel light en style inline (ctBadge).
+// On ajoute un attribut data-tone pour que EBIOS_RM.css puisse re-thémer les
+// badges en dark (paires --ct-*-tint / --ct-*-ink) sans changer le rendu light.
+var _CT_TONES = { red: "critical", redDark: "critical", redMax: "critical", orange: "high", yellow: "medium", green: "low", blue: "info", gray: "neutral" };
+function _tBadge(text, colorName) {
+    if (!text)
+        return "";
+    var tone = _CT_TONES[colorName] || "neutral";
+    return '<span class="badge" data-tone="' + tone + '" style="background:var(--ct-' + tone + '-tint);color:var(--ct-' + tone + '-ink)">' + esc(text) + '</span>';
+}
 function _riskColorName(level) {
     if (!level)
         return "gray";
@@ -146,9 +156,13 @@ function _riskColorName(level) {
     return "gray";
 }
 function riskColor(level) { return ctColor(_riskColorName(level)).vivid; }
-function _riskBg(level) { return ctColor(_riskColorName(level)).bg; }
-function _riskTxt(level) { return ctColor(_riskColorName(level)).txt; }
-function _riskBadge(text) { return ctBadge(text, _riskColorName(text)); }
+// Matrices et éditeur G×V : tokens du DS (suivent le thème) au lieu des pastels
+// CT_COLORS — mêmes valeurs que les légendes, donc légende ≡ cellules ≡ badges.
+// Les exports SVG→PNG passent par _svgResolveTokens (hex light, fond rapport).
+function _riskTone(level) { return _CT_TONES[_riskColorName(level)] || "neutral"; }
+function _riskBg(level) { return "var(--ct-" + _riskTone(level) + "-fill)"; }
+function _riskTxt(level) { return "var(--ct-" + _riskTone(level) + "-ink)"; }
+function _riskBadge(text) { return _tBadge(text, _riskColorName(text)); }
 function _expoColorName(expo) {
     var m = {};
     m[t("ebios.expo.critique")] = "red";
@@ -157,41 +171,62 @@ function _expoColorName(expo) {
     m[t("ebios.expo.faible")] = "green";
     return m[expo] || "gray";
 }
-function _expoBadge(text) { return ctBadge(text, _expoColorName(text)); }
-function gravColor(n) { return ctColorLevel(n, 5).bg; }
-function gravTextColor(n) { return ctColorLevel(n, 5).txt; }
-function _gravBadge(text, n) { return ctBadgeLevel(text, n, 5); }
+function _expoBadge(text) { return _tBadge(text, _expoColorName(text)); }
+// Pastilles de l'échelle de gravité : tokens du DS (suivent le thème) au lieu
+// des pastels CT_COLORS ; le niveau max prend le ton "extrême" (--ebios-extreme,
+// même logique que la cellule max des matrices vendor). Écran uniquement.
+var _GRAV_TONES = ["low", "medium", "high", "critical"];
+function gravColor(n) {
+    var i = Math.max(0, Math.min(n - 1, 4));
+    return i === 4 ? "var(--ebios-extreme, var(--ct-critical-tint))" : "var(--ct-" + _GRAV_TONES[i] + "-tint)";
+}
+function gravTextColor(n) {
+    var i = Math.max(0, Math.min(n - 1, 4));
+    return "var(--ct-" + (i === 4 ? "critical" : _GRAV_TONES[i]) + "-ink)";
+}
+// Badge de gravité : mêmes tokens -tint/-ink que les pastilles de l'échelle de
+// gravité et le reste du module (ctBadgeLevel émettrait un [data-fill] plein
+// base+blanc, désaligné) ; niveau max → ton "extrême", comme gravColor().
+function _gravBadge(text, n) {
+    if (!text)
+        return "";
+    var i = Math.max(0, Math.min(n - 1, 4));
+    if (i === 4)
+        return '<span class="ct-badge" style="background:var(--ebios-extreme,var(--ct-critical-tint));color:var(--ct-critical-ink)">' + esc(text) + '</span>';
+    return '<span class="ct-badge" data-tone="' + _GRAV_TONES[i] + '">' + esc(text) + '</span>';
+}
 function _socleBadge(text) {
     var m = {};
     m[t("ebios.socle.applique")] = "green";
     m[t("ebios.socle.partiel")] = "orange";
     m[t("ebios.socle.non_applique")] = "red";
-    return ctBadge(text, m[text] || "gray");
+    return _tBadge(text, m[text] || "gray");
 }
 function _prioBadge(text) {
     var m = {};
     m[t("ebios.socle.priorite_haute")] = "red";
     m[t("ebios.socle.priorite_moyenne")] = "orange";
     m[t("ebios.socle.priorite_basse")] = "green";
-    return ctBadge(text, m[text] || "gray");
+    return _tBadge(text, m[text] || "gray");
 }
 function _statutBadge(text) {
     var m = { "Terminé": "green", "En cours": "orange", "À étudier": "red", "Planifié": "blue" };
-    return ctBadge(text, m[text] || "gray");
+    return _tBadge(text, m[text] || "gray");
 }
 var _effColors = (function () {
     var r = ctColor("red"), o = ctColor("orange"), g = ctColor("green");
     return { "Absent": r, "Partiel": o, "Efficace": g, "Partial": o, "Effective": g };
 })();
+var _effTones = { "Absent": "critical", "Partiel": "high", "Efficace": "low", "Partial": "high", "Effective": "low" };
 function _effBadge(count, text, type) {
     if (!count)
         return "";
     var c = _effColors[type] || ctColor("gray");
-    return '<span class="badge" style="background:' + c.bg + ';color:' + c.txt + '">' + count + ' ' + esc(text) + '</span>';
+    return '<span class="badge" data-tone="' + (_effTones[type] || "neutral") + '" style="background:' + c.bg + ';color:' + c.txt + '">' + count + ' ' + esc(text) + '</span>';
 }
 function _origineBadge(text) {
     var m = { "Socle": "green", "\u00c9cosyst\u00e8me": "yellow", "SOP": "orange", "Compl\u00e9mentaire": "blue" };
-    return ctBadge(text, m[text] || "gray");
+    return _tBadge(text, m[text] || "gray");
 }
 // gravTextColor now uses ctColorLevel from CT_COLORS
 function gravLabel(n) {
@@ -682,7 +717,9 @@ var _PANEL_RENDER = {
 };
 function selectPanel(id) {
     _currentPanel = id;
-    document.querySelector(".sidebar").classList.remove("open");
+    var _nav = document.querySelector(".ct-rail, .sidebar");
+    if (_nav)
+        _nav.classList.remove("open");
     _updateSidebarAccordion(id);
     document.querySelectorAll(".tab-panel").forEach(function (p) { p.classList.remove("active"); });
     var panel = document.getElementById("panel-" + id);
@@ -766,7 +803,7 @@ function renderContext() {
     gh += `<span class="label-bold-sm">${t("ebios.gravity.nb_levels")}</span>`;
     for (const lv of [3, 4, 5]) {
         const active = lv === n;
-        gh += `<button style="padding:6px 16px;border-radius:6px;border:2px solid ${active ? "var(--light-blue)" : "var(--border)"};background:${active ? "var(--light-blue)" : "white"};color:${active ? "white" : "var(--text)"};font-weight:700;cursor:pointer;font-size:0.9em" data-click="setGravityLevels" data-args='${_da(lv)}'>${lv}</button>`;
+        gh += `<button style="padding:6px 16px;border-radius:6px;border:2px solid ${active ? "var(--light-blue)" : "var(--border)"};background:${active ? "var(--light-blue)" : "var(--ct-surface)"};color:${active ? "white" : "var(--text)"};font-weight:700;cursor:pointer;font-size:0.9em" data-click="setGravityLevels" data-args='${_da(lv)}'>${lv}</button>`;
     }
     gh += '</div>';
     const impactCols = [
@@ -974,7 +1011,7 @@ function renderSocleRefs() {
             const ud = rows[m.ref] || { conformite: "", ecart: "", mesures_prevues: "" };
             const conf = ud.conformite;
             const confVal = (conf === "" || conf === null) ? 0 : parseInt(String(conf)) || 0;
-            const confColor = confVal >= 80 ? "#16a34a" : confVal > 0 ? "#f59e0b" : "#dc2626";
+            const confColor = confVal >= 80 ? "var(--ct-low)" : confVal > 0 ? "var(--ct-medium)" : "var(--ct-critical)";
             const statut = socleStatut(conf);
             const prio = soclePriorite(conf);
             const sliderId = `slbl-ref-${fwId}-${i}`;
@@ -1719,8 +1756,8 @@ function renderSOP() {
         const _ec = _effColors[s.efficacite] || { bg: "#f1f5f9", txt: "#64748b" };
         h += '<tr>';
         if (spans[i] > 0) {
-            h += `<td rowspan="${spans[i]}" style="vertical-align:top;font-weight:600;background:#f1f5f9">${esc(s.sop)}<br><button class="btn-phase" data-click="addSOPPhase" data-args='${_da(i)}'>${t("ebios.btn.add_phase")}</button></td>`;
-            h += `<td${hd("ss")} rowspan="${spans[i]}" style="vertical-align:top;background:#f1f5f9">${refSelect("sop_detail", i, "ss", s.ss, ssOptions())}</td>`;
+            h += `<td rowspan="${spans[i]}" style="vertical-align:top;font-weight:600;background:var(--ct-surface-2)">${esc(s.sop)}<br><button class="btn-phase" data-click="addSOPPhase" data-args='${_da(i)}'>${t("ebios.btn.add_phase")}</button></td>`;
+            h += `<td${hd("ss")} rowspan="${spans[i]}" style="vertical-align:top;background:var(--ct-surface-2)">${refSelect("sop_detail", i, "ss", s.ss, ssOptions())}</td>`;
         }
         // Phase : numéro auto + tactique ATT&CK (liste) ou texte libre
         h += `<td><span style="color:var(--text-muted);font-weight:600">${phaseNums[i]}.</span> ${_sopPhaseSelect(i, s.phase)}</td>
@@ -1728,7 +1765,7 @@ function renderSOP() {
             <td${hd("bs")}>${refSelect("sop_detail", i, "bs", s.bs, bsOptions())}</td>
             <td${hd("ctrl")}>${ta("sop_detail", i, "controle", s.controle)}</td>
             <td${hd("ref")}>${refSelect("sop_detail", i, "ref", s.ref, socleOptions())}</td>
-            <td class="ta-c"><span class="eff-badge" data-click="_effBadgeClick" data-pass-el>${s.efficacite ? '<span class="badge" style="background:' + _ec.bg + ';color:' + _ec.txt + '">' + esc(s.efficacite) + '</span>' : `<span class="text-muted fs-xs cursor-pointer">${t("ebios.col.sop_choose")}</span>`}</span><span class="hidden">${sel("sop_detail", i, "efficacite", s.efficacite, [t("ebios.eff.absent"), t("ebios.eff.partiel"), t("ebios.eff.efficace")])}</span></td>
+            <td class="ta-c"><span class="eff-badge" data-click="_effBadgeClick" data-pass-el>${s.efficacite ? '<span class="badge" data-tone="' + (_effTones[s.efficacite] || "neutral") + '" style="background:' + _ec.bg + ';color:' + _ec.txt + '">' + esc(s.efficacite) + '</span>' : `<span class="text-muted fs-xs cursor-pointer">${t("ebios.col.sop_choose")}</span>`}</span><span class="hidden">${sel("sop_detail", i, "efficacite", s.efficacite, [t("ebios.eff.absent"), t("ebios.eff.partiel"), t("ebios.eff.efficace")])}</span></td>
             <td${hd("mp")}>${refSelect("sop_detail", i, "mesure_proposee", s.mesure_proposee, measuresOptions())}<button class="btn-add btn-add-sm" data-click="addSOPMeasure" data-args='${_da(i)}'>${t("ebios.btn.new_measure")}</button></td>`;
         h += `<td><div class="phase-actions">`;
         h += `<button class="btn-move" data-click="moveSOPPhase" data-args='${_da(i, -1)}' title="Monter">&#9650;</button>`;
@@ -1891,16 +1928,6 @@ function delSOPPhase(idx) {
     showStatus(t("ebios.status.deleted"));
     _persist("sop_detail");
     _persist("sop_summary");
-}
-function cycleEfficacite(idx) {
-    _saveState();
-    const vals = ["", "Absent", "Partiel", "Efficace"];
-    const current = D.sop_detail[idx].efficacite || "";
-    const next = vals[(vals.indexOf(current) + 1) % vals.length];
-    D.sop_detail[idx].efficacite = next;
-    renderSOP();
-    showStatus(t("ebios.status.efficacite", { val: next || "—" }));
-    _persist("sop_detail");
 }
 function addSOPMeasure(sopIdx) {
     _saveState();
@@ -2146,9 +2173,9 @@ function renderSynthesis() {
             nonEval++;
     });
     let distH = '<div class="risk-dist">';
-    distH += `<div class="risk-bar" style="background:#fca5a5;color:#991b1b"><div class="count">${eleve}</div><div class="label">${t("ebios.misc.eleve_label")}</div></div>`;
-    distH += `<div class="risk-bar" style="background:#fed7aa;color:#9a3412"><div class="count">${moyen}</div><div class="label">${t("ebios.misc.moyen_label")}</div></div>`;
-    distH += `<div class="risk-bar" style="background:#dcfce7;color:#166534"><div class="count">${faible}</div><div class="label">${t("ebios.misc.faible_label")}</div></div>`;
+    distH += `<div class="risk-bar" style="background:var(--ct-critical-tint);color:var(--ct-critical-ink)"><div class="count">${eleve}</div><div class="label">${t("ebios.misc.eleve_label")}</div></div>`;
+    distH += `<div class="risk-bar" style="background:var(--ct-high-tint);color:var(--ct-high-ink)"><div class="count">${moyen}</div><div class="label">${t("ebios.misc.moyen_label")}</div></div>`;
+    distH += `<div class="risk-bar" style="background:var(--ct-low-tint);color:var(--ct-low-ink)"><div class="count">${faible}</div><div class="label">${t("ebios.misc.faible_label")}</div></div>`;
     distH += '</div>';
     if (nonEval > 0)
         distH += `<p style="color:var(--text-muted);font-size:0.85em;margin-top:8px">${t("ebios.misc.ss_not_evaluated", { n: nonEval })}</p>`;
@@ -2209,9 +2236,9 @@ function renderSynthesis() {
                 return _riskBg(level);
             },
             legend: [
-                { label: t("ebios.risk.faible") || "Faible", color: "#dcfce7" },
-                { label: t("ebios.risk.moyen") || "Moyen", color: "#fed7aa" },
-                { label: t("ebios.risk.eleve") || "Eleve", color: "#fca5a5" }
+                { label: t("ebios.risk.faible") || "Faible", color: "var(--ct-low-fill)" },
+                { label: t("ebios.risk.moyen") || "Moyen", color: "var(--ct-high-fill)" },
+                { label: t("ebios.risk.eleve") || "Eleve", color: "var(--ct-critical-fill)" }
             ],
             tooltipFn: function (items) {
                 return items.map(function (item) {
@@ -2281,9 +2308,9 @@ function renderSynthesis() {
         });
         const avg = count > 0 ? Math.round(totalConf / count) : 0;
         let scH = '<div class="risk-dist">';
-        scH += `<div class="risk-bar" style="background:#fca5a5;color:#991b1b"><div class="count">${nonApp}</div><div class="label">${t("ebios.misc.non_applique_label")}</div></div>`;
-        scH += `<div class="risk-bar" style="background:#fed7aa;color:#9a3412"><div class="count">${partiel}</div><div class="label">${t("ebios.misc.partiel_label")}</div></div>`;
-        scH += `<div class="risk-bar" style="background:#dcfce7;color:#166534"><div class="count">${applique}</div><div class="label">${t("ebios.misc.applique_label")}</div></div>`;
+        scH += `<div class="risk-bar" style="background:var(--ct-critical-tint);color:var(--ct-critical-ink)"><div class="count">${nonApp}</div><div class="label">${t("ebios.misc.non_applique_label")}</div></div>`;
+        scH += `<div class="risk-bar" style="background:var(--ct-high-tint);color:var(--ct-high-ink)"><div class="count">${partiel}</div><div class="label">${t("ebios.misc.partiel_label")}</div></div>`;
+        scH += `<div class="risk-bar" style="background:var(--ct-low-tint);color:var(--ct-low-ink)"><div class="count">${applique}</div><div class="label">${t("ebios.misc.applique_label")}</div></div>`;
         scH += '</div>';
         scH += `<p style="font-size:0.85em;margin-top:8px;color:var(--text-muted)">${t("ebios.socle.conformite_moyenne", { avg: avg, count: count })}</p>`;
         document.getElementById("synth-socle").innerHTML = scH;
@@ -3164,7 +3191,7 @@ try {
 }
 catch (e) {
     console.error("Erreur au rendu initial:", e);
-    document.querySelector(".container").innerHTML = `<section><h2>Erreur</h2><pre>${esc(e.message)}
+    document.querySelector(".ct-content, .container").innerHTML = `<section><h2>Erreur</h2><pre>${esc(e.message)}
 ${esc(e.stack || "")}</pre></section>`;
 }
 // ===== Synthèse managériale (PPTX) + Rapport de sortie EBIOS RM (Word) =====
@@ -3247,7 +3274,6 @@ function _riskHex(level) {
         return "DCFCE7";
     return "F1F5F9";
 }
-function _hexRgb(h) { return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
 // {v-g: [ids]} grid for one matrix, from synthesis positions
 function _synthGrid(sd, getV) {
     const grid = {};
@@ -3447,6 +3473,24 @@ function _svgToPng(svg, targetW, scale) {
         img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
     });
 }
+// Report captures render outside the DOM (_svgToPng) where CSS variables don't
+// resolve — bake the light-theme hex in (reports are white-background docs).
+var _SVG_TOKEN_HEX = {
+    "var(--ct-low-tint)": "#e7f4ec", "var(--ct-low-ink)": "#116233",
+    "var(--ct-medium-tint)": "#fdf4dc", "var(--ct-medium-ink)": "#7c4a05",
+    "var(--ct-high-tint)": "#fdeee3", "var(--ct-high-ink)": "#8f3009",
+    "var(--ct-critical-tint)": "#fbe9e7", "var(--ct-critical-ink)": "#8c1d18",
+    "var(--ct-neutral-tint)": "#f2f3f7", "var(--ct-neutral-ink)": "#4c5566",
+    "var(--ct-critical-fill)": "#e7bcb9", "var(--ct-high-fill)": "#eecabb",
+    "var(--ct-medium-fill)": "#e8d8c1", "var(--ct-low-fill)": "#c4dfce",
+    "var(--ct-neutral-fill)": "#d7d9df",
+    "var(--ct-accent)": "#5a4bd8",
+};
+function _svgResolveTokens(svg) {
+    return svg.replace(/var\(--ct-[a-z]+(?:-(?:tint|ink|fill))?\)/g, function (tok) {
+        return _SVG_TOKEN_HEX[tok] || "#f2f3f7";
+    });
+}
 // Build a risk cartography matrix SVG (initial/residual) via ctRenderMatrix,
 // mirroring renderSynthesis' buildMatrix. Returns the <svg> string (or null).
 function _riskMatrixSVG(getV) {
@@ -3469,7 +3513,7 @@ function _riskMatrixSVG(getV) {
         xLabel: t("ebios.synth.col_vraisemblance") || "Vraisemblance", yLabel: t("ebios.synth.col_gravite") || "Gravité",
         yLabels: gLabels, grid: grid,
         colorFn: (v, g) => _riskBg(riskLevel(g, v)),
-        legend: [{ label: t("ebios.risk.faible"), color: "#dcfce7" }, { label: t("ebios.risk.moyen"), color: "#fed7aa" }, { label: t("ebios.risk.eleve"), color: "#fca5a5" }]
+        legend: [{ label: t("ebios.risk.faible"), color: "var(--ct-low-fill)" }, { label: t("ebios.risk.moyen"), color: "var(--ct-high-fill)" }, { label: t("ebios.risk.eleve"), color: "var(--ct-critical-fill)" }]
     });
     const m = html.match(/<svg[\s\S]*?<\/svg>/i);
     return m ? m[0] : null;
@@ -3489,7 +3533,7 @@ function _riskMatrixRefSVG() {
         xLabel: t("ebios.synth.col_vraisemblance") || "Vraisemblance", yLabel: t("ebios.synth.col_gravite") || "Gravité",
         yLabels: gLabels, grid: {},
         colorFn: (v, g) => _riskBg(riskLevel(g, v)),
-        legend: [{ label: t("ebios.risk.faible"), color: "#dcfce7" }, { label: t("ebios.risk.moyen"), color: "#fed7aa" }, { label: t("ebios.risk.eleve"), color: "#fca5a5" }]
+        legend: [{ label: t("ebios.risk.faible"), color: "var(--ct-low-fill)" }, { label: t("ebios.risk.moyen"), color: "var(--ct-high-fill)" }, { label: t("ebios.risk.eleve"), color: "var(--ct-critical-fill)" }]
     });
     const m = html.match(/<svg[\s\S]*?<\/svg>/i);
     if (!m)
@@ -3546,9 +3590,9 @@ async function _reportImages() {
     try {
         const si = _riskMatrixSVG(sp => sp.vInit), sr = _riskMatrixSVG(sp => sp.vResid);
         if (si)
-            imgs.risk_map_initial = await _svgToPng(si, 380, 2);
+            imgs.risk_map_initial = await _svgToPng(_svgResolveTokens(si), 380, 2);
         if (sr)
-            imgs.risk_map_residual = await _svgToPng(sr, 380, 2);
+            imgs.risk_map_residual = await _svgToPng(_svgResolveTokens(sr), 380, 2);
     }
     catch (e) {
         console.warn("Capture matrice de risque:", e);
@@ -3556,7 +3600,7 @@ async function _reportImages() {
     try {
         const ref = _riskMatrixRefSVG();
         if (ref)
-            imgs.risk_matrix_ref = await _svgToPng(ref, 440, 2);
+            imgs.risk_matrix_ref = await _svgToPng(_svgResolveTokens(ref), 440, 2);
     }
     catch (e) {
         console.warn("Capture matrice d'acceptabilité:", e);

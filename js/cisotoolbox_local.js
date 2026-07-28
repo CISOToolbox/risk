@@ -197,10 +197,10 @@ function _checkAutoSaveBanner() {
             '<span>&#128190; ' + t("session_found", { label: esc(label) }) + '</span>'
                 + '<button class="btn-restore" data-click="_restoreSession">' + t("btn_restore") + '</button>'
                 + '<button class="btn-discard" data-click="_discardSession">' + t("btn_discard") + '</button>';
-        document.body.insertBefore(banner, document.querySelector(".app-layout"));
-        var layout = document.querySelector(".app-layout");
-        if (layout)
-            layout.classList.add("with-banner");
+        var layoutEl = document.querySelector(".ct-body, .app-layout");
+        document.body.insertBefore(banner, layoutEl);
+        if (layoutEl)
+            layoutEl.classList.add("with-banner");
     }
     catch (e) { }
 }
@@ -223,7 +223,7 @@ function _dismissBanner() {
     var b = document.getElementById("restore-banner");
     if (b)
         b.remove();
-    var layout = document.querySelector(".app-layout");
+    var layout = document.querySelector(".ct-body, .app-layout");
     if (layout)
         layout.classList.remove("with-banner");
 }

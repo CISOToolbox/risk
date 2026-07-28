@@ -43,6 +43,18 @@ function badge(text, color) {
         return "";
     return '<span class="badge" style="background:' + color + '">' + esc(text) + '</span>';
 }
+// Semantic tone badge (spec v2). tone: critical|high|medium|low|info|neutral|accent.
+// opts.fill (solid, when the badge IS the value) · opts.size "sm".
+function badgeTone(text, tone, opts) {
+    if (!text)
+        return "";
+    var a = ' data-tone="' + esc(tone) + '"';
+    if (opts && opts.fill)
+        a += " data-fill";
+    if (opts && opts.size)
+        a += ' data-size="' + esc(opts.size) + '"';
+    return '<span class="ct-badge"' + a + ">" + esc(text) + "</span>";
+}
 // ═══════════════════════════════════════════════════════════════════════
 // CT_ICONS — Shared inline SVG icon set (Lucide-style)
 // ═══════════════════════════════════════════════════════════════════════
@@ -68,7 +80,14 @@ var CT_ICONS = {
     "code": '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
     "settings": '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
     "alert": '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
-    "folder": '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>'
+    "folder": '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+    // UI v2 chrome (SPEC §5)
+    "chevron-right": '<polyline points="9 18 15 12 9 6"/>',
+    "chevron-down": '<polyline points="6 9 12 15 18 9"/>',
+    "more-horizontal": '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+    "globe": '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+    "moon": '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
+    "sun": '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/>'
 };
 function _icon(name, size, extraClass) {
     var p = CT_ICONS[name];
@@ -162,11 +181,22 @@ function ctBadge(text, colorName) {
  * @param {number} maxLevel — max level (3, 4, 5)
  * @returns {string} HTML
  */
+// Map a 1..maxLevel severity level to a semantic tone (v2 badge system).
+function ctToneLevel(level, maxLevel) {
+    var m = maxLevel || 3;
+    var r = m > 1 ? (level - 1) / (m - 1) : 0;
+    if (r >= 0.75)
+        return "critical";
+    if (r >= 0.5)
+        return "high";
+    if (r >= 0.25)
+        return "medium";
+    return "low";
+}
 function ctBadgeLevel(text, level, maxLevel) {
     if (!text)
         return "";
-    var c = ctColorLevel(level, maxLevel);
-    return '<span class="badge" style="background:' + c.bg + ';color:' + c.txt + '">' + esc(text) + '</span>';
+    return '<span class="ct-badge" data-fill data-tone="' + ctToneLevel(level, maxLevel) + '">' + esc(text) + '</span>';
 }
 function confColor(v) {
     if (v === "" || v === null || v === undefined)
@@ -182,12 +212,26 @@ function _svgEsc(v) { return String(v == null ? "" : v).replace(/&/g, "&amp;").r
 //   value: current value
 //   max:   upper bound
 //   opts:  { size, color, label, sublabel, thickness }
+// ── Theme-aware chart colors ──────────────────────────────────────
+// Named CT_COLORS series resolve to DS variables so on-screen SVGs follow
+// the active theme. Exotic names (teal, purple…) keep their vivid hex so
+// multi-series breakdowns stay distinguishable.
+var _SVG_VAR_COLORS = {
+    red: "var(--ct-critical)", redDark: "var(--ct-critical)", redMax: "var(--ct-critical)",
+    orange: "var(--ct-high)", yellow: "var(--ct-medium)", green: "var(--ct-low)",
+    blue: "var(--ct-accent)", gray: "var(--ct-neutral)", dark: "var(--ct-ink-1)",
+};
+function _svgSeriesColor(name) {
+    if (name && _SVG_VAR_COLORS[name])
+        return _SVG_VAR_COLORS[name];
+    return (CT_COLORS[name || "blue"] || CT_COLORS.blue).vivid;
+}
 function _svgGauge(value, max, opts) {
     opts = opts || {};
     var size = opts.size || 120;
     var thickness = opts.thickness || 10;
     var pct = Math.max(0, Math.min(1, (max > 0 ? value / max : 0)));
-    var color = (CT_COLORS[opts.color || _postureColor(value, max)] || CT_COLORS.blue).vivid;
+    var color = _svgSeriesColor(opts.color || _postureColor(value, max));
     var r = (size - thickness) / 2;
     var cx = size / 2, cy = size / 2;
     var C = 2 * Math.PI * r;
@@ -196,13 +240,13 @@ function _svgGauge(value, max, opts) {
     var sub = opts.sublabel || "";
     var h = '<svg class="ct-svg-gauge" viewBox="0 0 ' + size + ' ' + size + '" width="' + size + '" height="' + size + '" role="img" aria-label="' + _svgEsc(label + " / " + max) + '">';
     // Background ring
-    h += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + CT_COLORS.gray.bg + '" stroke-width="' + thickness + '"/>';
+    h += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="var(--ct-line-soft)" stroke-width="' + thickness + '"/>';
     // Value arc (starts at top, rotates -90deg)
     h += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="' + thickness + '" stroke-linecap="round" stroke-dasharray="' + dash + ' ' + C + '" transform="rotate(-90 ' + cx + ' ' + cy + ')"/>';
     // Centre label
-    h += '<text x="' + cx + '" y="' + (cy + 6) + '" text-anchor="middle" font-size="' + (size * 0.28) + '" font-weight="700" fill="' + CT_COLORS.dark.vivid + '">' + _svgEsc(label) + '</text>';
+    h += '<text x="' + cx + '" y="' + (cy + 6) + '" text-anchor="middle" font-size="' + (size * 0.28) + '" font-weight="700" fill="var(--ct-ink)">' + _svgEsc(label) + '</text>';
     if (sub) {
-        h += '<text x="' + cx + '" y="' + (cy + size * 0.24) + '" text-anchor="middle" font-size="' + (size * 0.10) + '" fill="' + CT_COLORS.gray.vivid + '">' + _svgEsc(sub) + '</text>';
+        h += '<text x="' + cx + '" y="' + (cy + size * 0.24) + '" text-anchor="middle" font-size="' + (size * 0.10) + '" fill="var(--ct-ink-2)">' + _svgEsc(sub) + '</text>';
     }
     h += '</svg>';
     return h;
@@ -223,7 +267,7 @@ function _svgSparkline(points, opts) {
         var y = (h - ((p - min) / range) * (h - 4) - 2).toFixed(1);
         return x + "," + y;
     });
-    var color = (CT_COLORS[opts.color || "blue"] || CT_COLORS.blue).vivid;
+    var color = _svgSeriesColor(opts.color || "blue");
     var out = '<svg class="ct-svg-spark" viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '">';
     if (opts.fill !== false) {
         var area = "0," + h + " " + coords.join(" ") + " " + w + "," + h;
@@ -255,32 +299,32 @@ function _svgBar(data, opts) {
     var out = '<svg class="ct-svg-bar" viewBox="0 0 ' + width + ' ' + h + '" width="' + width + '" height="' + h + '">';
     buckets.forEach(function (b, i) {
         var y = i * rowH + 4;
-        out += '<text x="0" y="' + (y + 13) + '" font-size="11" fill="' + CT_COLORS.dark.vivid + '">' + _svgEsc(b.label) + '</text>';
+        out += '<text x="0" y="' + (y + 13) + '" font-size="11" fill="var(--ct-ink-1)">' + _svgEsc(b.label) + '</text>';
         // Background track
-        out += '<rect x="' + labelW + '" y="' + (y + 4) + '" width="' + barW + '" height="12" rx="3" fill="' + CT_COLORS.gray.bg + '"/>';
+        out += '<rect x="' + labelW + '" y="' + (y + 4) + '" width="' + barW + '" height="12" rx="3" fill="var(--ct-line-soft)"/>';
         // Bars (stacked or single)
         var cursor = labelW;
         var total = 0;
         if (b.segments) {
             b.segments.forEach(function (s) {
                 var w = (s.value / scale) * barW;
-                var color = (CT_COLORS[s.color || "blue"] || CT_COLORS.blue).vivid;
+                var color = _svgSeriesColor(s.color || "blue");
                 out += '<rect x="' + cursor + '" y="' + (y + 4) + '" width="' + w.toFixed(1) + '" height="12" fill="' + color + '"/>';
                 cursor += w;
                 total += s.value || 0;
             });
             // Round corners on the last visible segment
-            out += '<rect x="' + labelW + '" y="' + (y + 4) + '" width="' + barW + '" height="12" rx="3" fill="none" stroke="' + CT_COLORS.gray.bg + '" stroke-width="0.5"/>';
+            out += '<rect x="' + labelW + '" y="' + (y + 4) + '" width="' + barW + '" height="12" rx="3" fill="none" stroke="var(--ct-line-soft)" stroke-width="0.5"/>';
         }
         else {
             var w = (b.value / scale) * barW;
-            var color = (CT_COLORS[b.color || "blue"] || CT_COLORS.blue).vivid;
+            var color = _svgSeriesColor(b.color || "blue");
             out += '<rect x="' + labelW + '" y="' + (y + 4) + '" width="' + w.toFixed(1) + '" height="12" rx="3" fill="' + color + '"/>';
             total = b.value || 0;
         }
         // Value
         var unit = data.unit || "";
-        out += '<text x="' + (width - 2) + '" y="' + (y + 13) + '" text-anchor="end" font-size="11" font-weight="600" fill="' + CT_COLORS.dark.vivid + '">' + _svgEsc(total + unit) + '</text>';
+        out += '<text x="' + (width - 2) + '" y="' + (y + 13) + '" text-anchor="end" font-size="11" font-weight="600" fill="var(--ct-ink-1)">' + _svgEsc(total + unit) + '</text>';
     });
     out += '</svg>';
     return out;
@@ -303,12 +347,12 @@ function _svgDonut(data, opts) {
     // Inner radius available for the centre label
     var innerR = r - thickness / 2;
     var svg = '<svg class="ct-svg-donut" viewBox="0 0 ' + size + ' ' + size + '" width="' + size + '" height="' + size + '">';
-    svg += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + CT_COLORS.gray.bg + '" stroke-width="' + thickness + '"/>';
+    svg += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="var(--ct-line-soft)" stroke-width="' + thickness + '"/>';
     var cumulative = 0;
     segments.forEach(function (s) {
         var frac = s.value / total;
         var len = C * frac;
-        var color = (CT_COLORS[s.color || "blue"] || CT_COLORS.blue).vivid;
+        var color = _svgSeriesColor(s.color || "blue");
         var offset = -C * cumulative;
         svg += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="' + thickness + '" stroke-dasharray="' + len.toFixed(1) + ' ' + C + '" stroke-dashoffset="' + offset.toFixed(1) + '" transform="rotate(-90 ' + cx + ' ' + cy + ')"/>';
         cumulative += frac;
@@ -317,13 +361,13 @@ function _svgDonut(data, opts) {
     if (data.center_label) {
         var labelStr = String(data.center_label);
         var fontSize = Math.min(innerR * 0.9, size * 0.22);
-        svg += '<text x="' + cx + '" y="' + (cy + fontSize * 0.35) + '" text-anchor="middle" font-size="' + fontSize + '" font-weight="700" fill="' + CT_COLORS.dark.vivid + '">' + _svgEsc(labelStr) + '</text>';
+        svg += '<text x="' + cx + '" y="' + (cy + fontSize * 0.35) + '" text-anchor="middle" font-size="' + fontSize + '" font-weight="700" fill="var(--ct-ink)">' + _svgEsc(labelStr) + '</text>';
     }
     svg += '</svg>';
     // Legend below (all segments including zeros for full scale)
     var legend = '<div class="ct-donut-legend">';
     allSegments.forEach(function (s) {
-        var color = (CT_COLORS[s.color || "blue"] || CT_COLORS.blue).vivid;
+        var color = _svgSeriesColor(s.color || "blue");
         legend += '<span class="ct-donut-legend-item"><span class="ct-donut-dot" style="background:' + color + '"></span>' + _svgEsc(s.label) + ' <strong>' + s.value + '</strong></span>';
     });
     legend += '</div>';
@@ -346,12 +390,13 @@ function _svgHeatmap(data, opts) {
         for (var j = 0; j < n; j++) {
             var v = (m[n - 1 - i] && m[n - 1 - i][j]) || 0; // flip so row 0 is bottom
             var paletteRow = palette[n - 1 - i] || palette[0] || [];
-            var fill = paletteRow[j] || CT_COLORS.gray.bg;
+            var _hmVar = { "#dcfce7": "var(--ct-low-fill)", "#fef9c3": "var(--ct-medium-fill)", "#fed7aa": "var(--ct-high-fill)", "#fecaca": "var(--ct-critical-fill)", "#fca5a5": "var(--ct-critical-fill)", "#ef4444": "var(--ct-critical)" };
+            var fill = _hmVar[paletteRow[j]] || paletteRow[j] || "var(--ct-neutral-tint)";
             var x = j * cell + 8;
             var y = i * cell + 2;
-            out += '<rect x="' + x + '" y="' + y + '" width="' + (cell - 1) + '" height="' + (cell - 1) + '" rx="2" fill="' + fill + '" stroke="rgba(255,255,255,0.6)" stroke-width="1"/>';
+            out += '<rect x="' + x + '" y="' + y + '" width="' + (cell - 1) + '" height="' + (cell - 1) + '" rx="2" fill="' + fill + '" stroke="var(--ct-surface)" stroke-width="1"/>';
             if (v > 0) {
-                out += '<text x="' + (x + cell / 2) + '" y="' + (y + cell / 2 + 3) + '" text-anchor="middle" font-size="' + Math.max(9, cell * 0.38) + '" font-weight="700" fill="#0f172a">' + v + '</text>';
+                out += '<text x="' + (x + cell / 2) + '" y="' + (y + cell / 2 + 3) + '" text-anchor="middle" font-size="' + Math.max(9, cell * 0.38) + '" font-weight="700" fill="var(--ct-ink)">' + v + '</text>';
             }
         }
     }
@@ -368,28 +413,28 @@ function _svgTimeline(data, opts) {
         return '<div class="ct-empty">Aucun événement</div>';
     var w = opts.width || 320, h = 60;
     var statusColor = {
-        completed: CT_COLORS.green.vivid,
-        in_progress: CT_COLORS.blue.vivid,
-        planned: CT_COLORS.gray.vivid,
-        overdue: CT_COLORS.red.vivid,
-        cancelled: CT_COLORS.gray.vivid,
+        completed: _svgSeriesColor("green"),
+        in_progress: _svgSeriesColor("blue"),
+        planned: _svgSeriesColor("gray"),
+        overdue: _svgSeriesColor("red"),
+        cancelled: _svgSeriesColor("gray"),
     };
     // X axis: time between first and last event
     var first = new Date(events[0].date).getTime();
     var last = new Date(events[events.length - 1].date).getTime();
     var span = Math.max(1, last - first);
     var out = '<svg class="ct-svg-timeline" viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '">';
-    out += '<line x1="8" y1="30" x2="' + (w - 8) + '" y2="30" stroke="' + CT_COLORS.gray.bg + '" stroke-width="2"/>';
+    out += '<line x1="8" y1="30" x2="' + (w - 8) + '" y2="30" stroke="var(--ct-line-soft)" stroke-width="2"/>';
     events.forEach(function (e) {
         var t = new Date(e.date).getTime();
         var frac = span > 0 ? (t - first) / span : 0.5;
         var x = 8 + frac * (w - 16);
-        var color = statusColor[e.status] || CT_COLORS.gray.vivid;
-        out += '<circle cx="' + x.toFixed(1) + '" cy="30" r="5" fill="' + color + '" stroke="#fff" stroke-width="2"><title>' + _svgEsc(e.label + " — " + e.date) + '</title></circle>';
+        var color = statusColor[e.status] || _svgSeriesColor("gray");
+        out += '<circle cx="' + x.toFixed(1) + '" cy="30" r="5" fill="' + color + '" stroke="var(--ct-surface)" stroke-width="2"><title>' + _svgEsc(e.label + " — " + e.date) + '</title></circle>';
     });
     // Date ticks on edges
-    out += '<text x="8" y="50" font-size="10" fill="' + CT_COLORS.gray.vivid + '">' + _svgEsc((events[0].date || "").slice(0, 10)) + '</text>';
-    out += '<text x="' + (w - 8) + '" y="50" text-anchor="end" font-size="10" fill="' + CT_COLORS.gray.vivid + '">' + _svgEsc((events[events.length - 1].date || "").slice(0, 10)) + '</text>';
+    out += '<text x="8" y="50" font-size="10" fill="var(--ct-ink-2)">' + _svgEsc((events[0].date || "").slice(0, 10)) + '</text>';
+    out += '<text x="' + (w - 8) + '" y="50" text-anchor="end" font-size="10" fill="var(--ct-ink-2)">' + _svgEsc((events[events.length - 1].date || "").slice(0, 10)) + '</text>';
     out += '</svg>';
     return out;
 }
@@ -409,13 +454,15 @@ function _postureColor(value, max) {
 function _postureLabel(score) {
     if (score == null)
         return "";
+    // Translated via shared ct.posture.* keys (registered in ct_settings, loaded
+    // by every module) so the label follows the active language and re-renders.
     if (score < 40)
-        return "Faible";
+        return t("ct.posture.weak");
     if (score < 60)
-        return "Modéré";
+        return t("ct.posture.moderate");
     if (score < 80)
-        return "Bon";
-    return "Excellent";
+        return t("ct.posture.good");
+    return t("ct.posture.excellent");
 }
 // ── Dispatcher: render a breakdown by its type ───────────────────
 // Used by Pilot to turn the module stats.breakdown into SVG.
@@ -451,6 +498,7 @@ window._postureLabel = _postureLabel;
  * @param {string} panelId — the panel being selected
  */
 function _updateSidebarAccordion(panelId) {
+    // Legacy sidebar
     document.querySelectorAll(".sidebar-item").forEach(function (s) {
         s.classList.remove("active");
         var args = s.getAttribute("data-args");
@@ -465,6 +513,30 @@ function _updateSidebarAccordion(panelId) {
     document.querySelectorAll(".sidebar-group").forEach(function (g) {
         var panels = (g.getAttribute("data-panels") || "").split(",");
         g.classList.toggle("open", panels.indexOf(panelId) >= 0);
+    });
+    // UI v2 rail — aria-current on the active item; expand its group so it
+    // isn't hidden by the collapse rule.
+    document.querySelectorAll(".ct-rail-item").forEach(function (it) {
+        var args = it.getAttribute("data-args");
+        var match = false;
+        if (it.getAttribute("data-view") === panelId)
+            match = true;
+        else if (args) {
+            try {
+                if (JSON.parse(args)[0] === panelId)
+                    match = true;
+            }
+            catch (e) { }
+        }
+        if (match)
+            it.setAttribute("aria-current", "page");
+        else
+            it.removeAttribute("aria-current");
+    });
+    document.querySelectorAll(".ct-rail-section").forEach(function (sec) {
+        var grp = sec.querySelector(".ct-rail-group");
+        if (grp && sec.querySelector('.ct-rail-item[aria-current="page"]'))
+            grp.setAttribute("aria-expanded", "true");
     });
 }
 /**
@@ -495,11 +567,16 @@ function toggleGroup(el) {
 // ═══════════════════════════════════════════════════════════════════════
 // SLIDER — Shared slider with dynamic color (red→green)
 // ═══════════════════════════════════════════════════════════════════════
+// Gradient stops = the DS severity solids in their DARK values (#e8695f
+// #e08542 #d9a23c #4caf6d), used in BOTH themes: the vivid ramp reads better
+// than the muted light solids on a thin track. The "low" stop is doubled so
+// on a 0-4 scale, one step off the best score still reads green.
+function _sliderStops() {
+    return [[232, 105, 95], [224, 133, 66], [217, 162, 60], [76, 175, 109], [76, 175, 109]];
+}
 function _sliderColor(val, max) {
-    // Smooth gradient through Tailwind-like colors: red → orange → yellow → green
     var ratio = max > 0 ? val / max : 0;
-    // Stops: 0=#ef4444 (red-500), 0.33=#f97316 (orange-500), 0.66=#eab308 (yellow-500), 1=#22c55e (green-500)
-    var stops = [[239, 68, 68], [249, 115, 22], [234, 179, 8], [34, 197, 94]];
+    var stops = _sliderStops();
     var pos = ratio * (stops.length - 1);
     var i = Math.min(Math.floor(pos), stops.length - 2);
     var t2 = pos - i;
@@ -531,7 +608,9 @@ function _initSliders() {
 // DELEGATION D'EVENEMENTS (CSP : zero inline handlers)
 // ═══════════════════════════════════════════════════════════════════════
 function _toggleSidebarMobile() {
-    document.querySelector(".sidebar").classList.toggle("open");
+    var nav = document.querySelector(".ct-rail, .sidebar");
+    if (nav)
+        nav.classList.toggle("open");
 }
 function _menuAction(fnName) {
     if (_BLOCKED_DISPATCH[fnName])
@@ -542,7 +621,9 @@ function _menuAction(fnName) {
 }
 // ── Help overlay (shared across all modules) ────────────────────
 function toggleHelp(tab) {
-    document.querySelector(".sidebar").classList.remove("open");
+    var _nav = document.querySelector(".ct-rail, .sidebar");
+    if (_nav)
+        _nav.classList.remove("open");
     var overlay = document.getElementById("help-overlay");
     if (!overlay)
         return;
@@ -976,7 +1057,9 @@ function _getIsoDesc(ref) {
 // ═══════════════════════════════════════════════════════════════════════
 function _sliderInput(el) {
     var v = parseInt(el.value);
-    var c = v >= 80 ? "var(--green)" : v > 0 ? "var(--orange)" : "var(--red)";
+    // Même échelle que le rendu statique du socle : low / medium (= badge
+    // "Partiel") / critical — grade solid, adapté aux jauges.
+    var c = v >= 80 ? "var(--ct-low)" : v > 0 ? "var(--ct-medium)" : "var(--ct-critical)";
     var lbl = el.getAttribute("data-lbl");
     var l = lbl ? document.getElementById(lbl) : null;
     if (l) {
@@ -1012,7 +1095,9 @@ document.addEventListener("click", function (e) {
     }
 });
 function toggleSidebar() {
-    document.querySelector(".sidebar").classList.toggle("collapsed");
+    var nav = document.querySelector(".ct-rail, .sidebar");
+    if (nav)
+        nav.classList.toggle("collapsed");
 }
 // ═══════════════════════════════════════════════════════════════════════
 // UNDO / REDO
@@ -1285,24 +1370,27 @@ function ctRenderMatrix(opts) {
         var cy = MT + (NY - cy_val) * cellH + cellH / 2;
         var dotId = matrixId + "-" + cx_val + "-" + cy_val;
         var r = Math.min(14, 8 + items.length * 2);
-        svg += '<circle id="' + dotId + '" cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="rgba(37,99,235,0.8)" stroke="white" stroke-width="1.5" style="cursor:pointer"/>';
+        svg += '<circle id="' + dotId + '" cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="var(--ct-accent)" stroke="white" stroke-width="1.5" style="cursor:pointer"/>';
         svg += '<text x="' + cx + '" y="' + (cy + 4) + '" text-anchor="middle" fill="white" font-size="10" font-weight="700" style="pointer-events:none">' + items.length + '</text>';
         dots.push({ id: dotId, items: items });
     }
+    // Axis/tick labels: darker greys than the old #64748b/#94a3b8 for light-mode
+    // accessibility (ink-1/ink-2 light values, baked as hex so PNG exports keep
+    // working); dark mode re-themes them via module CSS attribute selectors.
     // X axis label (bottom center)
-    svg += '<text x="' + (ML + gridW / 2) + '" y="' + (H - 2) + '" text-anchor="middle" font-size="10" fill="#64748b">' + esc(xLabel) + '</text>';
+    svg += '<text x="' + (ML + gridW / 2) + '" y="' + (H - 2) + '" text-anchor="middle" font-size="10" fill="#3c4453">' + esc(xLabel) + '</text>';
     // Y axis label (left, rotated)
     var yCenter = MT + gridH / 2;
-    svg += '<text x="6" y="' + yCenter + '" text-anchor="middle" font-size="9" fill="#64748b" transform="rotate(-90,6,' + yCenter + ')">' + esc(yLabel) + '</text>';
+    svg += '<text x="6" y="' + yCenter + '" text-anchor="middle" font-size="9" fill="#3c4453" transform="rotate(-90,6,' + yCenter + ')">' + esc(yLabel) + '</text>';
     // Tick labels — X axis
     for (var nx = 1; nx <= NX; nx++) {
         var xLbl = xLabels ? (xLabels[nx - 1] || nx) : nx;
-        svg += '<text x="' + (ML + (nx - 1) * cellW + cellW / 2) + '" y="' + (MT + gridH + 14) + '" text-anchor="middle" font-size="9" fill="#94a3b8">' + esc(String(xLbl)) + '</text>';
+        svg += '<text x="' + (ML + (nx - 1) * cellW + cellW / 2) + '" y="' + (MT + gridH + 14) + '" text-anchor="middle" font-size="9" fill="#6b7488">' + esc(String(xLbl)) + '</text>';
     }
     // Tick labels — Y axis
     for (var ny = 1; ny <= NY; ny++) {
         var yLbl = yLabels ? (yLabels[ny - 1] || ny) : ny;
-        svg += '<text x="' + (ML - 5) + '" y="' + (MT + (NY - ny) * cellH + cellH / 2 + 3) + '" text-anchor="end" font-size="8" fill="#94a3b8">' + esc(String(yLbl)) + '</text>';
+        svg += '<text x="' + (ML - 5) + '" y="' + (MT + (NY - ny) * cellH + cellH / 2 + 3) + '" text-anchor="end" font-size="8" fill="#6b7488">' + esc(String(yLbl)) + '</text>';
     }
     svg += '</svg>';
     // Legend
@@ -1312,7 +1400,7 @@ function ctRenderMatrix(opts) {
     });
     svg += '</div>';
     // Tooltip div
-    svg += '<div id="' + matrixId + '-tip" style="display:none;position:fixed;background:white;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:400;max-width:300px;font-size:0.82em"></div>';
+    svg += '<div id="' + matrixId + '-tip" style="display:none;position:fixed;background:var(--ct-surface);color:var(--ct-ink);border:1px solid var(--ct-line);border-radius:8px;padding:8px 12px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:400;max-width:300px;font-size:0.82em"></div>';
     // Wire tooltips after render
     var tooltipFn = opts.tooltipFn || function (items) {
         return items.map(function (item) {
@@ -1340,6 +1428,226 @@ function ctRenderMatrix(opts) {
     }, 50);
     svg += '</div>'; // close centering wrapper
     return svg;
+}
+// ═══════════════════════════════════════════════════════════════════════
+// UI v2 CHROME (SPEC §9-§10) — appbar / rail / theme / icon hydration.
+// Edition branching lives only here + in ct_modules.ts (SPEC §0).
+// ═══════════════════════════════════════════════════════════════════════
+// Icon size by context (SPEC §5/§10): 16 in the appbar and row actions,
+// 14 in small buttons / rail groups / chips, 18 in empty states.
+function _ctIconSize(el) {
+    if (el.closest(".ct-empty"))
+        return 18;
+    if (el.closest(".ct-appbar") || el.closest(".ct-iconaction"))
+        return 16;
+    if (el.closest('[data-size="sm"]') || el.closest(".ct-rail-group") || el.closest(".ct-ref"))
+        return 14;
+    return 16;
+}
+/** Fill every empty [data-icon] element with its inline SVG. Idempotent —
+ *  safe to call after each render. Keeps 400-char SVGs out of templates. */
+function ct_hydrateIcons(root) {
+    var scope = root || document;
+    // querySelectorAll only matches descendants — include the scope element
+    // itself when it carries the icon (e.g. the theme-toggle button).
+    var nodes = Array.prototype.slice.call(scope.querySelectorAll("[data-icon]:not([data-icon-done])"));
+    if (scope instanceof HTMLElement && scope.matches("[data-icon]:not([data-icon-done])"))
+        nodes.unshift(scope);
+    nodes.forEach(function (el) {
+        var name = el.getAttribute("data-icon") || "";
+        if (!name)
+            return;
+        el.innerHTML = _icon(name, _ctIconSize(el));
+        el.setAttribute("data-icon-done", "1");
+    });
+}
+// ── Theme (light/dark) — persisted in ct_theme ──
+// Transitional default: LIGHT unless the user explicitly chose dark (ct_theme).
+// prefers-color-scheme auto-init is deferred until every module is dark-aware
+// — following the OS now would flip legacy (non-dark) app chrome to broken
+// inverted colours via the transition aliases.
+function ct_initTheme() {
+    var dark = localStorage.getItem("ct_theme") === "dark";
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+    _ctSyncThemeIcon();
+}
+function ct_toggleTheme() {
+    var dark = document.documentElement.dataset.theme !== "dark";
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+    localStorage.setItem("ct_theme", dark ? "dark" : "light");
+    _ctSyncThemeIcon();
+}
+function _ctSyncThemeIcon() {
+    var dark = document.documentElement.dataset.theme === "dark";
+    document.querySelectorAll('[data-click="ct_toggleTheme"]').forEach(function (btn) {
+        btn.setAttribute("data-icon", dark ? "sun" : "moon");
+        btn.removeAttribute("data-icon-done");
+        ct_hydrateIcons(btn);
+    });
+}
+// ── Language toggle (FR ⇄ EN) — reuses i18n switchLang ──
+function ct_toggleLang() {
+    var next = localStorage.getItem("ct_lang") === "en" ? "fr" : "en";
+    if (typeof switchLang === "function")
+        switchLang(next, window.renderAll);
+}
+// ── Navigation — the shell only routes; the app renders the view ──
+function ct_go(view) {
+    var hook = window.ctNavigate;
+    if (typeof hook === "function")
+        hook(view);
+    else if (view)
+        location.hash = view;
+    document.querySelectorAll('.ct-rail-item[aria-current="page"]').forEach(function (el) {
+        el.removeAttribute("aria-current");
+    });
+    var target = document.querySelector('.ct-rail-item[data-view="' + view + '"]');
+    if (target)
+        target.setAttribute("aria-current", "page");
+}
+function ct_toggleRailGroup(el) {
+    var open = el.getAttribute("aria-expanded") === "true";
+    el.setAttribute("aria-expanded", open ? "false" : "true");
+}
+// ── Module selector (suite: browse list; else: no-op — SPEC §0) ──
+function ct_toggleModuleMenu() {
+    if (CT_EDITION !== "suite")
+        return; // degraded: the picker is a static label
+    var picker = document.querySelector(".ct-modulepicker");
+    var menu = document.querySelector(".ct-modulemenu");
+    if (!picker)
+        return;
+    var expanded = picker.getAttribute("aria-expanded") === "true";
+    if (expanded) {
+        picker.setAttribute("aria-expanded", "false");
+        if (menu)
+            menu.remove();
+        return;
+    }
+    picker.setAttribute("aria-expanded", "true");
+    var appbar = document.querySelector(".ct-appbar");
+    if (!appbar)
+        return;
+    var box = document.createElement("div");
+    box.className = "ct-modulemenu";
+    var cur = _ctCurrentModuleId();
+    var items = ct_modules().map(function (m) {
+        var badge = m.alerts ? '<span class="ct-badge" data-tone="critical" data-size="sm">' + m.alerts + "</span>" : "";
+        return '<a class="ct-moduleitem" href="' + esc(m.url) + '"' + (m.id === cur ? ' aria-current="true"' : "") + '>'
+            + '<span class="ct-moduleitem-mark"><img src="' + esc(m.mark) + '" alt=""></span>'
+            + '<span><span class="ct-moduleitem-name">' + esc(m.name) + "</span></span>" + badge + "</a>";
+    }).join("");
+    box.innerHTML = '<div class="ct-modulemenu-list">' + items + "</div>";
+    appbar.appendChild(box);
+}
+/** Build the appbar markup for the current edition (SPEC §0/§10). Returns an
+ *  HTML string; the caller injects it and then calls ct_hydrateIcons(). */
+function ct_renderAppbar(opts) {
+    var o = opts || {};
+    var cur = ct_currentModule();
+    var name = cur ? cur.name : "";
+    var mark = cur ? cur.mark : "";
+    // Selector: clickable in suite, a static label otherwise (same box, §0).
+    var picker;
+    if (CT_EDITION === "suite") {
+        picker = '<button class="ct-modulepicker" data-click="ct_toggleModuleMenu" aria-expanded="false" aria-haspopup="true" aria-label="' + esc(t("chrome.switch_module")) + '">'
+            + '<img class="ct-modulemark" src="' + esc(mark) + '" alt="">'
+            + "<span>" + esc(name) + "</span>"
+            + '<span class="ct-icon-btn-slot" data-icon="chevron-down"></span></button>';
+    }
+    else {
+        picker = '<span class="ct-modulepicker" role="img" aria-label="' + esc(name) + '">'
+            + '<img class="ct-modulemark" src="' + esc(mark) + '" alt="">'
+            + "<span>" + esc(name) + "</span></span>";
+    }
+    var context = o.context ? '<span class="ct-appbar-sep"></span><nav class="ct-appbar-context" aria-label="Contexte"><span>' + esc(o.context) + "</span></nav>" : "";
+    var avatar = CT_EDITION === "opensource" ? "" : '<span class="ct-avatar" title="—">—</span>';
+    return picker + context
+        + '<span class="ct-spacer"></span>'
+        + '<span class="ct-appbar-saved" data-role="saved-at">' + esc(o.savedAt || "") + "</span>"
+        + '<div class="ct-appbar-actions">'
+        + '<button class="ct-iconaction" data-click="ct_toggleLang" data-icon="globe" aria-label="' + esc(t("chrome.lang")) + '"></button>'
+        + '<button class="ct-iconaction" data-click="ct_toggleTheme" data-icon="moon" aria-label="' + esc(t("chrome.theme_dark")) + '"></button>'
+        + '<button class="ct-iconaction" data-click="ct_openSettings" data-icon="settings" aria-label="' + esc(t("chrome.settings")) + '"></button>'
+        + avatar + "</div>";
+}
+/** Build the rail markup from a per-module spec (SPEC §10). */
+function ct_renderRail(spec) {
+    var html = '<div class="ct-rail-scroll">';
+    (spec.sections || []).forEach(function (sec) {
+        var itemsHtml = sec.items.map(function (it) {
+            var count = (it.count != null) ? '<span class="ct-rail-count">' + it.count + "</span>" : "";
+            return '<button class="ct-rail-item"' + (it.current ? ' aria-current="page"' : "")
+                + ' data-click="ct_go" data-view="' + esc(it.view) + '">'
+                + '<span class="ct-rail-item-label">' + esc(it.label) + "</span>" + count + "</button>";
+        }).join("");
+        if (sec.group) {
+            html += '<div class="ct-rail-section"><button class="ct-rail-group" aria-expanded="' + (sec.expanded === false ? "false" : "true") + '" data-click="ct_toggleRailGroup" data-pass-el>'
+                + '<span class="ct-icon-btn-slot" data-icon="chevron-right"></span><span>' + esc(sec.group) + "</span></button>"
+                + itemsHtml + "</div>";
+        }
+        else {
+            html += itemsHtml;
+        }
+    });
+    html += "</div>";
+    if (spec.foot)
+        html += '<div class="ct-rail-foot">' + spec.foot + "</div>";
+    return html;
+}
+var _w = window;
+_w.ct_hydrateIcons = ct_hydrateIcons;
+_w.ct_initTheme = ct_initTheme;
+_w.ct_toggleTheme = ct_toggleTheme;
+_w.ct_toggleLang = ct_toggleLang;
+_w.ct_go = ct_go;
+_w.ct_toggleRailGroup = ct_toggleRailGroup;
+_w.ct_toggleModuleMenu = ct_toggleModuleMenu;
+_w.ct_renderAppbar = ct_renderAppbar;
+_w.ct_renderRail = ct_renderRail;
+_w.ct_initTheme = ct_initTheme;
+// Upgrade the static .ct-modulepicker into the coloured mark + name (all
+// editions) and, in the suite, the clickable module switcher. No-op when the
+// app has no CT_CONFIG.module (opensource default keeps its static label).
+function ct_initModulePicker() {
+    var picker = document.querySelector(".ct-modulepicker");
+    if (!picker)
+        return;
+    var cmFn = _w.ct_currentModule;
+    if (typeof cmFn !== "function")
+        return; // ct_modules.js not loaded — keep static label
+    var cur = cmFn();
+    if (!cur)
+        return;
+    var suite = _w.CT_EDITION === "suite";
+    picker.innerHTML = '<img class="ct-modulemark" src="' + esc(cur.mark) + '" alt="">'
+        + '<span class="ct-modulepicker-name">' + esc(cur.name) + "</span>"
+        + (suite ? '<span class="ct-icon-btn-slot" data-icon="chevron-down"></span>' : "");
+    if (suite) {
+        picker.setAttribute("data-click", "ct_toggleModuleMenu");
+        picker.setAttribute("aria-haspopup", "true");
+        picker.setAttribute("aria-expanded", "false");
+        picker.style.cursor = "pointer";
+    }
+    ct_hydrateIcons(picker);
+}
+_w.ct_initModulePicker = ct_initModulePicker;
+// Auto-init the shared chrome once the DOM is ready: apply the persisted theme,
+// fill any static [data-icon] placeholders, and wire the module picker.
+function _ctChromeBoot() {
+    if (typeof (_w._ctSyncEdition) === "function")
+        _w._ctSyncEdition();
+    ct_initTheme();
+    ct_hydrateIcons();
+    ct_initModulePicker();
+}
+if (typeof document !== "undefined") {
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", _ctChromeBoot);
+    }
+    else {
+        _ctChromeBoot();
+    }
 }
 // Persistence layer loaded separately:
 // - cisotoolbox_local.js  (localStorage autosave, file I/O, snapshots — for standalone frontend apps)

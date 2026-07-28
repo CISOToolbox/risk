@@ -1,40 +1,27 @@
 /* ── EBIOS RM — App-specific styles ────────────────────────────── */
 
-/* ── Analysis Catalog ─────────────────────────────────────────── */
-.catalog-btn-new { background: none; border: none; color: rgba(255,255,255,0.4); cursor: pointer; font-size: 1.1em; padding: 0 4px; line-height: 1; transition: color 0.15s; position: relative; }
-.catalog-btn-new:hover { color: white; }
-.catalog-btn-new:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; right: 0; background: #1e293b; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; white-space: nowrap; pointer-events: none; z-index: 100; border: 1px solid rgba(255,255,255,0.15); }
-.catalog-actions-bar { display: flex; gap: 4px; padding: 4px 14px 6px; }
-.catalog-action { background: rgba(255,255,255,0.08); border: none; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 0.72em; padding: 3px 8px; border-radius: 4px; transition: all 0.15s; }
-.catalog-action:hover { background: rgba(255,255,255,0.15); color: white; }
-.catalog-search { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.8); font-size: 0.72em; padding: 3px 8px; border-radius: 4px; width: 100%; transition: border-color 0.2s; }
-.catalog-search:focus { outline: none; border-color: var(--light-blue); }
-.catalog-card { padding: 6px 14px; cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; }
-.catalog-card:hover { background: rgba(255,255,255,0.05); }
-.catalog-card.catalog-active { border-left-color: var(--light-blue); background: rgba(59,130,246,0.15); }
-.catalog-card-name { font-size: 0.82em; font-weight: 600; color: rgba(255,255,255,0.85); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.catalog-card-meta { font-size: 0.7em; color: rgba(255,255,255,0.4); display: flex; gap: 8px; margin-top: 1px; }
+/* ── Analysis Catalog — rendu dans .ct-rail-foot (rail clair) ──── */
+.catalog-actions-bar { display: flex; gap: 4px; padding: 4px 4px 6px; }
+.catalog-search { background: var(--ct-surface); border: 1px solid var(--ct-line); color: var(--ct-text-body); font-size: 0.72em; padding: 3px 8px; border-radius: var(--ct-r-sm); width: 100%; transition: border-color 0.2s; }
+.catalog-search:focus { outline: none; border-color: var(--ct-accent); }
+.catalog-card { padding: 6px 8px; cursor: pointer; border-left: 3px solid transparent; border-radius: var(--ct-r-sm); transition: background 0.15s, border-color 0.15s; }
+.catalog-card:hover { background: var(--ct-neutral-tint); }
+.catalog-card.catalog-active { border-left-color: var(--ct-accent); background: var(--ct-neutral-tint); }
+.catalog-card-name { font-size: 0.82em; font-weight: 600; color: var(--ct-text-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.catalog-card-meta { font-size: 0.7em; color: var(--ct-text-meta); display: flex; gap: 8px; margin-top: 1px; }
 .catalog-card-actions { display: none; gap: 2px; margin-top: 2px; }
 .catalog-card:hover .catalog-card-actions { display: flex; }
-.catalog-btn-sm { background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; font-size: 0.8em; padding: 1px 4px; transition: color 0.15s; position: relative; }
-.catalog-btn-sm:hover { color: white; }
-.catalog-btn-sm:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.85em; white-space: nowrap; pointer-events: none; z-index: 100; border: 1px solid rgba(255,255,255,0.15); }
-.catalog-btn-del:hover { color: var(--red); }
-.catalog-action { background: rgba(255,255,255,0.08); border: none; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 0.72em; padding: 3px 8px; border-radius: 4px; transition: all 0.15s; position: relative; }
-.catalog-action:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.95em; white-space: nowrap; pointer-events: none; z-index: 100; border: 1px solid rgba(255,255,255,0.15); }
-.catalog-empty { padding: 8px 14px; font-size: 0.78em; color: rgba(255,255,255,0.3); font-style: italic; }
-.catalog-more { padding: 4px 14px; font-size: 0.72em; color: rgba(255,255,255,0.3); }
-
-.btn-save { background: var(--green); color: white; }
-.btn-load { background: var(--light-blue); color: white; }
-.btn-sidebar-toggle { display: none; }
-.btn-sidebar-toggle:hover { opacity: 1; }
+.catalog-btn-sm { background: none; border: none; color: var(--ct-text-meta); cursor: pointer; font-size: 0.8em; padding: 1px 4px; transition: color 0.15s; position: relative; }
+.catalog-btn-sm:hover { color: var(--ct-ink); }
+.catalog-btn-sm:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.85em; white-space: nowrap; pointer-events: none; z-index: 100; }
+.catalog-btn-del:hover { color: var(--ct-critical); }
+.catalog-empty { padding: 8px; font-size: 0.78em; color: var(--ct-text-meta); font-style: italic; }
 
 .dict-toggles { display: flex; gap: 3px; }
 .dict-btn {
     width: 22px; height: 22px; border: 1.5px solid var(--border); border-radius: 3px;
     cursor: pointer; font-weight: 700; font-size: 0.7em; text-align: center;
-    line-height: 19px; background: white; color: var(--text-muted); transition: all 0.15s;
+    line-height: 19px; background: var(--ct-surface); color: var(--text-muted); transition: all 0.15s;
 }
 .dict-btn.active { background: var(--light-blue); color: white; border-color: var(--blue); }
 .dict-btn:hover { border-color: var(--light-blue); }
@@ -42,13 +29,6 @@
 .col-actions { width: 35px !important; min-width: 35px; max-width: 35px; }
 .eff-badge { cursor: pointer; }
 .eff-badge:hover { opacity: 0.8; }
-
-.btn-help {
-    background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.4);
-    width: 26px; height: 26px; border-radius: 50%; cursor: pointer;
-    font-weight: 700; font-size: 0.9em; margin-left: auto;
-}
-.btn-help:hover { background: rgba(255,255,255,0.3); }
 
 section {
     background: var(--card-bg); border: 1px solid var(--border);
@@ -59,10 +39,6 @@ section h2 {
     padding-bottom: 8px; border-bottom: 2px solid var(--light-blue);
     display: flex; align-items: center; gap: 8px;
 }
-.section-badge {
-    background: var(--light-blue); color: white; padding: 2px 8px;
-    border-radius: 10px; font-size: 0.7em;
-}
 
 input[type="text"], input[type="number"], textarea {
     width: 100%; padding: 4px 6px; border: 1px solid var(--border);
@@ -72,10 +48,12 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--l
 textarea { resize: vertical; min-height: 60px; }
 select { padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.9em; }
 
-.computed { background: var(--bg-highlight) !important; font-weight: 600; text-align: center; }
+/* Auto-calculated (read-only) cells: same surface as table headers, so they
+   read as "not editable" rather than accent/selection. */
+.computed { background: var(--ct-surface-2) !important; font-weight: 600; text-align: center; }
 .refs-bar { margin-top: 24px; padding-top: 16px; border-top: 2px solid var(--border); }
 .refs-bar-title { font-size: 0.8em; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
-.ref-chip.inactive { background: white; opacity: 0.65; }
+.ref-chip.inactive { background: var(--ct-surface); opacity: 0.65; }
 .ref-chip.active { color: white !important; opacity: 1; }
 .ref-chip:hover { opacity: 1; transform: translateY(-1px); }
 .ref-section { margin-top: 18px; border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; }
@@ -90,67 +68,47 @@ select { padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; 
 
 .indicators { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .indicator { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px; text-align: center; flex: 1; min-width: 80px; }
-.indicator .number { font-size: 1.4em; font-weight: 700; color: var(--light-blue); }
+.indicator .number { font-family: var(--ct-font-mono); font-variant-numeric: tabular-nums; font-size: 1.4em; font-weight: 500; color: var(--ct-ink); }
 .indicator .desc { font-size: 0.7em; color: var(--text-muted); }
-
-.risk-matrix { width: auto; margin: 0 auto; }
-.risk-matrix td { text-align: center; width: 90px; padding: 8px; font-weight: 600; color: white; font-size: 0.8em; }
 
 .meta { gap: 12px; margin: 16px 0; }
 .meta-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; flex: 1; min-width: 200px; }
 .meta-item .label { font-size: 0.75em; color: var(--text-muted); text-transform: uppercase; }
 .meta-item .value { margin-top: 2px; }
 
-/* ancien systeme de toggles supprime — remplace par col-hide/col-resize */
-
 footer { display: none; text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.8em; }
 @media print { footer { display: block; } }
 
 .synth-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-.synth-card { background: var(--bg); }
 .synth-card h3 { font-size: 0.9em; color: var(--blue); margin-bottom: 8px; }
 .risk-dist { display: flex; gap: 8px; margin-top: 8px; }
 .risk-bar { flex: 1; text-align: center; padding: 8px 6px; border-radius: 6px; color: white; font-weight: 600; }
 .risk-bar .count { font-size: 1.4em; }
 .risk-bar .label { font-size: 0.75em; opacity: 0.9; }
-.evolution-row { display: flex; align-items: center; gap: 8px; }
-.evolution-arrow { font-size: 1.2em; }
 
 @media (max-width: 1024px) {
-    .sidebar { width: 160px; min-width: 160px; }
-    .sidebar-item { font-size: 0.8em; padding: 7px 10px; }
-    .sidebar-section { font-size: 0.6em; padding: 4px 10px; }
-    .container { padding: 12px; }
     .synth-grid { grid-template-columns: 1fr; }
     table { font-size: 0.8em; }
     th, td { padding: 4px 6px; }
 }
 @media (max-width: 768px) {
-    .sidebar { width: 100%; min-width: 100%; }
-    .app-layout { position: fixed; top: 40px; left: 0; right: 0; bottom: 0; }
-    .main-content { flex: 1; overflow-y: auto; }
     .synth-grid { grid-template-columns: 1fr; }
     .meta-item { min-width: 100%; }
     table { font-size: 0.75em; }
     th, td { padding: 3px 4px; }
-    .col-toggles { gap: 4px; }
-    .col-toggle { font-size: 0.7em; padding: 2px 6px; }
+
     .ref-tags { font-size: 0.75em; }
     .panel-desc { font-size: 0.8em; padding: 8px 10px; }
 }
 @media (max-width: 480px) {
-    .sidebar-item { min-width: 80px; font-size: 0.7em; }
     table { font-size: 0.7em; }
-    .toolbar button { font-size: 0.7em; padding: 4px 8px; }
     .btn-add { font-size: 0.75em; padding: 4px 10px; }
 }
 
 /* ── Additional utility classes (EBIOS-specific) ──────────────── */
 .va-t { vertical-align: top; }
 .ta-c-va-t { text-align: center; vertical-align: top; }
-.fw-700 { font-weight: 700; }
-.fs-2xs { font-size: 0.75em; }
-.fs-3xs { font-size: 0.7em; }
+
 .w-40 { width: 40px; }
 .w-50 { width: 50px; }
 .w-55 { width: 55px; }
@@ -172,32 +130,66 @@ footer { display: none; text-align: center; padding: 20px; color: var(--text-mut
 .maxw-500 { max-width: 500px; }
 .minw-1000 { min-width: 1000px; }
 .mt-3 { margin-top: 3px; }
-.mt-4 { margin-top: 4px; }
-.mt-16 { margin-top: 16px; }
+
 .mb-20 { margin-bottom: 20px; }
-.mx-4 { margin: 0 4px 0 0; }
+
 .m-0 { margin: 0; }
-.p-2 { padding: 2px; }
+
 .text-green { color: var(--green); }
 .text-red { color: var(--red); }
-.text-blue { color: var(--blue); }
+
 .heading-blue { color: var(--blue); margin-bottom: 4px; }
-.sidebar-divider { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; }
-.btn-group-sm { display: flex; gap: 6px; padding: 6px 14px 8px; }
+
 .btn-group-end { display: flex; gap: 8px; justify-content: flex-end; }
 .flex-row { display: flex; gap: 8px; }
 .flex-row-center { display: flex; gap: 8px; align-items: center; }
-.flex-wrap-gap { display: flex; flex-wrap: wrap; gap: 8px; }
+
 .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
-.lh-28 { display: inline-block; width: 28px; height: 28px; border-radius: 50%; color: white; text-align: center; line-height: 28px; font-weight: 700; }
+
 .table-fixed { table-layout: fixed; }
 .label-bold-sm { font-size: 0.9em; font-weight: 600; }
 .cursor-pointer { cursor: pointer; }
-.snap-btn-red { background: var(--red); }
-.snap-btn-blue { background: var(--light-blue); }
+
 .overflow-x-auto { overflow-x: auto; }
 .desc-text-size { font-size: 0.82em; }
 .ta-l { text-align: left; }
 .py-4 { padding: 4px 0; }
 .text-black { color: black; }
-.bg-white { background: white; }
+.bg-white { background: var(--ct-surface); }
+
+/* ── Dark mode — re-thémage des couleurs legacy inline ─────────────
+   Les badges legacy (ctBadge / CT_COLORS) portent des hex pastel light
+   en style inline ; l'attribut data-tone (posé par EBIOS_RM_app.ts)
+   permet de les surcharger ici avec les paires -tint/-ink du design
+   system. Rendu light strictement inchangé (scopé data-theme=dark). */
+:root[data-theme="dark"] .badge[data-tone="critical"] { background: var(--ct-critical-tint) !important; color: var(--ct-critical-ink) !important; }
+:root[data-theme="dark"] .badge[data-tone="high"]     { background: var(--ct-high-tint) !important;     color: var(--ct-high-ink) !important; }
+:root[data-theme="dark"] .badge[data-tone="medium"]   { background: var(--ct-medium-tint) !important;   color: var(--ct-medium-ink) !important; }
+:root[data-theme="dark"] .badge[data-tone="low"]      { background: var(--ct-low-tint) !important;      color: var(--ct-low-ink) !important; }
+:root[data-theme="dark"] .badge[data-tone="info"]     { background: var(--ct-info-tint) !important;     color: var(--ct-info-ink) !important; }
+:root[data-theme="dark"] .badge[data-tone="neutral"]  { background: var(--ct-neutral-tint) !important;  color: var(--ct-neutral-ink) !important; }
+
+/* Boutons "+ Nouvelle SR" / "+ Nouvel OV" / "+ Phase" */
+:root[data-theme="dark"] .btn-phase { background: var(--ct-high-tint); color: var(--ct-high-ink); }
+
+/* Chips référentiels complémentaires (fond inline "white" en light) */
+:root[data-theme="dark"] .ref-chip.inactive { background: var(--ct-surface-2) !important; opacity: 0.9; }
+
+/* Matrices du dashboard (ctRenderMatrix) : traits blancs entre cellules et
+   points bleus à halo blanc codés en attributs SVG — surchargés en dark.
+   Les exports rapport extraient le <svg> hors DOM : non affectés. */
+:root[data-theme="dark"] #synth-matrix-initial svg rect[stroke="white"],
+:root[data-theme="dark"] #synth-matrix-residual svg rect[stroke="white"] { stroke: var(--ct-surface); }
+:root[data-theme="dark"] #synth-matrix-initial svg circle[stroke="white"],
+:root[data-theme="dark"] #synth-matrix-residual svg circle[stroke="white"] { fill: var(--ct-accent); stroke: var(--ct-surface); }
+:root[data-theme="dark"] #synth-matrix-initial svg text[fill="#3c4453"],
+:root[data-theme="dark"] #synth-matrix-residual svg text[fill="#3c4453"] { fill: var(--ct-ink-1); }
+:root[data-theme="dark"] #synth-matrix-initial svg text[fill="#6b7488"],
+:root[data-theme="dark"] #synth-matrix-residual svg text[fill="#6b7488"] { fill: var(--ct-ink-2); }
+:root[data-theme="dark"] #synth-matrix-initial span[style*="#e5e7eb"],
+:root[data-theme="dark"] #synth-matrix-residual span[style*="#e5e7eb"] { border-color: var(--ct-line) !important; }
+
+/* Ton "extrême" (niveau max de l'échelle de gravité) : un cran au-dessus de
+   critical-tint sans sauter au critical plein — suit le thème via ses deux
+   composantes (même approche que --tprm-extreme côté vendor). */
+:root { --ebios-extreme: var(--ct-critical-fill); }
