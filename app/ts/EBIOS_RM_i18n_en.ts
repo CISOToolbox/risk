@@ -1,0 +1,552 @@
+// EBIOS RM — English translations
+_registerTranslations("en", {
+
+    // ── Label app ──
+    "ebios.label": "analysis",
+
+    // ── Navigation (sidebar) ──
+    "ebios.sidebar.synth": "Overview",
+    "ebios.sidebar.a1": "Workshop 1 - Scoping",
+    "ebios.sidebar.a2": "Workshop 2 - Risk origins",
+    "ebios.sidebar.a3": "Workshop 3 - Strategic scenarios",
+    "ebios.sidebar.a4": "Workshop 4 - Operational scenarios",
+    "ebios.sidebar.a5": "Workshop 5 - Treatment",
+    "ebios.sidebar.context": "Context",
+    "ebios.sidebar.vm": "Business values",
+    "ebios.sidebar.bs": "Supporting assets",
+    "ebios.sidebar.er": "Feared events",
+    "ebios.sidebar.socle": "Security baseline",
+    "ebios.sidebar.srov": "Risk origins",
+    "ebios.sidebar.pp": "Stakeholders",
+    "ebios.sidebar.ss": "Strategic scenarios",
+    "ebios.sidebar.eco": "Ecosystem",
+    "ebios.sidebar.sop": "Operational scenarios",
+    "ebios.sidebar.sop_synth": "Risk overview",
+    "ebios.sidebar.measures": "Measures",
+    "ebios.sidebar.residuals": "Residual risks",
+    "ebios.sidebar.section_aide": "Help",
+    "ebios.sidebar.methodo": "Methodology",
+    "ebios.sidebar.usage": "User guide",
+
+    // ── Catalog ──
+    "catalog.section": "Analyses",
+    "catalog.import": "Import",
+    "catalog.export": "Export",
+    "catalog.duplicate": "Duplicate",
+    "catalog.rename": "Rename",
+    "catalog.delete": "Delete",
+    "catalog.copy": "copy",
+    "catalog.unnamed": "Unnamed",
+    "catalog.empty": "No analyses",
+    "catalog.rename_prompt": "New name:",
+    "catalog.delete_confirm": "Delete this analysis?",
+    "catalog.duplicated": "Analysis duplicated",
+    "catalog.imported": "Analysis imported",
+    "catalog.import_error": "Import error",
+    "catalog.export_all": "Export all analyses",
+    "catalog.exported_all": "All analyses exported",
+    "catalog.imported_multi": "analyses imported",
+    "catalog.search": "Search...",
+    "catalog.no_results": "No results",
+    "catalog.save_all_prompt": "Export all analyses?\n\nOK = All analyses\nCancel = Current analysis only",
+
+    // ── NAV subtabs ──
+
+    // ── Toolbar menu ──
+    "ebios.menu.file": "File",
+    "ebios.menu.open": "Open",
+    "ebios.menu.save": "Save",
+    "ebios.menu.save_as": "Save as",
+    "ebios.menu.import_excel": "Import Excel",
+    "ebios.menu.export_excel": "Export Excel",
+    "ebios.menu.export_synth_pptx": "Executive synthesis (PPTX)",
+    "ebios.menu.export_report_word": "Export report (Word)",
+    "ebios.status.loading_docx": "Loading Word engine…",
+    "ebios.status.generating_docx": "Generating Word report…",
+    "ebios.status.docx_downloaded": "Word report downloaded",
+    "ebios.report.ask_redacteur": "Report author name:",
+    "ebios.report.taux_phrase": "Weakness rate: {pct} % — operational likelihood: {vop}/4.",
+    "ebios.report.couple_one": "to the risk origin / target objective pair “{c}”",
+    "ebios.report.couple_many": "to the risk origin / target objective pairs “{list}”",
+    "ebios.report.couple_none": "to the retained risk origin / target objective pairs",
+    "ebios.report.ss_intro_pre": "This strategic scenario — “{scenario}” — is associated {couples}.",
+    "ebios.report.ss_intro_post": "Given the assessment of the operational scenarios detailed in the following sections, the likelihood is estimated at {vmax}/4.",
+    "ebios.alert.docx_load_error": "Could not load the Word engine",
+    "ebios.alert.docx_export_error": "Word export error: {msg}",
+    "ebios.status.loading_pptx": "Loading PPTX engine…",
+    "ebios.status.generating_pptx": "Generating PPTX…",
+    "ebios.status.pptx_downloaded": "PPTX synthesis downloaded",
+    "ebios.alert.pptx_load_error": "Could not load the PPTX engine",
+    "ebios.alert.pptx_export_error": "PPTX export error: {msg}",
+    "ebios.synth.export_title": "Executive risk synthesis",
+    "ebios.synth.export_subtitle": "EBIOS RM analysis",
+    "ebios.synth.exec_summary": "Executive summary",
+    "ebios.synth.socle_avg": "Baseline compliance",
+    "ebios.synth.socle_title": "Security baseline compliance",
+    "ebios.synth.map_initial": "Initial risk map",
+    "ebios.synth.map_residual": "Residual risk map",
+    "ebios.synth.risks_title": "Risks",
+    "ebios.synth.measures_title": "Treatment plan",
+    "ebios.synth.top_risks": "Top risks to address",
+    "ebios.synth.acceptance_title": "Residual risk acceptance",
+    "ebios.synth.acceptance_text": "After the treatment plan is implemented, the residual risk map shows {eleve} high risk(s), {moyen} medium and {faible} low. Management is invited to formally decide on the acceptance of these residual risks.",
+    "ebios.synth.val_date": "Date:",
+    "ebios.synth.val_sign": "Name / signature:",
+    "ebios.synth.intro_synthese": "This EBIOS Risk Manager analysis identifies and prioritises the risks affecting the scope under study. The figures below compare risks before and after implementing the proposed treatment plan.",
+    "ebios.synth.dist_initial": "Initial risks — before implementing the proposed treatment plan",
+    "ebios.synth.dist_residual": "Residual risks — after implementing the proposed treatment plan",
+    "ebios.synth.intro_carto_init": "Positioning of risks before treatment, by severity and likelihood.",
+    "ebios.synth.intro_carto_resid": "Positioning of risks after the treatment measures are applied: risks move towards lower levels.",
+    "ebios.synth.reading_matrix": "How to read the matrix:\n\n• Vertical axis: severity\n• Horizontal axis: likelihood\n• Cell colour: risk level (green = low, orange = medium, red = high)\n\nRisks in the top-right are the most critical and the first to address.",
+    "ebios.synth.intro_top_risks": "The risks below remain high or medium after treatment: they require management's attention. The initial-risk and residual-risk columns show the reduction achieved through the measures.",
+    "ebios.synth.intro_pacs": "The security continuous-improvement plan (PACS) lists the measures still to be implemented to reduce risks, with their origin, owner and due date.",
+    "ebios.synth.acceptance_note": "Residual risk can never be fully eliminated. Management must knowingly decide to accept these risks or launch additional measures; this decision is its responsibility.",
+    "ebios.synth.scope_title": "Scope and security baseline",
+    "ebios.synth.scope_perimeter": "Scope of the study:",
+    "ebios.synth.scope_referentiel": "Baseline assessment framework:",
+    "ebios.synth.scope_coverage": "Security baseline coverage:",
+    "ebios.synth.scope_measures": "{n} measure(s) have been added to the treatment plan to cover the baseline requirements.",
+    "ebios.synth.socle_anssi": "ANSSI cyber-hygiene measures (42 measures)",
+    "ebios.synth.socle_iso": "ISO/IEC 27001 standard",
+    "ebios.synth.evolution_title": "Risk evolution",
+    "ebios.menu.new_analysis": "New analysis",
+
+    // ── Panel descriptions ──
+    "ebios.desc.synth": "Consolidated analysis view: key indicators, risk maps, evolution and baseline compliance.",
+    "ebios.desc.context": "General information about the organization, study scope and regulatory framework.",
+    "ebios.desc.vm": "Essential business assets of the organization: critical processes or information. Specify the nature (Information or Process) and the owner.",
+    "ebios.desc.bs": "Information system components supporting business assets: applications, servers, networks, data.",
+    "ebios.desc.pp": "External actors (suppliers, service providers, partners). Assess their threat level via 4 criteria: Dependency, Penetration, Cyber maturity, Trust.",
+    "ebios.desc.socle": "Compliance assessment of the security baseline (ANSSI 42 controls or ISO 27001 93 controls). Enter compliance percentage and identified gaps.",
+    "ebios.desc.srov": "Identification of risk origins (threat actors) and their objectives. Each RO/TO pair is assessed on 3 criteria (Motivation, Resources, Activity) to determine relevance.",
+    "ebios.desc.er": "Business impact feared events for each business asset. Severity determines the importance of the event on a scale of 1 to {max}.",
+    "ebios.desc.ss": "Strategic attack paths: WHO (RO) attacks WHY (TO), THROUGH WHOM (stakeholder), targeting WHAT (asset), causing WHICH event (FE). Severity is computed automatically (MAX of FE).",
+    "ebios.desc.eco": "Security controls applied to ecosystem stakeholders to reduce their threat level. Controls are referenced in registry 5a.",
+    "ebios.desc.sop": "Attack phase detail (kill chain) for each operational scenario. For each phase, identify existing measures, effectiveness, and propose treatment measures.",
+    "ebios.desc.sop_synth": "Initial risk summary: for each strategic scenario, severity (from FE) crossed with operational likelihood (from SOP) gives the initial risk level.",
+    "ebios.desc.measures": "Complete security controls registry: baseline measures (applied and missing), ecosystem measures, SOP measures and additional measures. Each control is traced to its origin.",
+    "ebios.desc.residuals": "Residual risk assessment after applying measures. For each strategic scenario, define residual likelihood and treatment decision.",
+
+    // ── Footer ──
+    "ebios.footer": "Interactive EBIOS RM report — Editable data, JSON save",
+
+    // ── Synthesis cards ──
+    "ebios.synth.initial_map": "Initial risk map",
+    "ebios.synth.residual_map": "Residual risk map",
+    "ebios.synth.socle_compliance": "Baseline compliance",
+    "ebios.synth.risk_dist": "Residual risk distribution",
+    "ebios.synth.risk_evolution": "Risk evolution",
+    "ebios.synth.measures_todo": "Security measures to implement",
+
+    // ── Buttons ──
+    "ebios.btn.add_vm": "+ Add business asset",
+    "ebios.btn.add_bs": "+ Add supporting asset",
+    "ebios.btn.add_pp": "+ Add stakeholder",
+    "ebios.btn.import_vendor": "Import from Vendor",
+    "ebios.import_vendor.no_vendors": "No vendors found in the file.",
+    "ebios.import_vendor.success": "{added} stakeholder(s) imported, {measures} measure(s), {skipped} skipped.",
+    "ebios.import_vendor.error": "Import error: {msg}",
+    "ebios.btn.add_er": "+ Add feared event",
+    "ebios.btn.add_srov": "+ Add RO/TO pair",
+    "ebios.btn.add_ss": "+ Add strategic scenario",
+    "ebios.btn.add_eco": "+ Add ecosystem measure",
+    "ebios.btn.add_sop": "+ New SOP",
+    "ebios.btn.add_measure": "+ Add security measure",
+    "ebios.btn.add_phase": "+ Phase",
+    "ebios.btn.new_measure": "+ New security measure",
+    "ebios.btn.new_sr": "+ New RS",
+    "ebios.btn.new_ov": "+ New TO",
+    "ebios.btn.new_socle_measure": "+ New security measure",
+
+    // ── Help tabs ──
+    "ebios.help.tab_methodo": "EBIOS RM Methodology",
+    "ebios.help.tab_usage": "Application User Guide",
+
+    // ── Confirm dialog ──
+    "ebios.confirm.delete_sop": "Delete all of {sop} and its phases?",
+    "ebios.confirm.duplicate_srov": "Pair {sr}/{ov} already exists. Change cancelled.",
+
+    // ── Column headers: Context ──
+    "ebios.col.societe": "Company / Organization",
+    "ebios.col.objet_etude": "Studied object",
+    "ebios.col.date": "Analysis date",
+    "ebios.col.analyste": "Performed by",
+    "ebios.col.date_precedente": "Previous analysis date",
+    "ebios.col.reglementation": "Applicable regulations",
+    "ebios.col.ref_socle_securite": "Security baseline framework",
+    "ebios.col.commentaires": "Comments / context",
+    "ebios.col.evolutions": "Changes since last analysis",
+    "ebios.col.anssi_label": "ANSSI — Hygiene Guide (42 controls)",
+    "ebios.col.iso_label": "ISO 27001 — Annex A (93 controls)",
+
+    // ── Gravity ──
+    "ebios.gravity.heading": "Severity scale",
+    "ebios.gravity.nb_levels": "Number of levels:",
+    "ebios.gravity.col_niveau": "Lvl.",
+    "ebios.gravity.col_label": "Label",
+    "ebios.gravity.col_description": "Description",
+    "ebios.gravity.col_impact_financier": "Financial impact",
+    "ebios.gravity.col_impact_reputation": "Reputation impact",
+    "ebios.gravity.col_impact_reglementaire": "Regulatory impact",
+    "ebios.gravity.col_impact_donnees_perso": "Personal data impact",
+    "ebios.gravity.col_impact_operationnel": "Operational impact",
+
+    // ── Risk matrix ──
+    "ebios.matrix.heading": "Risk matrix (Severity x Likelihood)",
+    "ebios.matrix.hint": "Click a level to change it. Changes propagate to the entire analysis.",
+
+    // ── Risk levels ──
+    "ebios.risk.eleve": "High",
+    "ebios.risk.moyen": "Medium",
+    "ebios.risk.faible": "Low",
+
+    // ── Exposure levels ──
+    "ebios.expo.critique": "Critical",
+    "ebios.expo.elevee": "High",
+    "ebios.expo.moderee": "Moderate",
+    "ebios.expo.faible": "Low",
+
+    // ── Socle status ──
+    "ebios.socle.applique": "Applied",
+    "ebios.socle.partiel": "Partial",
+    "ebios.socle.non_applique": "Not applied",
+    "ebios.socle.priorite_haute": "High",
+    "ebios.socle.priorite_moyenne": "Medium",
+    "ebios.socle.priorite_basse": "Low",
+    "ebios.socle.anssi_label": "ANSSI (42 controls)",
+    "ebios.socle.iso_label": "ISO 27001 (93 controls)",
+    "ebios.socle.non_evalue": "Baseline not assessed",
+    "ebios.socle.conformite_moyenne": "Average compliance: <strong>{avg}%</strong> ({count} measures assessed)",
+
+    // ── Column headers: VM ──
+    "ebios.col.vm_id": "ID",
+    "ebios.col.vm_name": "Business asset",
+    "ebios.col.vm_nature": "Nature",
+    "ebios.col.vm_description": "Description",
+    "ebios.col.vm_responsable": "Owner",
+
+    // ── Column headers: BS ──
+    "ebios.col.bs_id": "ID",
+    "ebios.col.bs_name": "Supporting Asset",
+    "ebios.col.bs_type": "Type",
+    "ebios.col.bs_vm": "Supported BA",
+    "ebios.col.bs_localisation": "Location",
+    "ebios.col.bs_proprietaire": "Owner",
+
+    // ── Column headers: PP ──
+    "ebios.col.pp_id": "ID",
+    "ebios.col.pp_name": "Stakeholder",
+    "ebios.col.pp_categorie": "Category",
+    "ebios.col.pp_type": "Type",
+    "ebios.col.pp_dependance": "Depen-dency",
+    "ebios.col.pp_penetration": "Pene-tration",
+    "ebios.col.pp_maturite": "Matu-rity",
+    "ebios.col.pp_confiance": "Trust",
+    "ebios.col.pp_menace": "Threat",
+    "ebios.col.pp_exposition": "Exposure",
+    "ebios.col.pp_bs": "Related assets",
+
+    // ── PP categories ──
+    "ebios.pp.cat_client": "Client",
+    "ebios.pp.cat_partenaire": "Partner",
+    "ebios.pp.cat_prestataire": "Service provider",
+
+    // ── Column headers: Socle ──
+    "ebios.col.socle_num": "#",
+    "ebios.col.socle_theme": "Theme",
+    "ebios.col.socle_mesure": "Measure / Expected",
+    "ebios.col.socle_conformite": "Compliance",
+    "ebios.col.socle_statut": "Status",
+    "ebios.col.socle_ecart": "Identified gap",
+    "ebios.col.socle_priorite": "Priority",
+    "ebios.col.socle_mesures_prevues": "Planned controls",
+
+    // ── Column headers: Referentiels complementaires ──
+
+    // ── Column headers: SR/OV ──
+    "ebios.col.srov_couple": "Pair",
+    "ebios.col.srov_sr": "Risk origin",
+    "ebios.col.srov_ov": "Target objective",
+    "ebios.col.srov_motivation": "Motiva-tion",
+    "ebios.col.srov_ressources": "Resour-ces",
+    "ebios.col.srov_activite": "Acti-vity",
+    "ebios.col.srov_pertinence": "Rele-vance",
+    "ebios.col.srov_priorite": "Priority",
+    "ebios.col.srov_justification": "Justification",
+
+    // ── SROV priority labels ──
+    "ebios.srov.p1": "P1",
+    "ebios.srov.p2": "P2",
+    "ebios.srov.non_retenu": "Not retained",
+    "ebios.srov.ecarte": "Excluded",
+
+    // ── Column headers: ER ──
+    "ebios.col.er_id": "ID",
+    "ebios.col.er_evenement": "Feared event",
+    "ebios.col.er_vm": "Related BA",
+    "ebios.col.er_dict": "DICT",
+    "ebios.col.er_impacts": "Impacts",
+    "ebios.col.er_gravite": "Severity",
+    "ebios.col.er_label": "Label",
+    "ebios.er.gravite_par_cat": "Severity per category",
+
+    // ── Column headers: SS ──
+    "ebios.col.ss_id": "ID",
+    "ebios.col.ss_scenario": "Scenario",
+    "ebios.col.ss_srov": "RO/TO pair",
+    "ebios.col.ss_pp": "Stakeholders",
+    "ebios.col.ss_bs": "Targeted assets",
+    "ebios.col.ss_er": "Related FE",
+    "ebios.col.ss_gravite": "Severity",
+
+    // ── Column headers: Eco ──
+    "ebios.col.eco_pp": "SH",
+    "ebios.col.eco_nom": "Name",
+    "ebios.col.eco_existantes": "Existing measures",
+    "ebios.col.eco_complementaires": "Additional measures",
+    "ebios.col.eco_dep": "Dep.",
+    "ebios.col.eco_pen": "Pen.",
+    "ebios.col.eco_mat": "Mat.",
+    "ebios.col.eco_conf": "Trust",
+    "ebios.col.eco_menace": "Threat",
+    "ebios.col.eco_exposition": "Exposure",
+
+    // ── Column headers: SOP ──
+    "ebios.col.sop_sop": "SOP",
+    "ebios.col.sop_ss": "SS",
+    "ebios.col.sop_phase": "Phase",
+    "ebios.col.sop_action": "Action",
+    "ebios.col.sop_bs": "Targeted asset",
+    "ebios.col.sop_controle": "Existing control",
+    "ebios.col.sop_ref": "Baseline ref.",
+    "ebios.col.sop_efficacite": "Effectiveness",
+    "ebios.col.sop_mesure_proposee": "Proposed measure(s)",
+    "ebios.col.sop_choose": "— choose",
+
+    // ── Efficacite labels ──
+    "ebios.eff.absent": "Absent",
+    "ebios.eff.partiel": "Partial",
+    "ebios.eff.efficace": "Effective",
+
+    // ── Column headers: SOP Synth ──
+    "ebios.col.sopsynth_ss": "SS",
+    "ebios.col.sopsynth_scenario": "Scenario",
+    "ebios.col.sopsynth_gravite": "Severity",
+    "ebios.col.sopsynth_sop": "SOP",
+    "ebios.col.sopsynth_efficacite": "Measure effectiveness",
+    "ebios.col.sopsynth_taux": "Weakness rate",
+    "ebios.col.sopsynth_vinit": "Init. L",
+    "ebios.col.sopsynth_risque": "Initial risk",
+    "ebios.col.sopsynth_no_sop": "No associated SOP",
+
+    // ── Column headers: Measures ──
+    "ebios.col.m_id": "ID",
+    "ebios.col.m_mesure": "Security measure",
+    "ebios.col.m_details": "Details",
+    "ebios.col.m_origine": "Origin",
+    "ebios.col.m_type": "Type",
+    "ebios.col.m_sop": "Addressed SOP",
+    "ebios.col.m_phase": "Phase",
+    "ebios.col.m_effet": "Effect",
+    "ebios.col.m_ref_socle": "Baseline ref.",
+    "ebios.col.m_responsable": "Owner",
+    "ebios.col.m_echeance": "Deadline",
+    "ebios.col.m_cout": "Cost",
+    "ebios.col.m_statut": "Status",
+
+    // ── Measure origins ──
+    "ebios.m.origine_socle": "Baseline",
+    "ebios.m.origine_ecosysteme": "Ecosystem",
+    "ebios.m.origine_sop": "SOP",
+    "ebios.m.origine_complementaire": "Additional",
+
+    // ── Measure types ──
+    "ebios.m.type_prevention": "Prevention",
+    "ebios.m.type_detection": "Detection",
+    "ebios.m.type_reaction": "Response",
+
+    // ── Measure statuts ──
+    "ebios.m.statut_termine": "Completed",
+    "ebios.m.statut_en_cours": "In progress",
+    "ebios.m.statut_a_etudier": "To study",
+
+    // ── Column headers: Residuals ──
+    "ebios.col.r_ss": "SS",
+    "ebios.col.r_scenario": "Scenario",
+    "ebios.col.r_gravite": "Severity",
+    "ebios.col.r_mesures": "Applied measures",
+    "ebios.col.r_v_init": "Init. L",
+    "ebios.col.r_v_resid": "Resid. L",
+    "ebios.col.r_risque": "Resid. risk",
+    "ebios.col.r_decision": "Decision",
+
+    // ── Risk decisions ──
+    "ebios.decision.accepter": "Accept",
+    "ebios.decision.reduire": "Reduce",
+    "ebios.decision.transferer": "Transfer",
+    "ebios.decision.eviter": "Avoid",
+
+    // ── DICT ──
+    "ebios.dict.d": "Availability",
+    "ebios.dict.i": "Integrity",
+    "ebios.dict.c": "Confidentiality",
+    "ebios.dict.t": "Traceability",
+
+    // ── Snapshots / History ──
+
+    // ── Status messages ──
+    "ebios.status.modified": "Modified",
+    "ebios.status.modified_refs": "Modified + references updated",
+    "ebios.status.line_added": "Row added: {id}",
+    "ebios.status.line_deleted": "Row deleted",
+    "ebios.status.sop_added": "SOP {id} added",
+    "ebios.status.phase_added": "Phase added to {id}",
+    "ebios.status.phase_moved": "Phase moved",
+    "ebios.status.deleted": "Deleted",
+    "ebios.status.efficacite": "Effectiveness: {val}",
+    "ebios.status.measure_created": "Measure {id} created and added",
+    "ebios.status.sr_created": "{id} created",
+    "ebios.status.ov_created": "{id} created",
+    "ebios.status.loading_exceljs": "Loading ExcelJS...",
+    "ebios.status.exceljs_loaded": "ExcelJS loaded",
+    "ebios.status.loading_template": "Loading template...",
+    "ebios.status.generating_excel": "Generating Excel...",
+    "ebios.status.excel_downloaded": "Excel downloaded",
+    "ebios.status.reading_excel": "Reading Excel...",
+    "ebios.status.eco_moved_compl": "{id} moved to additional controls — status changed to 'To study'",
+    "ebios.status.eco_moved_exist": "{id} moved to existing controls",
+    "ebios.status.error": "Error: {msg}",
+
+    // ── Prompt messages ──
+    "ebios.prompt.new_socle_measure": "New measure description:",
+    "ebios.prompt.new_sr": "New risk origin description:",
+    "ebios.prompt.new_ov": "New target objective description:",
+    "ebios.prompt.new_eco_measure": "New ecosystem measure description:",
+    "ebios.prompt.new_sop_measure": "New SOP measure description:",
+
+    // ── Alert messages ──
+    "ebios.alert.template_unavailable": "Excel template not available. Use python3 json_to_excel.py",
+    "ebios.alert.excel_export_error": "Excel export error: {msg}\nUse python3 json_to_excel.py as an alternative.",
+    "ebios.alert.excel_import_error": "Excel import error: {msg}",
+    "ebios.alert.exceljs_load_error": "Unable to load ExcelJS",
+
+    // ── Validation ──
+
+    // ── Misc ──
+    "ebios.misc.click_choose": "Click to choose...",
+    "ebios.misc.filter": "Filter...",
+    "ebios.misc.phases": "phases",
+    "ebios.misc.measures_indicator": "Controls",
+    "ebios.misc.show_terminated": "Also show completed measures",
+    "ebios.misc.no_measures": "No measures",
+    "ebios.misc.measures_todo_count": "{todo} measures to implement out of {total} total",
+    "ebios.misc.ss_not_evaluated": "{n} SS not assessed (no SOP or residual likelihood)",
+    "ebios.misc.eleve_label": "High",
+    "ebios.misc.moyen_label": "Medium",
+    "ebios.misc.faible_label": "Low",
+    "ebios.misc.non_applique_label": "Not applied",
+    "ebios.misc.partiel_label": "Partial",
+    "ebios.misc.applique_label": "Applied",
+
+    // ── Synthesis evolution ──
+    "ebios.synth.col_ss": "SS",
+    "ebios.synth.col_scenario": "Scenario",
+    "ebios.synth.col_risque_initial": "Initial risk",
+    "ebios.synth.col_risque_residuel": "Residual risk",
+    "ebios.synth.col_evolution": "Evolution",
+    "ebios.synth.col_decision": "Decision",
+    "ebios.synth.col_gravite": "Severity",
+    "ebios.synth.col_vraisemblance": "Likelihood",
+    "ebios.synth.ameliore": "Improved",
+    "ebios.synth.identique": "Unchanged",
+    "ebios.synth.degrade": "Degraded",
+
+    // ── Synthesis measures table ──
+    "ebios.synth.col_id": "ID",
+    "ebios.synth.col_mesure": "Control",
+    "ebios.synth.col_origine": "Origin",
+    "ebios.synth.col_responsable": "Owner",
+    "ebios.synth.col_echeance": "Deadline",
+    "ebios.synth.col_statut": "Status",
+
+    // ── Eco SVG labels ──
+    "ebios.eco.clients": "Clients",
+    "ebios.eco.partenaires": "Partners",
+    "ebios.eco.prestataires": "Service providers",
+    "ebios.eco.zone_danger": "Danger zone (threshold: 2.5)",
+    "ebios.eco.zone_controle": "Control zone (threshold: 0.9)",
+    "ebios.eco.zone_veille": "Watch zone (threshold: 0.2)",
+    "ebios.eco.fiabilite": "CYBER RELIABILITY:",
+    "ebios.eco.fiab_faible": "Low",
+    "ebios.eco.fiab_moyenne": "Medium",
+    "ebios.eco.fiab_bonne": "Good",
+    "ebios.eco.fiab_elevee": "High",
+    "ebios.eco.diametre": "DIAMETER = exposure",
+    "ebios.eco.map_after": "Map (after ecosystem controls)",
+    "ebios.eco.map_initial": "Ecosystem map (initial threat)",
+
+    // ── Gravity defaults ──
+    "ebios.grav.extreme": "Extreme",
+    "ebios.grav.critique": "Critical",
+    "ebios.grav.grave": "Severe",
+    "ebios.grav.significatif": "Significant",
+    "ebios.grav.faible": "Low",
+    "ebios.grav.desc_extreme": "Catastrophic consequences threatening the survival of the organization",
+    "ebios.grav.desc_critique": "Unacceptable consequences (major impact on essential missions)",
+    "ebios.grav.desc_grave": "Serious consequences (notable degradation of activities)",
+    "ebios.grav.desc_significatif": "Significant but manageable consequences (limited and temporary impact)",
+    "ebios.grav.desc_faible": "Limited and acceptable consequences",
+
+    // ── SOP phase (MITRE ATT&CK tactics) ──
+    "ebios.sop.phase_other": "Other (free text)…",
+    "ebios.sop.phase_free_prompt": "Phase name (free text)",
+    "ebios.attack.TA0043": "Reconnaissance",
+    "ebios.attack.TA0042": "Resource Development",
+    "ebios.attack.TA0001": "Initial Access",
+    "ebios.attack.TA0002": "Execution",
+    "ebios.attack.TA0003": "Persistence",
+    "ebios.attack.TA0004": "Privilege Escalation",
+    "ebios.attack.TA0005": "Defense Evasion",
+    "ebios.attack.TA0006": "Credential Access",
+    "ebios.attack.TA0007": "Discovery",
+    "ebios.attack.TA0008": "Lateral Movement",
+    "ebios.attack.TA0009": "Collection",
+    "ebios.attack.TA0011": "Command and Control",
+    "ebios.attack.TA0010": "Exfiltration",
+    "ebios.attack.TA0040": "Impact",
+
+    // ── Measure effects ──
+    "ebios.m.renforcement_socle": "Baseline measure reinforcement {ref}",
+    "ebios.m.mesure_eco_pour": "Ecosystem measure for {pp}",
+
+    // ── Referentiels catalog descriptions (EN) ──
+    "ebios.ref.lpm.desc": "Military Programming Law (France) — ANSSI security rules for critical infrastructure operators",
+    "ebios.ref.loi0520.desc": "Moroccan cybersecurity law — obligations for regulated organizations",
+    "ebios.ref.dora.desc": "Digital Operational Resilience Act (EU 2022/2554) — digital resilience for the financial sector",
+    "ebios.ref.hds.desc": "Health Data Hosting Certification (France) — additional ISO 27001 requirements",
+    "ebios.ref.secnumcloud.desc": "ANSSI qualification framework for Cloud service providers (v3.2)",
+    "ebios.ref.nis2.desc": "NIS 2 Directive (EU 2022/2555) — cybersecurity requirements for essential and important entities",
+    "ebios.ref.cra.desc": "EU Cyber Resilience Act (CRA 2024) — requirements for products with digital elements",
+    "ebios.ref.soc2.desc": "Trust Services Criteria (AICPA) — security, availability, integrity, confidentiality, privacy",
+
+    // ── Help content ──
+    "ebios.help.usage": "<h1 class=\"heading-blue\">User Guide</h1>\n<p class=\"text-muted\">How to use the EBIOS RM interactive application</p>\n\n<h2>Overview</h2>\n<p>The application is organized in <strong>3 areas</strong>: the <strong>app bar</strong> at the top (File menu, language, theme, settings), the <strong>side rail</strong> on the left (workshop navigation, analysis catalog, undo/redo) and the <strong>work area</strong> in the center (editable tables).</p>\n<div class=\"help-tip\">In this connected edition, analyses are <strong>automatically saved server-side</strong> after each change. The File menu remains available to exchange local files (JSON, Excel) and produce deliverables (PPTX, Word). Risk is one module of the CISO Toolbox suite, alongside Pilot, Compliance, Vendor, Asset, AppSec (SAST/SCA), Surface and Access.</div>\n\n<h2>Navigation</h2>\n<table><thead><tr><th>Element</th><th>Description</th></tr></thead><tbody>\n<tr><td><strong>Side rail</strong></td><td>One entry per page, grouped by workshop. Click a group title to collapse/expand it. On mobile, the menu opens via the &#9776; button.</td></tr>\n<tr><td><strong>Overview</strong></td><td>Consolidated view: indicators, initial and residual risk maps, baseline compliance, risk distribution and evolution, measures to implement. Updates automatically.</td></tr>\n<tr><td><strong>Help</strong></td><td>The Methodology and User guide entries open this help panel (close with the &times; or a click outside).</td></tr>\n</tbody></table>\n\n<h2>Analysis catalog</h2>\n<p>The <strong>Analyses</strong> section at the bottom of the side rail manages multiple analyses stored server-side:</p>\n<ul>\n<li><strong>+</strong>: create a new analysis</li>\n<li><strong>Search</strong>: filter the list by name</li>\n<li>Click a card to switch from one analysis to another</li>\n<li>Per-card buttons: <strong>Duplicate</strong>, <strong>Rename</strong>, <strong>Export</strong> (JSON download), <strong>Delete</strong></li>\n</ul>\n<div class=\"help-tip\">Server saving is automatic a few moments after each change. Regularly export your important analyses as JSON to keep a local copy.</div>\n\n<h2>Editing tables</h2>\n<h3>Edit a cell</h3>\n<p>Editable cells contain an <strong>input field</strong> (text or number) or a <strong>dropdown</strong>. Changes are applied when you leave the field (tab, click elsewhere).</p>\n<h3>Add a row</h3>\n<p>Click the <strong class=\"text-green\">+ Add</strong> button below the table. The identifier (VM-XX, BS-XX, etc.) is generated automatically.</p>\n<h3>Delete a row</h3>\n<p>Click the <strong class=\"text-red\">X</strong> button on the right of the row. Confirmation is required if the row contains data.</p>\n<h3>Computed values</h3>\n<p>Grey-background columns are computed automatically and are not editable:</p>\n<ul>\n<li><strong>SH Threat</strong> = (Penetration &times; Dependency) / (Maturity &times; Trust)</li>\n<li><strong>SH Exposure</strong> = thresholds on threat (&ge;4 Critical, &ge;2 High, &ge;1 Moderate, &lt;1 Low)</li>\n<li><strong>RO/TO Relevance</strong> = (Motivation + Resources + Activity) / 12</li>\n<li><strong>SS Severity</strong> = maximum of associated FE severities</li>\n<li><strong>SOP Weakness rate</strong> = MAX(0, (Absent&times;2 + Partial - Effective&times;2)) / (Total&times;2)</li>\n<li><strong>SOP Likelihood</strong> = derived from the weakness rate (V1 to V4)</li>\n<li><strong>Initial/residual risk</strong> = Severity &times; Likelihood intersection in the risk matrix (Low / Medium / High)</li>\n</ul>\n\n<h2>Column management</h2>\n<table><thead><tr><th>Action</th><th>How</th></tr></thead><tbody>\n<tr><td><strong>Hide a column</strong></td><td>Click the <strong>&times;</strong> on the right of the column name in the table header</td></tr>\n<tr><td><strong>Restore a column</strong></td><td>A <strong>Hidden columns (N)</strong> button appears above the table — click to choose columns to restore</td></tr>\n<tr><td><strong>Resize</strong></td><td>Drag the right edge of a column header</td></tr>\n</tbody></table>\n\n<h2>Cross-references</h2>\n<p>Fields that reference other elements (BV in supporting assets, SH in scenarios, FE in scenarios, etc.) use a <strong>search selector</strong>:</p>\n<ul>\n<li>Click the field to open the selector</li>\n<li>Type to filter available elements</li>\n<li>Check/uncheck to select (multi-selection supported)</li>\n<li>Click outside to close</li>\n</ul>\n<div class=\"help-tip\">When you rename an element (BV, SA, SH, FE...), all references in other tables are updated automatically.</div>\n\n<h2>File menu</h2>\n<p>The <strong>File</strong> menu at the top of the screen handles local files and deliverables:</p>\n<table><thead><tr><th>Action</th><th>Format</th><th>Description</th></tr></thead><tbody>\n<tr><td><strong>Open</strong></td><td>.json / .enc</td><td>Loads a JSON (or encrypted) file from disk and replaces the current analysis data. Automatic format validation.</td></tr>\n<tr><td><strong>Save</strong></td><td>.json / .enc</td><td>Quick save into the open file. Requires a browser supporting File System Access (the entry is hidden otherwise).</td></tr>\n<tr><td><strong>Save as</strong></td><td>.json / .enc</td><td>Saves as JSON with optional AES-256 password encryption (.enc extension).</td></tr>\n<tr><td><strong>Import Excel</strong></td><td>.xlsx</td><td>Reads an existing EBIOS RM Excel file and loads the data. Compatible with files generated by the application.</td></tr>\n<tr><td><strong>Export Excel</strong></td><td>.xlsx</td><td>Generates a complete workbook: one sheet per workshop, formulas and conditional formatting.</td></tr>\n<tr><td><strong>Executive synthesis</strong></td><td>.pptx</td><td>Generates a synthesis presentation: indicators, initial and residual risk matrices, key tables — ready for an executive readout.</td></tr>\n<tr><td><strong>Export report</strong></td><td>.docx</td><td>Generates the full analysis report from a Word template (French or English depending on the active language), maps included.</td></tr>\n<tr><td><strong>New analysis</strong></td><td>—</td><td>Creates a new blank analysis in the catalog.</td></tr>\n</tbody></table>\n<div class=\"help-tip\">The export engines (Excel, PPTX, Word) are bundled with the application: no external connection is needed to generate deliverables.</div>\n\n<h2>Import from Vendor</h2>\n<p>On the <strong>Stakeholders</strong> page, the <strong>Import from Vendor</strong> button loads a JSON file exported from the suite's Vendor module (\"SH\" export or full save file). Suppliers are created as stakeholders with their D/P/M/T ratings, their security measures are added to the measures registry (tagged with the originating supplier), and duplicates are skipped.</p>\n\n<h2>History and undo</h2>\n<h3>Undo / Redo</h3>\n<p>Each change is recorded in history (50 levels max). Use the buttons at the bottom of the side rail or the shortcuts:</p>\n<ul>\n<li><strong>Ctrl+Z</strong> (or Cmd+Z on Mac): undo the last change</li>\n<li><strong>Ctrl+Y</strong> or <strong>Ctrl+Shift+Z</strong>: redo the undone change</li>\n</ul>\n<h3>Checkpoints</h3>\n<p>In this connected edition, persistence is handled by automatic server-side saving; browser-stored snapshots (standalone edition) are not available. To create dated copies of the analysis, use <strong>Export</strong> in the analysis catalog or <strong>File &rarr; Save as</strong>.</p>\n\n<h2>Settings</h2>\n<p>The app bar offers three buttons: <strong>globe</strong> (switch French/English), <strong>moon</strong> (light/dark theme) and <strong>gear</strong> (&#9881;) for settings:</p>\n<ul>\n<li><strong>Language</strong>: French / English</li>\n<li><strong>AI Assistant</strong>: enable/disable and, in direct mode, choose the provider (Anthropic, OpenAI, AWS Bedrock or custom LLM), the model, the API key and optionally the endpoint</li>\n<li><strong>Methodology instructions</strong>: upload a Markdown file to guide AI suggestions</li>\n</ul>\n<div class=\"help-tip\"><strong>Managed mode</strong>: when AI is managed centrally, only the enable toggle is offered — provider, model and API key are configured by the administrator and calls go through the module server (no API key in the browser).</div>\n\n<h2>AI Assistant</h2>\n<p>The AI assistant is an optional module that provides contextual suggestions at each stage of the analysis. It is <strong>disabled by default</strong>.</p>\n<h3>Usage</h3>\n<p>Once enabled in Settings, a <strong>&#10024; AI</strong> button appears on each page (Business values, Supporting assets, Feared events, Risk origins, Stakeholders, Scenarios, Baseline, Measures, Residual risks...). Clicking it:</p>\n<ul>\n<li>The assistant analyzes the data already entered in the current analysis</li>\n<li>It suggests additional elements (BV, SA, RO/TO, scenarios, measures, kill chains...) or updates to existing ones</li>\n<li>Each suggestion can be <strong>accepted</strong> (added to the analysis) or <strong>ignored</strong></li>\n<li>You can also give your own instructions (e.g. \"suggest ransomware-related scenarios\")</li>\n</ul>\n<h3>Methodology instructions</h3>\n<p>A Markdown file can be uploaded in Settings to enrich the AI context:</p>\n<ul>\n<li>Internal organizational framework</li>\n<li>Writing or naming conventions</li>\n<li>Specific methodology or EBIOS RM supplements</li>\n<li>Applicable security policy or charter</li>\n</ul>\n<p>This file is appended to the system prompt of every AI request.</p>\n<h3>Risks and precautions</h3>\n<ul>\n<li><strong>Data sharing</strong>: analysis data is sent to the AI provider to generate suggestions. Verify that your privacy policy and contractual obligations allow this.</li>\n<li><strong>Direct mode (personal key)</strong>: the API key is transmitted in HTTP headers directly from the browser. It is visible in DevTools, can be captured by browser extensions, and may be logged by corporate proxies. Use a dedicated browser profile without extensions. The key is stored in localStorage, never in saved files.</li>\n<li><strong>Managed mode</strong>: calls go through the module server — no API key in the browser.</li>\n<li><strong>No guarantee on suggestions</strong>: AI proposals must be validated by the analyst.</li>\n</ul>\n\n<h2>Data security</h2>\n<ul>\n<li><strong>Authenticated access</strong>: when authentication is enabled, module access goes through the suite login page; sign-out is available in the app bar</li>\n<li><strong>Server storage</strong>: analyses are stored in a server-side database, with automatic saving</li>\n<li><strong>JSON export encryption</strong>: AES-256-GCM with PBKDF2 key derivation (250,000 iterations)</li>\n<li><strong>Import validation</strong>: every imported JSON file is validated before loading (structure, types, bounds)</li>\n<li><strong>API keys (direct mode)</strong>: stored only in localStorage, never in saved files</li>\n</ul>\n\n<h2>Keyboard shortcuts</h2>\n<table><thead><tr><th>Shortcut</th><th>Action</th></tr></thead><tbody>\n<tr><td><strong>Ctrl+S</strong> / <strong>Cmd+S</strong></td><td>Save (local file)</td></tr>\n<tr><td><strong>Ctrl+Z</strong> / <strong>Cmd+Z</strong></td><td>Undo</td></tr>\n<tr><td><strong>Ctrl+Y</strong> or <strong>Ctrl+Shift+Z</strong></td><td>Redo</td></tr>\n<tr><td><strong>Tab</strong></td><td>Move to the next field in a table</td></tr>\n<tr><td><strong>Escape</strong></td><td>Close a dialog box</td></tr>\n</tbody></table>\n\n<h2>Best practices</h2>\n<ul>\n<li><strong>Export regularly</strong>: server saving is automatic, but export your important analyses as JSON (catalog &rarr; Export or File &rarr; Save as) to keep local copies</li>\n<li><strong>Follow the workshop order</strong>: later workshops depend on earlier ones (BV &rarr; SA &rarr; FE &rarr; RO/TO &rarr; SH &rarr; SS &rarr; SOP &rarr; Measures)</li>\n<li><strong>Check the overview</strong>: the Overview page provides a global view — indicators and matrices update automatically</li>\n<li><strong>Deliverables</strong>: Export Excel for the detailed workbook, Executive synthesis (PPTX) for the management readout, Export report (Word) for the formal report</li>\n</ul>\n\n<h2>Features requiring AI</h2>\n<p>These features call a language model and are only available once AI is configured. They are <strong>optional</strong>: without configuration they are hidden or inactive and the rest of the module works normally.</p>\n<ul>\n<li><strong>EBIOS RM assistant</strong>: per-workshop suggestions (business values, feared events, risk origins, strategic and operational scenarios, treatment measures)</li>\n</ul>\n<p class=\"help-tip\">Where to configure: in a standalone install, through the module's <strong>Settings &rarr; AI</strong> (your own API key). In the suite, keys are centralised by <strong>Pilot</strong> and pushed to the modules &mdash; nothing to enter here, and AI access is granted per user in the permissions matrix.</p>",
+
+    "ebios.help.methodo": "<h1 class=\"heading-blue\">EBIOS Risk Manager Methodology Guide</h1>\n<p class=\"text-muted\">Risk assessment method published by ANSSI — 5 workshops</p>\n\n<h2>General principle</h2>\n<p>EBIOS RM is a risk assessment method that starts from the organization's <strong>business values</strong> to identify the most relevant <strong>risk scenarios</strong> and define a proportionate <strong>treatment plan</strong>. It is carried out in 5 sequential workshops, each feeding the next.</p>\n\n<h2>Assessment scales</h2>\n<table><thead><tr><th>Scale</th><th>Levels</th><th>Usage</th></tr></thead><tbody>\n<tr><td><strong>Severity</strong></td><td>3 to 5 levels: Low, Significant, Severe, Critical, Extreme (depending on the chosen scale)</td><td>Impact of feared events and scenarios</td></tr>\n<tr><td><strong>Likelihood</strong></td><td>V1 to V4</td><td>Probability of success of an operational scenario</td></tr>\n<tr><td><strong>Risk level</strong></td><td>Low / Medium / High</td><td>Severity &times; Likelihood intersection in the risk matrix</td></tr>\n<tr><td><strong>Ecosystem exposure</strong></td><td>Low / Moderate / High / Critical</td><td>Thresholds on the stakeholder threat level</td></tr>\n</tbody></table>\n<div class=\"help-tip\"><strong>Adjustable matrix</strong>: each Severity &times; Likelihood cell of the matrix can be requalified (Low / Medium / High) according to the organization's risk appetite. The requalification propagates to the whole analysis.</div>\n\n<h2>Workshop 1 — Scoping and security baseline</h2>\n<h3>Objective</h3>\n<p>Define the study scope, identify critical assets, feared events and assess the existing security level.</p>\n<h3>Participants</h3>\n<p><strong>CISO</strong>, <strong>CIO</strong>, <strong>Business management</strong>, <strong>DPO</strong> (if personal data)</p>\n<h3>Steps</h3>\n<table><thead><tr><th>Step</th><th>Content</th><th>Guide</th></tr></thead><tbody>\n<tr><td>Context</td><td>Scope, regulations, severity scale</td><td>Define the organization, the study object, applicable regulations and the severity scale (3 to 5 levels)</td></tr>\n<tr><td>Business values</td><td>Essential processes and information</td><td>Identify 5-10 BV, assess DICT needs from 1 to N (per scale)</td></tr>\n<tr><td>Supporting assets</td><td>IS supporting the BV</td><td>List servers, applications, networks, data and attach them to BV</td></tr>\n<tr><td>Feared events</td><td>Impacts feared per BV</td><td>For each BV, identify FE and rate their severity</td></tr>\n<tr><td>Security baseline</td><td>Compliance with frameworks</td><td>Assess each control (0-100%), identify and prioritize gaps</td></tr>\n</tbody></table>\n<h3>Baseline and frameworks</h3>\n<p>The baseline is assessed against the <strong>ANSSI hygiene guide</strong> (42 controls) or <strong>ISO 27001 — Annex A</strong> (93 controls). Depending on the regulatory context, <strong>complementary frameworks</strong> can be added to the scope: NIS 2, DORA, Cyber Resilience Act (CRA), SecNumCloud, HDS, LPM, Law 05-20 (Morocco), SOC 2, GAMP 5. Identified gaps feed the workshop 5 treatment plan.</p>\n\n<h2>Workshop 2 — Risk origins and target objectives</h2>\n<h3>Objective</h3>\n<p>Identify <strong>who</strong> could attack (risk origins) and <strong>why</strong> (target objectives). Assess the relevance of each RO/TO pair.</p>\n<h3>Participants</h3>\n<p><strong>CISO</strong>, <strong>CTI Analyst</strong> (if available), <strong>Management</strong></p>\n<h3>Guide</h3>\n<ul>\n<li>Create risk origins (cybercriminals, employees, states, competitors...)</li>\n<li>Create target objectives (ransomware, data theft, sabotage...)</li>\n<li>Combine into pairs and rate Motivation (0-4), Resources (0-4), Activity (0-4)</li>\n<li>Relevance = sum /12. Priority: P1 (&gt;7), P2 (5-7), Not retained (3-4), Excluded (&le;2)</li>\n</ul>\n\n<h2>Workshop 3 — Strategic scenarios</h2>\n<h3>Objective</h3>\n<p>Identify and assess ecosystem <strong>stakeholders</strong>, build <strong>strategic attack paths</strong> and define measures to reduce ecosystem threat.</p>\n<h3>Participants</h3>\n<p><strong>CISO</strong>, <strong>Business management</strong>, <strong>Procurement/partnership manager</strong></p>\n<h3>Steps</h3>\n<table><thead><tr><th>Step</th><th>Content</th><th>Guide</th></tr></thead><tbody>\n<tr><td>Stakeholders</td><td>Ecosystem actors</td><td>Suppliers (providers), partners, clients — assess D/P/M/T (1-4), category</td></tr>\n<tr><td>Strategic scenarios</td><td>Attack paths</td><td>Link RO/TO + SH + SA + FE. The scenario severity is the MAX of the associated FE severities</td></tr>\n<tr><td>Ecosystem measures</td><td>SH threat reduction</td><td>For each SH, list measures and reassess residual D/P/M/T. Ecosystem map</td></tr>\n</tbody></table>\n<div class=\"help-tip\"><strong>Stakeholder rule</strong>: if the study scope is the entire company, internal employees are NOT stakeholders. Only external actors are stakeholders.</div>\n\n<h2>Workshop 4 — Operational scenarios</h2>\n<h3>Objective</h3>\n<p>Detail each strategic scenario into a <strong>technical kill chain</strong>: attack phases, existing controls, effectiveness. Calculate <strong>operational likelihood</strong> and <strong>initial risk</strong>.</p>\n<h3>Participants</h3>\n<p><strong>CISO</strong>, <strong>Technical team/SOC</strong>, <strong>Security architect</strong>, <strong>DevOps/Sysadmin</strong></p>\n<h3>Steps</h3>\n<table><thead><tr><th>Step</th><th>Content</th><th>Guide</th></tr></thead><tbody>\n<tr><td>Operational scenarios</td><td>Kill chain per SOP</td><td>4-8 phases per SOP, controls, effectiveness (Absent/Partial/Effective), proposed measures</td></tr>\n<tr><td>Initial risks</td><td>Risk summary</td><td>For each SS: severity, control effectiveness, weakness rate, operational likelihood, initial risk</td></tr>\n</tbody></table>\n<div class=\"help-tip\"><strong>Formulas</strong>: Weakness rate = MAX(0, (Absent&times;2 + Partial - Effective&times;2)) / (Total&times;2). Each Effective phase compensates for one Absent in the kill chain. Operational likelihood derives from it: V4 if rate &ge; 70%, V3 if &ge; 40%, V2 if &ge; 20%, V1 otherwise.</div>\n\n<h2>Workshop 5 — Risk treatment</h2>\n<h3>Objective</h3>\n<p>Define the <strong>treatment plan</strong>: security measures, owners, deadlines. Assess <strong>residual risks</strong> and make treatment decisions.</p>\n<h3>Participants</h3>\n<p><strong>CISO</strong>, <strong>Management</strong>, <strong>CIO</strong>, <strong>Business owners</strong>, <strong>DPO</strong></p>\n<h3>Steps</h3>\n<table><thead><tr><th>Step</th><th>Content</th><th>Guide</th></tr></thead><tbody>\n<tr><td>Measures registry</td><td>All measures</td><td>Consolidate: baseline applied (Completed), baseline to reinforce, ecosystem, SOP, additional</td></tr>\n<tr><td>Residual risks</td><td>Risk after treatment</td><td>For each SS, assess residual likelihood (1-4) and choose the decision (Accept / Reduce / Transfer / Avoid)</td></tr>\n</tbody></table>\n<div class=\"help-tip\"><strong>Measure priority</strong>: propose missing baseline measures first, then ecosystem measures, then additional measures only if necessary.</div>\n\n<h2>CISO Toolbox suite integration</h2>\n<p>In a suite deployment, the <strong>security measures</strong> defined in this module flow up automatically into <strong>Pilot's action plan</strong> (the governance hub), where they are consolidated with the items from the other modules under the shared term <strong>Action</strong> and can be grouped into <strong>projects</strong> to steer cross-cutting progress. The module remains the authority for its own domain — Pilot only consolidates.</p>\n\n<h2>Glossary</h2>\n<table><thead><tr><th>Acronym</th><th>Meaning</th><th>Description</th></tr></thead><tbody>\n<tr><td><strong>BV</strong></td><td>Business Value</td><td>Essential process or activity of the organization (e.g. order management, R&amp;D)</td></tr>\n<tr><td><strong>SA</strong></td><td>Supporting Asset</td><td>IS component supporting a BV (server, application, network, data)</td></tr>\n<tr><td><strong>SH</strong></td><td>Stakeholder</td><td>Actor external to the study object (supplier, provider, partner, client)</td></tr>\n<tr><td><strong>RO</strong></td><td>Risk Origin</td><td>Potential threat actor (cybercriminal, malicious employee, competitor, state)</td></tr>\n<tr><td><strong>TO</strong></td><td>Target Objective</td><td>Goal pursued by the risk origin (extortion, data theft, sabotage)</td></tr>\n<tr><td><strong>RO/TO</strong></td><td>Origin/Objective pair</td><td>Combination of a RO and a TO assessed for relevance</td></tr>\n<tr><td><strong>FE</strong></td><td>Feared Event</td><td>Feared business impact in DICT terms (e.g. client data leak)</td></tr>\n<tr><td><strong>SS</strong></td><td>Strategic Scenario</td><td>Attack path: WHO (RO) attacks WHY (TO) THROUGH WHOM (SH) targeting WHAT (SA) causing WHICH impact (FE)</td></tr>\n<tr><td><strong>SOP</strong></td><td>Operational Scenario</td><td>Technical kill chain detailing the attack phases of a SS</td></tr>\n<tr><td><strong>DICT</strong></td><td>Availability, Integrity, Confidentiality, Traceability</td><td>The 4 security criteria for assessing needs and breaches</td></tr>\n<tr><td><strong>PACS</strong></td><td>Security Continuous Improvement Plan</td><td>Treatment plan resulting from the EBIOS RM analysis</td></tr>\n</tbody></table>",
+
+    "matrix.low": "Low",
+    "matrix.moderate": "Moderate",
+    "matrix.significant": "Significant",
+    "matrix.high": "High",
+    "matrix.critical": "Critical",
+    "matrix.extreme": "Extreme",
+    "matrix.x": "Impact",
+    "matrix.y": "Likelihood",
+    "settings.title": "Settings",
+    "settings.ai_section": "AI Assistant",
+    "settings.saved": "Settings saved",
+    "settings.language": "Language",
+    "settings.ai_privacy_warning": "By enabling the AI assistant:\n\n1. DATA SHARING — Your analysis data (context, requirements, controls) will be sent to the selected AI provider. Make sure your privacy policy and contractual obligations allow this.\n\n2. API KEY EXPOSURE — The API key is transmitted directly from your browser. It is visible in browser DevTools and can be captured by browser extensions. Use a browser without extensions or a dedicated profile.\n\n3. NETWORK — Communications are encrypted (HTTPS) but may be logged by corporate proxies.\n\nDo you want to continue?",
+    "settings.ai_enable": "Enable AI assistant",
+    "settings.save": "Save",
+});

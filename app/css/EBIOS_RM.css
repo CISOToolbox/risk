@@ -1,0 +1,152 @@
+/* ── EBIOS RM — App-specific styles ────────────────────────────── */
+
+/* ── Analysis Catalog — rendu dans .ct-rail-foot (rail clair) ──── */
+.catalog-actions-bar { display: flex; gap: 4px; padding: 4px 4px 6px; }
+.catalog-search { background: var(--ct-surface); border: 1px solid var(--ct-line); color: var(--ct-text-body); font-size: 0.72em; padding: 3px 8px; border-radius: var(--ct-r-sm); width: 100%; transition: border-color 0.2s; }
+.catalog-search:focus { outline: none; border-color: var(--ct-accent); }
+.catalog-card { padding: 6px 8px; cursor: pointer; border-left: 3px solid transparent; border-radius: var(--ct-r-sm); transition: background 0.15s, border-color 0.15s; }
+.catalog-card:hover { background: var(--ct-neutral-tint); }
+.catalog-card.catalog-active { border-left-color: var(--ct-accent); background: var(--ct-neutral-tint); }
+.catalog-card-name { font-size: 0.82em; font-weight: 600; color: var(--ct-text-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.catalog-card-meta { font-size: 0.7em; color: var(--ct-text-meta); display: flex; gap: 8px; margin-top: 1px; }
+.catalog-card-actions { display: none; gap: 2px; margin-top: 2px; }
+.catalog-card:hover .catalog-card-actions { display: flex; }
+.catalog-empty { padding: 8px; font-size: 0.78em; color: var(--ct-text-meta); font-style: italic; }
+
+
+/* 44px = bouton icone 22px + les 2x10px de rembourrage de la cellule. A 35px
+   le bouton debordait du bord droit depuis le passage en data-icon. */
+.col-actions { width: 44px !important; min-width: 44px; max-width: 44px; }
+.eff-badge { cursor: pointer; }
+.eff-badge:hover { opacity: 0.8; }
+
+section {
+    background: var(--ct-surface); border: 1px solid var(--ct-line);
+    border-radius: 8px; padding: 24px; margin-bottom: 24px;
+}
+section h2 {
+    font-size: 1.2em; color: var(--ct-ink); margin-bottom: 16px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--ct-accent);
+    display: flex; align-items: center; gap: 8px;
+}
+
+input[type="text"], input[type="number"], textarea {
+    width: 100%; padding: 4px 6px; border: 1px solid var(--ct-line);
+    border-radius: 4px; font-size: 0.9em; font-family: inherit;
+}
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--ct-accent); box-shadow: var(--ct-focus-soft); }
+textarea { resize: vertical; min-height: 60px; }
+select { padding: 4px 6px; border: 1px solid var(--ct-line); border-radius: 4px; font-size: 0.9em; }
+
+/* Auto-calculated (read-only) cells: same surface as table headers, so they
+   read as "not editable" rather than accent/selection. */
+.computed { background: var(--ct-surface-2) !important; font-weight: 600; text-align: center; }
+.phase-actions { display: flex; flex-direction: column; gap: 2px; align-items: center; }
+
+.meta { gap: 12px; margin: 16px 0; }
+.meta-item .label { font-size: 0.75em; color: var(--ct-ink-2); text-transform: uppercase; }
+.meta-item .value { margin-top: 2px; }
+
+footer { display: none; text-align: center; padding: 20px; color: var(--ct-ink-2); font-size: 0.8em; }
+@media print { footer { display: block; } }
+
+.synth-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.synth-card h3 { font-size: 0.9em; color: var(--ct-ink); margin-bottom: 8px; }
+.risk-dist { display: flex; gap: 8px; margin-top: 8px; }
+/* Pas de color ici : les barres portent un fond -tint (pâle) et leur couleur
+   de texte vient de .ct-text-*-ink (foncé). Forcer onsolid (clair) écrasait ces
+   classes à spécificité égale et rendait le texte illisible sur fond pâle. */
+.risk-bar { flex: 1; text-align: center; padding: 8px 6px; border-radius: 6px; font-weight: 600; }
+.risk-bar .count { font-size: 1.4em; }
+.risk-bar .label { font-size: 0.75em; opacity: 0.9; }
+
+@media (max-width: 1024px) {
+    .synth-grid { grid-template-columns: 1fr; }
+    table { font-size: 0.8em; }
+    th, td { padding: 4px 6px; }
+}
+@media (max-width: 768px) {
+    .synth-grid { grid-template-columns: 1fr; }
+    .meta-item { min-width: 100%; }
+    table { font-size: 0.75em; }
+    th, td { padding: 3px 4px; }
+
+    .ref-tags { font-size: 0.75em; }
+    .panel-desc { font-size: 0.8em; padding: 8px 10px; }
+}
+@media (max-width: 480px) {
+    table { font-size: 0.7em; }
+    .btn-add { font-size: 0.75em; padding: 4px 10px; }
+}
+
+/* ── Additional utility classes (EBIOS-specific) ──────────────── */
+.va-t { vertical-align: top; }
+.ta-c-va-t { text-align: center; vertical-align: top; }
+
+.w-40 { width: 40px; }
+.w-50 { width: 50px; }
+.w-55 { width: 55px; }
+.w-60 { width: 60px; }
+.w-65 { width: 65px; }
+.w-70 { width: 70px; }
+.w-80 { width: 80px; }
+.w-85 { width: 85px; }
+.w-100 { width: 100px; }
+.w-110 { width: 110px; }
+.w-120 { width: 120px; }
+.w-130 { width: 130px; }
+.w-180 { width: 180px; }
+.minw-120 { min-width: 120px; }
+.minw-140 { min-width: 140px; }
+.minw-150 { min-width: 150px; }
+.minw-200 { min-width: 200px; }
+.minw-250 { min-width: 250px; }
+.minw-300 { min-width: 300px; }
+.maxw-500 { max-width: 500px; }
+.minw-1000 { min-width: 1000px; }
+.mt-3 { margin-top: 3px; }
+
+.mb-20 { margin-bottom: 20px; }
+
+.m-0 { margin: 0; }
+
+.text-green { color: var(--ct-low); }
+.text-red { color: var(--ct-critical); }
+
+.heading-blue { color: var(--ct-ink); margin-bottom: 4px; }
+
+.btn-group-end { display: flex; gap: 8px; justify-content: flex-end; }
+.flex-row { display: flex; gap: 8px; }
+.flex-row-center { display: flex; gap: 8px; align-items: center; }
+
+.grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+
+.table-fixed { table-layout: fixed; }
+.label-bold-sm { font-size: 0.9em; font-weight: 600; }
+.cursor-pointer { cursor: pointer; }
+
+.overflow-x-auto { overflow-x: auto; }
+.desc-text-size { font-size: 0.82em; }
+.ta-l { text-align: left; }
+.py-4 { padding: 4px 0; }
+.text-black { color: var(--ct-ink); }
+.bg-white { background: var(--ct-surface); }
+
+/* ── Dark mode — re-thémage des couleurs legacy inline ─────────────
+   Les badges legacy (ctBadge / CT_COLORS) portent des hex pastel light
+   en style inline ; l'attribut data-tone (posé par EBIOS_RM_app.ts)
+   permet de les surcharger ici avec les paires -tint/-ink du design
+   system. Rendu light strictement inchangé (scopé data-theme=dark). */
+
+/* Boutons "+ Nouvelle SR" / "+ Nouvel OV" / "+ Phase" */
+
+/* Chips référentiels complémentaires (fond inline "white" en light) */
+
+/* Matrices du dashboard (ctRenderMatrix) : traits blancs entre cellules et
+   points bleus à halo blanc codés en attributs SVG — surchargés en dark.
+   Les exports rapport extraient le <svg> hors DOM : non affectés. */
+
+/* Ton "extrême" (niveau max de l'échelle de gravité) : un cran au-dessus de
+   critical-tint sans sauter au critical plein — suit le thème via ses deux
+   composantes (même approche que --tprm-extreme côté vendor). */
+:root { --ebios-extreme: var(--ct-critical-fill); }

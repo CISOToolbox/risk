@@ -1,0 +1,74 @@
+# ── Standalone risk ─────────────────────────────────────────────
+# Single-module deployment. App + dedicated PostgreSQL.
+# Usage:
+#   cp .env.example .env  # set DB_PASSWORD, JWT_SECRET
+#   docker compose up -d
+# App available on http://localhost:8085
+
+services:
+  risk-app:
+    build: .
+    container_name: ciso-risk-standalone
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://risk:${DB_PASSWORD:-ciso2026}@risk-db:5432/risk
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-prod}
+      - APP_URL=${APP_URL:-http://localhost:8085}
+      # ── Standalone auth posture (AUTH-01) ──────────────────────
+      # This module issues AND verifies its own sessions; there is no Pilot
+      # here. MODULE_NAME selects both the audience claim ("ciso-module:risk")
+      # and the signing key, derived as
+      #   HKDF-SHA256(JWT_SECRET, info="ciso-module:risk")
+      # so JWT_SECRET is never used as a signing key and a token minted by
+      # another module (or another standalone deployment sharing the secret)
+      # fails audience *and* signature verification here.
+      # Leaving MODULE_NAME unset would collapse every standalone module onto
+      # the same "ciso-module:module" key — do not remove it.
+      - AUTH_MODE=${AUTH_MODE:-standalone}
+      - MODULE_NAME=risk
+      - MODULE_COOKIE=risk_token
+    ports:
+      - "8085:8080"
+    depends_on:
+      risk-db:
+        condition: service_healthy
+    networks:
+      - risk-net
+
+  risk-db:
+    image: postgres:16-alpine
+    container_name: ciso-risk-db-standalone
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    # CNT-03 — minimal capability set for the official postgres image:
+    # entrypoint chowns PGDATA (CHOWN/FOWNER/DAC_OVERRIDE) then steps down
+    # from root to the postgres user via gosu (SETUID/SETGID).
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    environment:
+      - POSTGRES_USER=risk
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-ciso2026}
+      - POSTGRES_DB=risk
+    volumes:
+      - risk-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U risk"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - risk-net
+
+volumes:
+  risk-db-data:
+
+networks:
+  risk-net:

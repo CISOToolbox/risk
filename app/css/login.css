@@ -1,0 +1,34 @@
+/* -----------------------------------------------------------------------------
+   REPLICATED from the private shared repository (shared/css/login.css).
+   DO NOT EDIT HERE - changes will be overwritten by the next propagation run.
+   Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
+   ----------------------------------------------------------------------------- */
+body {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; overflow: auto;
+    background: linear-gradient(135deg, var(--ct-ink) 0%, #1a252f 100%);
+}
+.login-card {
+    background: var(--ct-surface); border-radius: 12px; padding: 48px 40px;
+    width: 100%; max-width: 400px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    text-align: center;
+}
+.login-logo { font-size: 2em; font-weight: 700; color: var(--ct-ink); margin-bottom: 4px; }
+.login-subtitle { color: var(--ct-ink-2); font-size: 0.9em; margin-bottom: 32px; }
+.login-divider { border: none; border-top: 1px solid var(--ct-line); margin: 24px 0; }
+.login-btn {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    width: 100%; padding: 12px 20px; border: 1px solid var(--ct-line); border-radius: 8px;
+    background: var(--ct-surface); color: var(--ct-ink); font-size: 0.95em; font-weight: 500;
+    cursor: pointer; transition: all 0.15s; text-decoration: none; margin-bottom: 12px;
+}
+.login-btn:hover { background: var(--ct-canvas); border-color: var(--ct-accent); }
+.login-btn:last-child { margin-bottom: 0; }
+.login-btn svg { flex-shrink: 0; }
+.login-error {
+    background: var(--ct-critical-tint); color: var(--ct-critical); border: 1px solid var(--ct-critical-tint);
+    border-radius: 8px; padding: 10px 16px; margin-bottom: 20px; font-size: 0.85em;
+}
+.login-footer { margin-top: 24px; font-size: 0.8em; color: var(--ct-ink-2); }
+.login-footer a { color: var(--ct-accent); text-decoration: none; }
+.login-footer a:hover { text-decoration: underline; }

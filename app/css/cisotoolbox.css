@@ -1,0 +1,1485 @@
+/* -----------------------------------------------------------------------------
+   REPLICATED from the private shared repository (shared/css/cisotoolbox.css).
+   DO NOT EDIT HERE - changes will be overwritten by the next propagation run.
+   Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
+   ----------------------------------------------------------------------------- */
+/* ── CISO Toolbox — Shared CSS ─────────────────────────────────────
+   UI v2 design system (SPEC-implementationv2.md).
+
+   Structure:
+     1. Design tokens (:root, dark, module tints)   — §1
+     2. Transition aliases (old var names → new)     — §7.1  (removed at step 6)
+     3. @font-face (IBM Plex — deferred, graceful)
+     4. Base + primitives + chrome + print           — §9
+     5. LEGACY (old classes, still emitted by shared TS + un-migrated apps)
+        — removed module-by-module (steps 4-6).
+
+   Migration status (SPEC §7): foundations + additive primitives are in.
+   The 5 primitives whose NAME collides with a live shared component
+   (.ct-table, .ct-badge, .ct-modal-*, .ct-bulkbar, .ct-icon) are still the
+   LEGACY versions below — they migrate together with their emitting TS
+   (ct_table / badge() / ct_modal / ct_bulkbar / _icon) in a later increment.
+   ──────────────────────────────────────────────────────────────── */
+
+/* ═══════════════════ 1. DESIGN TOKENS (SPEC §1) ═══════════════════ */
+:root {
+  /* Neutres */
+  --ct-canvas:       #f6f7f9;
+  --ct-surface:      #ffffff;
+  --ct-surface-2:    #fafbfc;
+  --ct-line-soft:    #eef0f4;
+  --ct-line:         #e3e6ec;
+  --ct-line-strong:  #cbd1dc;   /* separateurs decoratifs — pas un contour de cible */
+  /* Contour des cibles de SAISIE. --ct-line-strong tient 1,53:1, largement sous le
+     seuil non textuel de 3:1 (WCAG 1.4.11) : un champ vide n'avait aucun contour
+     perceptible. Token distinct plutot que relevement de line-strong — l'exigence
+     porte sur les controles, et relever le token global redessinerait les dix
+     modules d'un coup. */
+  --ct-line-field:   #8b909b;
+  --ct-ink:          #12151c;
+  --ct-ink-1:        #3c4453;
+  --ct-ink-2:        #6b7488;
+  /* NON TEXTUEL. A 3,09:1 il ne peut pas porter de texte, et toute valeur qui
+     atteindrait 4,5:1 se confondrait avec --ct-ink-2 (4,69:1) : trois gris de
+     texte ne tiennent pas dans l'echelle. On en garde deux, et ink-3 devient le
+     gris des elements decoratifs — seuil 3:1, WCAG 1.4.11. Le seul usage restant
+     est l'icone d'etat vide ; tout texte qui l'utilisait est passe a ink-2. */
+  --ct-ink-3:        #8a93a4;
+  --ct-ink-disabled: #798294;   /* etait #9aa2b1 : 2,32:1 sur -neutral-tint, illisible,
+                                   alors que le sombre heritait 5,52:1. Le desactive
+                                   echappe formellement a AA, mais pas au bon sens :
+                                   un meme etat doit se lire pareil dans les deux themes. */
+
+  /* Accent — action et sélection UNIQUEMENT */
+  /* Encre posee sur un aplat ACCENT. Blanche dans les deux themes, contrairement
+     a --ct-onsolid qui s'inverse : l'accent sombre a ete assombri (passe 2, option B)
+     precisement pour continuer a porter du blanc, la ou les aplats de severite,
+     eux, s'eclaircissent vraiment en sombre. Deux encres parce que deux
+     comportements, pas par gout de la nuance. */
+  --ct-onaccent:     #fff;
+  /* Voile des surcouches (modale, aide, historique). Noir translucide dans les
+     deux themes : c'est l'assombrissement du fond qui fait la surcouche, il ne
+     s'inverse pas. Token parce que la valeur est repetee a quatre endroits. */
+  --ct-scrim:        rgba(0,0,0,0.45);
+  /* Fond des blocs de code / d'exemple. Sombre dans les DEUX themes, comme
+     une console : c'est une convention de lecture, pas une surface d'interface. */
+  --ct-code-bg:      #0f172a;
+
+  --ct-accent:       #5a4bd8;
+  --ct-accent-hover: #4536b4;
+  --ct-accent-tint:  #eeecfd;
+  --ct-accent-ink:   #3f32a8;
+
+  /* Sévérité — données UNIQUEMENT.
+     Trois grades par ton, mêmes hues, même encre (-ink) :
+     -tint pour un badge · -fill pour un aplat (cellule de matrice, chip de
+     score) · base (solid) pour un liseré, une jauge ou un survol destructif. */
+  --ct-critical:      #b3261e;  --ct-critical-tint: #fbe9e7;  --ct-critical-fill: #e7bcb9;  --ct-critical-ink: #8c1d18;
+  --ct-high:          #c2410c;  --ct-high-tint:     #fdeee3;  --ct-high-fill:     #eecabb;  --ct-high-ink:     #8f3009;
+  --ct-medium:        #a16207;  --ct-medium-tint:   #fdf4dc;  --ct-medium-fill:   #e8d8c1;  --ct-medium-ink:   #7c4a05;
+  --ct-low:           #15803d;  --ct-low-tint:      #e7f4ec;  --ct-low-fill:      #c4dfce;  --ct-low-ink:      #116233;
+  --ct-info:          #3f6d8c;  --ct-info-tint:     #e9f0f5;  --ct-info-fill:     #c3d2db;  --ct-info-ink:     #2f536b;
+  --ct-neutral:       #6b7488;  --ct-neutral-tint:  #f2f3f7;  --ct-neutral-fill:  #d7d9df;  --ct-neutral-ink:  #4c5566;
+
+  /* Encre posée sur un aplat de couleur base (solid) — s'inverse en dark. */
+  --ct-onsolid: #fff;
+
+  /* Typo */
+  --ct-font:      'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --ct-font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --ct-text-page:    20px;
+  --ct-text-section: 16px;
+  --ct-text-body:    14px;
+  --ct-text-ui:      13.5px;
+  --ct-text-data:    13px;
+  --ct-text-meta:    12px;
+  --ct-text-label:   11px;
+
+  /* Rayons */
+  --ct-r-sm: 4px;  --ct-r-md: 6px;  --ct-r-lg: 8px;  --ct-r-xl: 12px;  --ct-r-pill: 999px;
+
+  /* Espacement */
+  --ct-s1: 4px; --ct-s2: 8px; --ct-s3: 12px; --ct-s4: 16px;
+  --ct-s5: 20px; --ct-s6: 24px; --ct-s8: 32px; --ct-s12: 48px;
+
+  /* Hauteurs de contrôle */
+  /* xs sert les contextes denses : fleches de reordonnancement dans un tableau,
+     actions d'une carte de rail. C'est un troisieme cran sur l'axe md -> sm,
+     pas un concept nouveau. */
+  --ct-h-xs: 22px;  --ct-h-sm: 28px;  --ct-h-md: 34px;
+  /* Hauteur par défaut d'un bouton : plus courte qu'un champ (34), un cran
+     au-dessus d'un bouton de modale (~27). --ct-h-md reste réservé aux champs. */
+  --ct-h-btn: 30px;
+
+  /* Élévation */
+  --ct-shadow-card:    0 1px 2px rgba(18,21,28,0.05);
+  --ct-shadow-overlay: 0 20px 48px -12px rgba(18,21,28,0.28);
+
+  /* Chrome */
+  --ct-appbar-h: 48px;
+  --ct-rail-w:   232px;
+
+  --ct-focus: 0 0 0 3px rgba(90,75,216,0.28);
+
+  /* Compléments (§1) */
+  --ct-line-hover:  #aab2c0;
+  --ct-focus-soft:  0 0 0 3px rgba(90,75,216,0.18);
+  --ct-danger-tint: #fdeeec;
+  --ct-danger-line: #e9cdc9;
+
+  /* Identité des modules (§5) — teinte de fond / encre, jamais un ton de sévérité */
+  --ct-mod-risk-tint:#e9edf1; --ct-mod-risk-ink:#2c3e50;
+  --ct-mod-compliance-tint:#eeecfd; --ct-mod-compliance-ink:#4b3fbd;
+  --ct-mod-audit-tint:#e4f2e8; --ct-mod-audit-ink:#186334;
+  --ct-mod-vendor-tint:#e0f5f2; --ct-mod-vendor-ink:#0f766e;
+  --ct-mod-asset-tint:#e6eefc; --ct-mod-asset-ink:#1a5cbf;
+  --ct-mod-access-tint:#fce7f1; --ct-mod-access-ink:#a81259;
+  --ct-mod-surface-tint:#fbeaea; --ct-mod-surface-ink:#a01818;
+  --ct-mod-appsec-tint:#e2f1f5; --ct-mod-appsec-ink:#0b5d73;
+  --ct-mod-scan-tint:#fdeee3; --ct-mod-scan-ink:#9a3d0a;
+  --ct-mod-pilot-tint:#f6ecf6; --ct-mod-pilot-ink:#6e2a6e;
+}
+
+:root[data-theme="dark"] {
+  /* Native form controls (checkbox, radio, select, scrollbars) follow the
+     theme — kills the stock white widgets on dark tables. */
+  color-scheme: dark;
+
+  --ct-canvas:      #0f1218;
+  --ct-surface:     #1c2029;
+  --ct-surface-2:   #21252f;
+  --ct-line-soft:   #262b36;
+  --ct-line:        #2b313d;
+  --ct-line-strong: #3a4150;   /* separateurs decoratifs */
+  --ct-line-field:  #6a7182;   /* contour des cibles de saisie — voir bloc clair */
+  --ct-ink:         #f2f4f8;
+  --ct-ink-1:       #c3c9d4;
+  --ct-ink-2:       #99a1b0;
+  --ct-ink-3:       #79818f;   /* non textuel — voir le bloc clair */
+
+  /* Passe 2, option B : l'accent sombre etait eclairci pour se detacher de la
+     surface, au point de ne plus porter de blanc (4,01:1, et 3,12:1 au survol).
+     On l'assombrit plutot que d'inverser l'encre : un bouton primaire se reconnait
+     autant a sa structure — encre claire sur fond sature — qu'a sa couleur, et
+     l'inverser d'un theme a l'autre la retourne. --ct-onsolid reste ainsi cantonne
+     aux aplats de severite, qui eux s'eclaircissent reellement en sombre. */
+  --ct-accent:       #6656e2;
+  --ct-accent-hover: #6f60e5;
+  --ct-accent-tint:  #2e2757;
+  --ct-accent-ink:   #b9aefb;
+
+  --ct-critical: #e8695f;  --ct-critical-tint: #3a1e1b;  --ct-critical-fill: #613333;  --ct-critical-ink: #f0a49c;
+  --ct-high:     #e08542;  --ct-high-tint:     #3a2415;  --ct-high-fill:     #5a3b27;  --ct-high-ink:     #efab77;
+  --ct-medium:   #d9a23c;  --ct-medium-tint:   #332a12;  --ct-medium-fill:   #584625;  --ct-medium-ink:   #e2c069;
+  --ct-low:      #4caf6d;  --ct-low-tint:      #16301f;  --ct-low-fill:      #244936;  --ct-low-ink:      #7ecb96;
+  --ct-info:     #6aa3c4;  --ct-info-tint:     #14262f;  --ct-info-fill:     #324959;  --ct-info-ink:     #9cc8de;
+  --ct-neutral:  #79818f;  --ct-neutral-tint:  #262b36;  --ct-neutral-fill:  #464c56;  --ct-neutral-ink:  #c3c9d4;
+
+  /* Les aplats de sévérité s'éclaircissent en dark : l'encre posée dessus s'inverse. */
+  --ct-onsolid: #11121a;
+  /* Halo de focus : reste indigo (état d'interaction), recalé sur l'accent dark. */
+  --ct-focus: 0 0 0 3px rgba(122,108,240,0.35);
+
+  --ct-shadow-card:    none;
+  --ct-shadow-overlay: 0 20px 48px -12px rgba(0,0,0,0.55);
+
+  --ct-line-hover:  #4a5162;
+  --ct-focus-soft:  0 0 0 3px rgba(122,108,240,0.25);
+  --ct-danger-tint: #3a1e1b;
+  --ct-danger-line: #5a2f2a;
+
+  --ct-mod-risk-tint:#232c37; --ct-mod-risk-ink:#a9bacd;
+  --ct-mod-compliance-tint:#2a2455; --ct-mod-compliance-ink:#b9aefb;
+  --ct-mod-audit-tint:#132b1c; --ct-mod-audit-ink:#74c288;
+  --ct-mod-vendor-tint:#10302c; --ct-mod-vendor-ink:#6fd0c1;
+  --ct-mod-asset-tint:#141f3a; --ct-mod-asset-ink:#8fb4f5;
+  --ct-mod-access-tint:#331428; --ct-mod-access-ink:#f099c4;
+  --ct-mod-surface-tint:#3a1c1c; --ct-mod-surface-ink:#f0a0a0;
+  --ct-mod-appsec-tint:#0f2c34; --ct-mod-appsec-ink:#77c3d4;
+  --ct-mod-scan-tint:#33230f; --ct-mod-scan-ink:#efab77;
+  --ct-mod-pilot-tint:#2d1b2d; --ct-mod-pilot-ink:#d8a6d8;
+}
+
+/* ═══════════ 2. LEGACY RAIL LITERAL ══════════════════════════════════
+   Le bloc d'alias de transition (--blue, --border, --text-muted…) est
+   supprime : plus aucun consommateur dans l'arbre. Seul --sidebar-bg
+   subsiste, c'est un literal et non un alias. */
+:root {
+  --sidebar-bg:   #0f172a;   /* legacy dark rail — stays literal until removed */
+}
+
+/* ═══════════════════ 3. @font-face (deferred) ═══════════════════
+   woff2 files not shipped yet — the stack falls back to system-ui until
+   they land in shared/fonts/. Drop the files and typography activates.  */
+@font-face { font-family:'IBM Plex Sans'; font-weight:400; font-display:swap; src:url('../fonts/IBMPlexSans-Regular.woff2') format('woff2'); }
+@font-face { font-family:'IBM Plex Sans'; font-weight:500; font-display:swap; src:url('../fonts/IBMPlexSans-Medium.woff2') format('woff2'); }
+@font-face { font-family:'IBM Plex Sans'; font-weight:600; font-display:swap; src:url('../fonts/IBMPlexSans-SemiBold.woff2') format('woff2'); }
+@font-face { font-family:'IBM Plex Mono'; font-weight:400; font-display:swap; src:url('../fonts/IBMPlexMono-Regular.woff2') format('woff2'); }
+@font-face { font-family:'IBM Plex Mono'; font-weight:500; font-display:swap; src:url('../fonts/IBMPlexMono-Medium.woff2') format('woff2'); }
+
+/* ═══════════════════ 4. BASE + PRIMITIVES (SPEC §9) ═══════════════════ */
+
+/* 9.1 Base */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--ct-font);
+  font-size: var(--ct-text-body);
+  line-height: 1.6;
+  color: var(--ct-ink);
+  background: var(--ct-canvas);
+  -webkit-font-smoothing: antialiased;
+}
+/* Apps with the full toolbar + sidebar + internal-scroll layout add
+   class="ct-app-shell" on <body> to lock the page to 100vh. */
+body.ct-app-shell { overflow: hidden; height: 100vh; }
+h1, h2, h3, h4 { margin: 0; font-weight: 600; letter-spacing: -0.3px; }
+code, .ct-mono, .ct-num { font-family: var(--ct-font-mono); }
+.ct-num { font-variant-numeric: tabular-nums; }
+:focus-visible { outline: none; box-shadow: var(--ct-focus); }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
+.ct-icon-btn-slot { display: inline-flex; align-items: center; }
+.ct-spacer { flex: 1; }
+
+/* 9.2 .ct-btn */
+.ct-btn {
+  font-family: inherit;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  height: var(--ct-h-btn); min-width: 0; padding: 0 13px;
+  border: 1px solid var(--ct-line-field); border-radius: var(--ct-r-md);
+  background: var(--ct-surface); color: var(--ct-ink);
+  font-size: 12.5px; font-weight: 500; white-space: nowrap;
+  cursor: pointer; transition: background 120ms, border-color 120ms, color 120ms;
+}
+.ct-btn:hover { background: var(--ct-canvas); border-color: var(--ct-line-hover); }
+.ct-btn[data-size="sm"] { height: var(--ct-h-sm); padding: 0 11px; border-radius: var(--ct-r-sm); font-size: 12.5px; }
+.ct-btn[data-size="xs"] { height: var(--ct-h-xs); padding: 0 7px; border-radius: var(--ct-r-sm); font-size: 11px; }
+.ct-btn[data-icon] { width: var(--ct-h-btn); padding: 0; }
+.ct-btn[data-icon][data-size="sm"] { width: var(--ct-h-sm); }
+.ct-btn[data-icon][data-size="xs"] { width: var(--ct-h-xs); }
+/* La spec nomme quatre variantes ; "neutral" est le dessin par defaut du
+   .ct-btn nu. On le declare quand meme : un appelant ne doit pas avoir a
+   savoir que l'absence d'attribut signifie quelque chose. */
+.ct-btn[data-variant="neutral"] { /* = .ct-btn */ }
+.ct-btn[data-variant="primary"] { background: var(--ct-accent); border-color: var(--ct-accent); color: var(--ct-onaccent); }
+.ct-btn[data-variant="primary"]:hover { background: var(--ct-accent-hover); border-color: var(--ct-accent-hover); }
+.ct-btn[data-variant="ghost"] { background: transparent; border-color: transparent; color: var(--ct-ink-1); }
+.ct-btn[data-variant="ghost"]:hover { background: var(--ct-line-soft); border-color: transparent; color: var(--ct-ink); }
+.ct-btn[data-variant="danger"] { background: var(--ct-danger-tint); border-color: var(--ct-danger-line); color: var(--ct-critical-ink); }
+.ct-btn[data-variant="danger"]:hover { background: var(--ct-critical); border-color: var(--ct-critical); color: var(--ct-onsolid); }
+/* Bouton d'action IA (étoile) : modificateur de .ct-btn. L'accent du système
+   est déjà l'indigo « IA » ; on l'applique en version teintée pour distinguer
+   ces actions des boutons ordinaires sans rivaliser avec le primary. Toujours
+   combiné à .ct-btn, jamais à une variante. Thémé clair/sombre par les jetons.
+   Placé après les variantes pour l'emporter à spécificité (0,2,0) égale. */
+.ct-btn.btn-ai { background: var(--ct-accent); border-color: var(--ct-accent); color: var(--ct-onaccent); }
+.ct-btn.btn-ai:hover { background: var(--ct-accent-tint); border-color: var(--ct-accent-tint); color: var(--ct-accent-ink); }
+.ct-btn:disabled, .ct-btn[aria-disabled="true"] {
+  background: var(--ct-neutral-tint); border-color: var(--ct-line-field);
+  color: var(--ct-ink-disabled); cursor: not-allowed;
+}
+.ct-btngroup { display: flex; gap: var(--ct-s2); align-items: center; flex-wrap: wrap; }
+
+/* 9.3 .ct-ref  (.ct-badge deferred — see header) */
+/* Variante dense, alignée sur .ct-badge[data-size="sm"] : mêmes 10,5px, même
+   resserrement. Elle existe pour les contextes où la référence accompagne un
+   contenu court — une carte de kanban, une cellule — et où la taille de base
+   pèse plus que ce qu'elle désigne. Une variante nommée dans le socle, pas un
+   font-size posé sur place : c'est la seule forme qui reste vraie partout. */
+.ct-ref[data-size="sm"] { height: 18px; padding: 0 7px; font-size: 10.5px; }
+
+.ct-ref {
+  display: inline-flex; align-items: center; height: 20px; padding: 0 8px;
+  border: 1px solid var(--ct-line); border-radius: var(--ct-r-sm);
+  background: var(--ct-neutral-tint); color: var(--ct-ink-1);
+  font-family: var(--ct-font-mono); font-size: 11px; font-weight: 500; white-space: nowrap;
+}
+.ct-ref[data-module="risk"]       { background: var(--ct-mod-risk-tint);       color: var(--ct-mod-risk-ink);       border-color: transparent; }
+.ct-ref[data-module="compliance"] { background: var(--ct-mod-compliance-tint); color: var(--ct-mod-compliance-ink); border-color: transparent; }
+.ct-ref[data-module="audit"]      { background: var(--ct-mod-audit-tint);      color: var(--ct-mod-audit-ink);      border-color: transparent; }
+.ct-ref[data-module="vendor"]     { background: var(--ct-mod-vendor-tint);     color: var(--ct-mod-vendor-ink);     border-color: transparent; }
+.ct-ref[data-module="asset"]      { background: var(--ct-mod-asset-tint);      color: var(--ct-mod-asset-ink);      border-color: transparent; }
+.ct-ref[data-module="access"]     { background: var(--ct-mod-access-tint);     color: var(--ct-mod-access-ink);     border-color: transparent; }
+.ct-ref[data-module="surface"]    { background: var(--ct-mod-surface-tint);    color: var(--ct-mod-surface-ink);    border-color: transparent; }
+.ct-ref[data-module="appsec"]     { background: var(--ct-mod-appsec-tint);     color: var(--ct-mod-appsec-ink);     border-color: transparent; }
+.ct-ref[data-module="scan"]       { background: var(--ct-mod-scan-tint);       color: var(--ct-mod-scan-ink);       border-color: transparent; }
+.ct-ref[data-module="pilot"]      { background: var(--ct-mod-pilot-tint);      color: var(--ct-mod-pilot-ink);      border-color: transparent; }
+
+/* 9.3b .ct-badge — semantic tone system (tinted by default, [data-fill] solid) */
+.ct-badge { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: var(--ct-r-pill);
+  font-size: 11px; font-weight: 600; line-height: 1.5; white-space: nowrap;
+  /* Cas par defaut, sans data-tone : lisible plutot qu'invisible. Un appel sans
+     ton reste un bug d'appelant, mais il ne doit pas produire un badge fantome. */
+  background: var(--ct-neutral-tint); color: var(--ct-ink); }
+.ct-badge[data-size="sm"] { padding: 1px 6px; font-size: 10.5px; }
+/* « En cours » : un état, pas une couleur. Il vivait dans Surface sous la forme
+   d'une animation attachée à .job-running, donc invisible aux autres modules
+   qui ont pourtant des traitements en cours. Attribut nu, comme data-fill. */
+.ct-badge[data-live] { animation: ct-pulse 1.5s ease-in-out infinite; }
+@keyframes ct-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) {
+    /* Le clignotement est un confort de lecture, pas une information : le ton
+       porte déjà l'état. On le coupe pour qui l'a demandé. */
+    .ct-badge[data-live] { animation: none; }
+}
+.ct-badge[data-tone="critical"] { background: var(--ct-critical-tint); color: var(--ct-critical-ink); }
+.ct-badge[data-tone="high"]     { background: var(--ct-high-tint);     color: var(--ct-high-ink); }
+.ct-badge[data-tone="medium"]   { background: var(--ct-medium-tint);   color: var(--ct-medium-ink); }
+.ct-badge[data-tone="low"]      { background: var(--ct-low-tint);      color: var(--ct-low-ink); }
+.ct-badge[data-tone="info"]     { background: var(--ct-info-tint);     color: var(--ct-info-ink); }
+.ct-badge[data-tone="neutral"]  { background: var(--ct-neutral-tint);  color: var(--ct-neutral-ink); }
+.ct-badge[data-tone="accent"]   { background: var(--ct-accent-tint);   color: var(--ct-accent-ink); }
+/* [data-fill] — solid, only when the badge IS the value (computed cells) */
+.ct-badge[data-fill][data-tone="critical"] { background: var(--ct-critical); color: var(--ct-onsolid); }
+.ct-badge[data-fill][data-tone="high"]     { background: var(--ct-high);     color: var(--ct-onsolid); }
+.ct-badge[data-fill][data-tone="medium"]   { background: var(--ct-medium);   color: var(--ct-onsolid); }
+.ct-badge[data-fill][data-tone="low"]      { background: var(--ct-low);      color: var(--ct-onsolid); }
+.ct-badge[data-fill][data-tone="info"]     { background: var(--ct-info);     color: var(--ct-onsolid); }
+.ct-badge[data-fill][data-tone="neutral"]  { background: var(--ct-neutral);  color: var(--ct-onsolid); }
+.ct-badge[data-fill][data-tone="accent"]   { background: var(--ct-accent);   color: var(--ct-onaccent); }
+
+/* 9.4 .ct-field · .ct-input */
+.ct-field { display: flex; flex-direction: column; gap: 6px; }
+/* L'espacement ENTRE champs manquait au socle : .ct-field ne réglait que
+   l'écart interne libellé / saisie. Surface et AppSec le compensaient chacun
+   par un margin-bottom local — supprimé comme collision, ce qui a collé les
+   champs de leurs modales. La règle appartient au socle, pas aux modules.
+   Sur le sélecteur adjacent, donc sans marge orpheline après le dernier champ. */
+.ct-field + .ct-field { margin-top: 14px; }
+/* Conteneur de formulaire (spec §2). Quand le balisage l'adopte, c'est le gap
+   qui porte l'espacement et la règle adjacente s'efface — une seule valeur
+   visible, jamais deux qui s'additionnent. */
+.ct-form { display: flex; flex-direction: column; gap: 14px; }
+.ct-form .ct-field + .ct-field { margin-top: 0; }
+.ct-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.ct-form-grid .ct-field + .ct-field { margin-top: 0; }
+.ct-form-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+.ct-label { font-size: var(--ct-text-label); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--ct-ink-2); }
+.ct-input, .ct-select, .ct-textarea {
+  font-family: inherit; font-size: var(--ct-text-ui);
+  height: var(--ct-h-md); width: 100%; padding: 0 11px;
+  border: 1px solid var(--ct-line-field); border-radius: var(--ct-r-md);
+  background: var(--ct-surface); color: var(--ct-ink);
+}
+.ct-select { padding: 0 10px; }
+.ct-textarea { height: auto; min-height: 76px; padding: 8px 11px; line-height: 1.55; resize: vertical; }
+.ct-input:focus, .ct-select:focus, .ct-textarea:focus { outline: none; border-color: var(--ct-accent); box-shadow: var(--ct-focus-soft); }
+.ct-input::placeholder, .ct-textarea::placeholder { color: var(--ct-ink-disabled); }
+
+/* .ct-filter — select de barre d'outils, au-dessus d'une liste ou d'un
+   tableau. Ce n'est pas un champ de formulaire : il se dimensionne a son
+   contenu au lieu de prendre toute la largeur, et adopte la hauteur sm pour
+   s'aligner sur les boutons de la meme barre. */
+.ct-filter {
+  font-family: inherit; font-size: var(--ct-text-meta);
+  height: var(--ct-h-sm); width: auto; min-width: 110px; max-width: 240px;
+  padding: 0 9px;
+  border: 1px solid var(--ct-line-field); border-radius: var(--ct-r-sm);
+  background: var(--ct-surface); color: var(--ct-ink); cursor: pointer;
+}
+.ct-filter:focus { outline: none; border-color: var(--ct-accent); box-shadow: var(--ct-focus-soft); }
+.ct-input:disabled, .ct-select:disabled { background: var(--ct-neutral-tint); color: var(--ct-ink-disabled); cursor: not-allowed; }
+.ct-input[data-size="sm"], .ct-select[data-size="sm"] { height: 30px; font-size: var(--ct-text-data); }
+/* xs : pour les champs en cellule de tableau, alignés sur input de cellule (~24) et bouton xs (22). */
+.ct-input[data-size="xs"], .ct-select[data-size="xs"] { height: 24px; padding: 0 8px; font-size: var(--ct-text-meta); }
+.ct-hint  { font-size: var(--ct-text-meta); color: var(--ct-ink-2); line-height: 1.5; }
+.ct-error { font-size: var(--ct-text-meta); color: var(--ct-critical-ink); line-height: 1.5; }
+[aria-invalid="true"] { border-color: var(--ct-critical); }
+
+.ct-tagfield {
+  display: flex; flex-wrap: wrap; gap: 5px; align-items: center;
+  min-height: var(--ct-h-md); padding: 5px 7px;
+  border: 1px solid var(--ct-line-field); border-radius: var(--ct-r-md); background: var(--ct-surface);
+}
+.ct-tag {
+  display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 6px 0 9px;
+  border-radius: var(--ct-r-sm); background: var(--ct-accent-tint); color: var(--ct-accent-ink);
+  font-family: var(--ct-font-mono); font-size: 11.5px; font-weight: 500;
+}
+.ct-check { position: relative; display: flex; align-items: center; gap: 9px; font-size: var(--ct-text-ui); color: var(--ct-ink); cursor: pointer; }
+.ct-check-box { width: 17px; height: 17px; border: 1px solid var(--ct-line-field); border-radius: var(--ct-r-sm); background: var(--ct-surface); display: inline-flex; align-items: center; justify-content: center; color: transparent; flex-shrink: 0; }
+.ct-check input:checked + .ct-check-box { background: var(--ct-accent); border-color: var(--ct-accent); color: var(--ct-onaccent); }
+.ct-check input { position: absolute; opacity: 0; width: 0; height: 0; }
+.ct-choice { display: inline-flex; gap: 6px; }
+.ct-choice > button {
+  font-family: inherit; height: var(--ct-h-sm); min-width: 28px; padding: 0 10px;
+  border: 1px solid var(--ct-line-field); border-radius: var(--ct-r-sm);
+  background: var(--ct-surface); color: var(--ct-ink-1);
+  font-size: 12.5px; font-weight: 500; cursor: pointer;
+}
+.ct-choice > button[aria-pressed="true"] { background: var(--ct-accent); border-color: var(--ct-accent); color: var(--ct-onaccent); }
+/* Un choix peut porter un jugement et pas seulement une selection : la decision
+   de revue est verte ou rouge. On reutilise le vocabulaire de tons plutot que
+   d'inventer des noms d'etat. Le ton ne s'applique qu'a l'option retenue. */
+.ct-choice > button[aria-pressed="true"][data-tone="low"]      { background: var(--ct-low);      border-color: var(--ct-low);      color: var(--ct-onsolid); }
+.ct-choice > button[aria-pressed="true"][data-tone="critical"] { background: var(--ct-critical); border-color: var(--ct-critical); color: var(--ct-onsolid); }
+.ct-choice > button[aria-pressed="true"][data-tone="high"]     { background: var(--ct-high);     border-color: var(--ct-high);     color: var(--ct-onsolid); }
+.ct-choice[data-size="xs"] > button { height: var(--ct-h-xs); min-width: var(--ct-h-xs); padding: 0 6px; font-size: 11px; }
+.ct-choice[data-mono] > button { font-family: var(--ct-font-mono); }
+
+/* Infobulle au survol, alimentee par data-tip. Le motif etait duplique dans
+   Pilot et Risk sous .catalog-btn-sm:hover::after. */
+.ct-tip { position: relative; }
+.ct-tip[data-tip]:hover::after {
+  content: attr(data-tip); position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%); margin-bottom: 4px;
+  background: var(--ct-ink); color: var(--ct-onaccent);
+  padding: 3px 8px; border-radius: var(--ct-r-sm); font-size: 11px;
+  white-space: nowrap; pointer-events: none; z-index: 100;
+}
+
+/* 9.5 .ct-card · .ct-kpi · .ct-meter · .ct-empty */
+.ct-card {
+  background: var(--ct-surface); border: 1px solid var(--ct-line);
+  border-radius: var(--ct-r-lg); box-shadow: var(--ct-shadow-card); overflow: hidden;
+}
+.ct-card-head { display: flex; align-items: center; gap: var(--ct-s3); padding: 13px 18px; border-bottom: 1px solid var(--ct-line); }
+.ct-card-title { font-size: 14px; font-weight: 600; color: var(--ct-ink); flex: 1; }
+.ct-card-body { padding: 18px; }
+
+.ct-kpigrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--ct-s3); }
+.ct-kpi { background: var(--ct-surface); border: 1px solid var(--ct-line); border-radius: var(--ct-r-lg); box-shadow: var(--ct-shadow-card); overflow: hidden; display: flex; flex-direction: column; }
+.ct-kpi-tone { height: 3px; background: var(--ct-neutral); }
+.ct-kpi[data-tone="critical"] .ct-kpi-tone { background: var(--ct-critical); }
+.ct-kpi[data-tone="high"]     .ct-kpi-tone { background: var(--ct-high); }
+.ct-kpi[data-tone="medium"]   .ct-kpi-tone { background: var(--ct-medium); }
+.ct-kpi[data-tone="low"]      .ct-kpi-tone { background: var(--ct-low); }
+.ct-kpi[data-tone="info"]     .ct-kpi-tone { background: var(--ct-info); }
+/* Emphase "value" : la valeur prend l'encre du ton (criticité). Jetons -ink,
+   AA 6,5-9:1. Défaut = valeur neutre + liseré seul. (audit v2 §04) */
+.ct-kpi[data-emphasis="value"][data-tone="critical"] .ct-kpi-value { color: var(--ct-critical-ink); }
+.ct-kpi[data-emphasis="value"][data-tone="high"]     .ct-kpi-value { color: var(--ct-high-ink); }
+.ct-kpi[data-emphasis="value"][data-tone="medium"]   .ct-kpi-value { color: var(--ct-medium-ink); }
+.ct-kpi[data-emphasis="value"][data-tone="low"]      .ct-kpi-value { color: var(--ct-low-ink); }
+.ct-kpi[data-emphasis="value"][data-tone="info"]     .ct-kpi-value { color: var(--ct-info-ink); }
+.ct-kpi-body { padding: 14px 18px 15px; display: flex; flex-direction: column; gap: var(--ct-s3); flex: 1; }
+.ct-kpi-label { font-size: var(--ct-text-label); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--ct-ink-2); }
+.ct-kpi-value { font-family: var(--ct-font-mono); font-size: 30px; font-weight: 500; line-height: 1; color: var(--ct-ink); font-variant-numeric: tabular-nums; margin-top: auto; }
+.ct-kpi-unit  { font-size: var(--ct-text-data); color: var(--ct-ink-2); }
+.ct-kpi-split { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
+.ct-kpi[data-density="dense"] .ct-kpi-body { padding: 13px 16px 15px; gap: 7px; }
+.ct-kpi[data-density="dense"] .ct-kpi-value { font-size: 26px; }
+
+/* .ct-kpi-adv — tuile KPI avancée : superset de .ct-kpi. Ajoute titre, badge
+   source (Auto/Ext), pill d'état, statut, seuils sur une ligne, un slot
+   graphique optionnel (.ct-kpi-adv-viz, ex. .ct-meter) et une note de pied
+   (.ct-kpi-adv-foot). Réutilise le liseré de ton et l'encre de valeur du
+   système .ct-kpi — un dashboard mélange les deux formats sans rupture.
+   Couvre le kpi-card de pilot et les indicateurs de compliance. (audit v2 §P3) */
+.ct-kpi-adv { background: var(--ct-surface); border: 1px solid var(--ct-line); border-radius: var(--ct-r-lg); box-shadow: var(--ct-shadow-card); overflow: hidden; display: flex; flex-direction: column; }
+.ct-kpi-adv.ct-clickable:hover { border-color: var(--ct-line-strong); }
+.ct-kpi-adv[data-tone="critical"] .ct-kpi-tone { background: var(--ct-critical); }
+.ct-kpi-adv[data-tone="high"]     .ct-kpi-tone { background: var(--ct-high); }
+.ct-kpi-adv[data-tone="medium"]   .ct-kpi-tone { background: var(--ct-medium); }
+.ct-kpi-adv[data-tone="low"]      .ct-kpi-tone { background: var(--ct-low); }
+.ct-kpi-adv[data-tone="info"]     .ct-kpi-tone { background: var(--ct-info); }
+.ct-kpi-adv-body { padding: 15px 18px 16px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.ct-kpi-adv-head { display: flex; align-items: flex-start; gap: var(--ct-s2); }
+.ct-kpi-adv-title { font-size: var(--ct-text-ui); font-weight: 600; color: var(--ct-ink); line-height: 1.3; flex: 1; }
+.ct-kpi-adv-src { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 1px 6px; border-radius: var(--ct-r-sm); white-space: nowrap; flex-shrink: 0; margin-top: 1px; }
+.ct-kpi-adv-src[data-src="auto"] { color: var(--ct-info-ink); background: var(--ct-info-tint); }
+.ct-kpi-adv-src[data-src="ext"]  { color: var(--ct-medium-ink); background: var(--ct-medium-tint); }
+.ct-kpi-adv-pill { font-size: 10px; font-weight: 600; letter-spacing: 0.3px; padding: 1px 7px; border-radius: var(--ct-r-pill); white-space: nowrap; flex-shrink: 0; margin-top: 1px; color: var(--ct-neutral-ink); background: var(--ct-neutral-tint); }
+.ct-kpi-adv-valrow { display: flex; align-items: baseline; gap: var(--ct-s2); margin-top: auto; flex-wrap: wrap; }
+.ct-kpi-adv-value { font-family: var(--ct-font-mono); font-size: 28px; font-weight: 500; line-height: 1; color: var(--ct-ink); font-variant-numeric: tabular-nums; }
+.ct-kpi-adv[data-tone="critical"] .ct-kpi-adv-value { color: var(--ct-critical-ink); }
+.ct-kpi-adv[data-tone="high"]     .ct-kpi-adv-value { color: var(--ct-high-ink); }
+.ct-kpi-adv[data-tone="medium"]   .ct-kpi-adv-value { color: var(--ct-medium-ink); }
+.ct-kpi-adv[data-tone="low"]      .ct-kpi-adv-value { color: var(--ct-low-ink); }
+.ct-kpi-adv[data-tone="info"]     .ct-kpi-adv-value { color: var(--ct-info-ink); }
+.ct-kpi-adv[data-tone="neutral"]  .ct-kpi-adv-value { color: var(--ct-ink-2); }
+.ct-kpi-adv-status { font-size: var(--ct-text-meta); font-weight: 600; padding: 1px 7px; border-radius: var(--ct-r-sm); }
+.ct-kpi-adv-status[data-tone="critical"] { color: var(--ct-critical-ink); background: var(--ct-critical-tint); }
+.ct-kpi-adv-status[data-tone="high"]     { color: var(--ct-high-ink); background: var(--ct-high-tint); }
+.ct-kpi-adv-status[data-tone="medium"]   { color: var(--ct-medium-ink); background: var(--ct-medium-tint); }
+.ct-kpi-adv-status[data-tone="low"]      { color: var(--ct-low-ink); background: var(--ct-low-tint); }
+.ct-kpi-adv-status[data-tone="info"]     { color: var(--ct-info-ink); background: var(--ct-info-tint); }
+.ct-kpi-adv-status[data-tone="neutral"]  { color: var(--ct-neutral-ink); background: var(--ct-neutral-tint); }
+.ct-kpi-adv-viz { margin-top: 2px; }
+.ct-kpi-adv-meta { display: flex; justify-content: space-between; gap: var(--ct-s2); white-space: nowrap; padding-top: 9px; border-top: 1px solid var(--ct-line-soft); }
+.ct-kpi-adv-meta span { font-size: 11px; color: var(--ct-ink-2); font-variant-numeric: tabular-nums; }
+.ct-kpi-adv-meta b { color: var(--ct-ink-1); font-weight: 600; }
+.ct-kpi-adv-foot { font-size: var(--ct-text-label); color: var(--ct-ink-2); }
+.ct-kpi-adv[data-state="inactive"] { opacity: 0.75; background: var(--ct-surface-2); }
+.ct-kpi-adv[data-state="inactive"] .ct-kpi-tone { background: var(--ct-line); }
+.ct-kpi-adv[data-state="inactive"] .ct-kpi-adv-title { color: var(--ct-ink-2); }
+
+.ct-meter { height: 6px; border-radius: var(--ct-r-pill); background: var(--ct-line-soft); overflow: hidden; }
+.ct-meter > span { display: block; height: 100%; border-radius: var(--ct-r-pill); background: var(--ct-accent); }
+.ct-meter[data-tone="critical"] > span { background: var(--ct-critical); }
+.ct-meter[data-tone="high"]     > span { background: var(--ct-high); }
+.ct-meter[data-tone="medium"]   > span { background: var(--ct-medium); }
+.ct-meter[data-tone="low"]      > span { background: var(--ct-low); }
+.ct-dot { width: 8px; height: 8px; border-radius: var(--ct-r-pill); background: var(--ct-neutral); }
+.ct-dot[data-tone="critical"] { background: var(--ct-critical); }
+.ct-dot[data-tone="medium"]   { background: var(--ct-medium); }
+.ct-dot[data-tone="low"]      { background: var(--ct-low); }
+
+.ct-empty { padding: 40px 20px 44px; display: flex; flex-direction: column; align-items: center; gap: var(--ct-s3); text-align: center; }
+.ct-empty-icon { width: 38px; height: 38px; border-radius: var(--ct-r-pill); background: var(--ct-neutral-tint); border: 1px solid var(--ct-line); display: flex; align-items: center; justify-content: center; color: var(--ct-ink-3); }
+.ct-empty-title { font-size: 14px; font-weight: 500; color: var(--ct-ink); }
+.ct-empty-text  { font-size: var(--ct-text-data); color: var(--ct-ink-2); max-width: 300px; line-height: 1.55; }
+
+/* 9.6 table wrappers  (.ct-table + .ct-bulkbar deferred — see header) */
+.ct-tablewrap { background: var(--ct-surface); border: 1px solid var(--ct-line); border-radius: var(--ct-r-lg); box-shadow: var(--ct-shadow-card); overflow: hidden; }
+.ct-tabletoolbar { display: flex; align-items: center; gap: var(--ct-s3); padding: 11px 16px; border-bottom: 1px solid var(--ct-line); }
+.ct-tablecount { font-family: var(--ct-font-mono); font-size: 11.5px; color: var(--ct-ink-2); }
+.ct-pagination { display: flex; align-items: center; gap: var(--ct-s2); padding: 10px 16px; border-top: 1px solid var(--ct-line); font-size: var(--ct-text-meta); color: var(--ct-ink-2); }
+.ct-filters { display: flex; align-items: center; gap: var(--ct-s2); flex-wrap: wrap; }
+
+/* 9.7 .ct-modal (new markup — additive; legacy .ct-modal-* kept) · .ct-tabs */
+.ct-modal { width: 100%; max-width: 560px; max-height: calc(100vh - 64px); display: flex; flex-direction: column;
+  background: var(--ct-surface); border-radius: var(--ct-r-xl); box-shadow: var(--ct-shadow-overlay); overflow: hidden; }
+.ct-modal[data-width="sm"] { max-width: 420px; }
+.ct-modal[data-width="lg"] { max-width: 860px; }
+.ct-modal-head { display: flex; align-items: center; gap: var(--ct-s3); padding: 18px 22px; border-bottom: 1px solid var(--ct-line); }
+.ct-modal-title { font-size: var(--ct-text-section); font-weight: 600; color: var(--ct-ink); flex: 1; }
+.ct-modal-foot { display: flex; gap: 10px; justify-content: flex-end; padding: 16px 22px; border-top: 1px solid var(--ct-line); background: var(--ct-surface-2); }
+/* Le corps de modale n'existait pas dans la famille v2 — seuls -head et -foot
+   étaient definis — et la version legacy plus bas se limitait a un
+   margin-bottom. Surface et AppSec compensaient chacun par une regle locale,
+   supprimee comme collision : leurs modales ont perdu d'un coup le
+   rembourrage ET le defilement. Le composant partage emet ces trois noms, le
+   socle doit donc les servir en entier.
+   flex:1 + overflow-y:auto : c'est le corps qui defile, jamais la modale —
+   sinon l'en-tete et les actions sortent de l'ecran avec le contenu. */
+.ct-modal-body { padding: 18px 22px; overflow-y: auto; flex: 1; min-height: 0; }
+.ct-modal-header { display: flex; align-items: center; gap: var(--ct-s3); padding: 18px 22px;
+                   border-bottom: 1px solid var(--ct-line); font-size: var(--ct-text-section);
+                   font-weight: 600; color: var(--ct-ink); }
+.ct-modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding: 16px 22px;
+                   border-top: 1px solid var(--ct-line); background: var(--ct-surface-2); }
+
+.ct-tabs { display: flex; gap: var(--ct-s6); border-bottom: 1px solid var(--ct-line); }
+.ct-tab {
+  font-family: inherit; padding: 14px 0; border: 0; background: none;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  font-size: var(--ct-text-ui); font-weight: 500; color: var(--ct-ink-2);
+  display: flex; align-items: center; gap: 7px; cursor: pointer;
+}
+.ct-tab:hover { color: var(--ct-ink); }
+.ct-tab[aria-selected="true"] { color: var(--ct-ink); border-bottom-color: var(--ct-accent); font-weight: 600; }
+.ct-count { font-family: var(--ct-font-mono); font-size: 11px; color: var(--ct-ink-2); background: var(--ct-neutral-tint); border-radius: var(--ct-r-pill); padding: 1px 7px; }
+
+/* 9.8 Chrome — .ct-appbar · .ct-rail · .ct-pagehead */
+.ct-app { height: 100vh; display: flex; flex-direction: column; }
+.ct-appbar { position: relative;
+  height: var(--ct-appbar-h); flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 16px;
+  background: var(--ct-surface); border-bottom: 1px solid var(--ct-line); }
+.ct-appbar-sep { width: 1px; height: 22px; background: var(--ct-line); }
+.ct-appbar-context { display: flex; align-items: center; gap: 7px; font-size: var(--ct-text-data); color: var(--ct-ink-1); }
+.ct-appbar-context .ct-sep { color: var(--ct-line-strong); }
+.ct-appbar-context .ct-muted { color: var(--ct-ink-2); }
+.ct-appbar-saved { font-family: var(--ct-font-mono); font-size: 11.5px; color: var(--ct-ink-2); }
+.ct-appbar-actions { display: flex; align-items: center; gap: 4px; }
+.ct-iconaction { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
+  border: 0; border-radius: var(--ct-r-md); background: transparent; color: var(--ct-ink-2); cursor: pointer; }
+.ct-iconaction:hover { background: var(--ct-neutral-tint); color: var(--ct-ink); }
+/* Legacy injected controls (settings gear + github link) inherit dark-toolbar
+   white; re-theme them to ink inside the light appbar so they stay visible. */
+.ct-appbar-actions .btn-settings, .ct-appbar-actions .btn-github { color: var(--ct-ink-2); }
+.ct-appbar-actions .btn-settings:hover, .ct-appbar-actions .btn-github:hover { color: var(--ct-ink); background: var(--ct-neutral-tint) !important; }
+.ct-avatar { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px;
+  border-radius: var(--ct-r-pill); background: var(--ct-accent-tint); color: var(--ct-accent-ink); font-size: 11.5px; font-weight: 600; }
+
+.ct-modulepicker { display: flex; align-items: center; gap: 9px; height: 32px; padding: 0 10px 0 8px;
+  border: 1px solid var(--ct-line); border-radius: var(--ct-r-md); background: var(--ct-surface-2);
+  font-size: var(--ct-text-ui); font-weight: 600; color: var(--ct-ink); cursor: pointer; }
+.ct-modulepicker:hover { border-color: var(--ct-line-field); }
+.ct-modulepicker[aria-expanded="true"] { border-color: var(--ct-accent); background: var(--ct-accent-tint); color: var(--ct-accent-ink); }
+.ct-modulemark { width: 18px; height: 18px; flex-shrink: 0; }
+.ct-modulemenu { position: absolute; top: 44px; left: 12px; width: 640px; z-index: 900;
+  background: var(--ct-surface); border: 1px solid var(--ct-line); border-radius: var(--ct-r-xl); box-shadow: var(--ct-shadow-overlay); overflow: hidden; }
+.ct-modulemenu-search { padding: 12px 16px; border-bottom: 1px solid var(--ct-line); }
+.ct-modulemenu-list { padding: 12px 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+.ct-modulemenu-group { padding: 0 8px 8px; font-size: 10.5px; font-weight: 600; letter-spacing: 1.1px; text-transform: uppercase; color: var(--ct-ink-2); }
+.ct-moduleitem { display: flex; align-items: center; gap: 11px; padding: 9px 10px; border: 0; border-radius: var(--ct-r-md); background: transparent; text-align: left; cursor: pointer; }
+.ct-moduleitem:hover { background: var(--ct-neutral-tint); }
+.ct-moduleitem[aria-current="true"] { background: var(--ct-accent-tint); }
+.ct-moduleitem-mark { width: 26px; height: 26px; border-radius: var(--ct-r-md); background: var(--ct-neutral-tint);
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ct-moduleitem-mark img { width: 17px; height: 17px; }
+.ct-moduleitem-name { font-size: var(--ct-text-ui); font-weight: 500; color: var(--ct-ink); }
+.ct-moduleitem-desc { font-size: var(--ct-text-meta); color: var(--ct-ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.ct-body { flex: 1; display: flex; min-height: 0; }
+.ct-rail { width: var(--ct-rail-w); flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden;
+  transition: width 160ms ease, max-height 240ms ease;
+  background: var(--ct-surface-2); border-right: 1px solid var(--ct-line); }
+.ct-rail-scroll { flex: 1; overflow-y: auto; padding: 12px 10px; }
+.ct-rail-section { margin-top: 14px; }
+.ct-rail-group { display: flex; align-items: center; gap: 6px; padding: 0 10px 6px; border: 0; background: none; width: 100%;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 1.1px; text-transform: uppercase; color: var(--ct-ink-2); cursor: pointer; }
+.ct-rail-group .ct-icon { transition: transform 120ms; }
+.ct-rail-group[aria-expanded="true"] .ct-icon { transform: rotate(90deg); }
+/* collapse: hide the items following a collapsed group in the same section */
+.ct-rail-group[aria-expanded="false"] ~ .ct-rail-item { display: none; }
+.ct-rail-item { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 4px 10px; border-radius: var(--ct-r-md);
+  font-size: var(--ct-text-ui); font-weight: 500; color: var(--ct-ink-1); text-align: left; cursor: pointer; border: 0; background: transparent; width: 100%; }
+.ct-rail-item:hover { background: var(--ct-neutral-tint); }
+.ct-rail-item::before { content: ""; width: 3px; height: 16px; border-radius: 2px; background: transparent; flex-shrink: 0; }
+.ct-rail-item[aria-current="page"] { background: var(--ct-accent-tint); color: var(--ct-ink); font-weight: 600; }
+.ct-rail-item[aria-current="page"]::before { background: var(--ct-accent); }
+.ct-rail-item-label { flex: 1; }
+.ct-rail-subitem { min-height: 28px; padding-left: 22px; font-size: calc(var(--ct-text-ui) - 1px); }
+.ct-rail-subitem .ct-rail-item-label { color: var(--ct-ink-2); }
+.ct-rail-subitem[aria-current="page"] .ct-rail-item-label { color: var(--ct-ink); }
+.ct-rail-count { font-family: var(--ct-font-mono); font-size: 11px; color: var(--ct-ink-2); }
+.ct-rail-foot { border-top: 1px solid var(--ct-line); padding: 10px; }
+.ct-rail-doc { display: flex; align-items: center; gap: 8px; min-height: 34px; padding: 4px 10px; border-radius: var(--ct-r-md); cursor: pointer; }
+.ct-rail-doc-name { font-size: 12.5px; font-weight: 500; color: var(--ct-ink-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ct-rail-doc-meta { font-family: var(--ct-font-mono); font-size: 10.5px; color: var(--ct-ink-2); }
+
+.ct-content { flex: 1; min-width: 0; overflow-y: auto; padding: 24px 28px 32px; background: var(--ct-canvas); }
+.ct-pagehead { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 20px; }
+.ct-pagehead-main { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+.ct-crumbs { display: flex; align-items: center; gap: 7px; font-family: var(--ct-font-mono); font-size: 11.5px; color: var(--ct-ink-2); }
+.ct-crumbs .ct-sep { color: var(--ct-line-strong); }
+.ct-crumbs [aria-current="page"] { color: var(--ct-ink); }
+.ct-pagetitle { font-size: var(--ct-text-page); font-weight: 600; color: var(--ct-ink); letter-spacing: -0.3px; }
+.ct-pagesub { font-size: var(--ct-text-ui); color: var(--ct-ink-2); line-height: 1.55; max-width: 640px; }
+.ct-pagehead-actions { display: flex; gap: var(--ct-s2); padding-top: 22px; }
+
+/* 9.9 Impression (new chrome) */
+@media print {
+  .ct-appbar, .ct-rail, .ct-tabletoolbar, .ct-pagehead-actions, .ct-bulkbar, .ct-pagination { display: none !important; }
+  .ct-content { overflow: visible; padding: 0; background: #fff; }
+  .ct-card, .ct-kpi, .ct-tablewrap { box-shadow: none; break-inside: avoid; }
+}
+
+/* ═══════════════════ 5. LEGACY (removed steps 4-6) ═══════════════════
+   Classes still emitted by un-migrated apps and shared TS. They resolve
+   colours via the transition aliases above. Includes the 5 collision
+   primitives (.ct-table, .ct-badge, .ct-modal-*, .ct-bulkbar, .ct-icon)
+   until their emitting TS is migrated.                                   */
+
+/* ── Inline SVG icon (legacy — _icon()) ── */
+.ct-icon { display: inline-block; vertical-align: -0.15em; flex-shrink: 0; }
+
+/* ── Toolbar ── */
+.toolbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200; height: 40px;
+    background: var(--ct-ink); padding: 0 20px;
+    display: flex; gap: 10px; align-items: center;
+    box-shadow: none;
+}
+.toolbar-logo { display: flex; align-items: center; text-decoration: none; margin-right: 8px; opacity: 0.9; transition: opacity 0.15s; }
+.toolbar-logo:hover { opacity: 1; }
+.toolbar .app-title { color: white; font-weight: 700; font-size: 1em; margin-right: auto; }
+.toolbar .app-subtitle { color: rgba(255,255,255,0.7); font-size: 0.85em; margin-right: 16px; }
+.toolbar button {
+    padding: 5px 14px; border: none; border-radius: 4px; cursor: pointer;
+    font-weight: 600; font-size: 0.8em; transition: opacity 0.2s;
+}
+.toolbar button:hover { opacity: 0.85; }
+.toolbar .status { color: rgba(255,255,255,0.7); font-size: 0.8em; margin-left: 8px; }
+.toolbar-right { display: flex; align-items: center; gap: 8px; margin-left: 8px; }
+
+.btn-settings {
+    display: flex; align-items: center; justify-content: center;
+    padding: 4px; background: none !important; border: none; color: rgba(255,255,255,0.5);
+    cursor: pointer; transition: all 0.15s; border-radius: 50%;
+}
+.btn-settings:hover { color: white; background: rgba(255,255,255,0.1) !important; }
+.btn-github {
+    display: flex; align-items: center; justify-content: center;
+    padding: 4px; color: rgba(255,255,255,0.5); border-radius: 50%; transition: all 0.15s; text-decoration: none;
+}
+.btn-github:hover { color: white; background: rgba(255,255,255,0.1); }
+
+.toolbar-menu { position: relative; }
+.btn-menu { padding: 5px 14px; border: 1px solid var(--ct-line); border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.8em; background: var(--ct-surface); color: var(--ct-ink); transition: background 120ms, border-color 120ms; }
+.btn-menu:hover { background: var(--ct-canvas); border-color: var(--ct-line-hover); }
+.btn-menu:hover { opacity: 0.9; }
+.toolbar-dropdown {
+    display: none; position: absolute; top: 100%; right: 0; margin-top: 4px;
+    background: var(--ct-surface); border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    min-width: 180px; z-index: 300; overflow: hidden;
+}
+.toolbar-dropdown.open { display: block; }
+.toolbar-dropdown-item {
+    padding: 8px 16px; cursor: pointer; font-size: 0.85em; color: var(--ct-ink);
+    transition: background 0.15s;
+}
+.toolbar-dropdown-item:hover { background: var(--ct-neutral-tint); }
+.toolbar-dropdown-sep { height: 1px; background: var(--ct-line); margin: 2px 0; }
+
+/* Sélecteur de langue (menu déroulant N-langues, positionné en fixed via JS). */
+.ct-lang-menu {
+    position: fixed; z-index: 600; background: var(--ct-surface);
+    border: 1px solid var(--ct-line); border-radius: var(--ct-r-md);
+    box-shadow: var(--ct-shadow-overlay); padding: 4px; min-width: 150px;
+    display: flex; flex-direction: column;
+}
+.ct-lang-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    width: 100%; text-align: left; background: none; border: none;
+    border-radius: var(--ct-r-sm); padding: 7px 10px; font: inherit;
+    font-size: var(--ct-text-ui); color: var(--ct-ink); cursor: pointer;
+}
+.ct-lang-item:hover { background: var(--ct-canvas); }
+.ct-lang-item.active { color: var(--ct-accent-ink); font-weight: 600; }
+.ct-lang-check { color: var(--ct-accent); }
+
+.btn-hamburger { display: inline-block; background: none !important; border: none; color: var(--ct-ink-1); font-size: 1.8em !important; cursor: pointer; padding: 4px 10px 4px 0 !important; }
+/* ── Breakpoints responsive (convention partagée) ─────────────────
+   Approche desktop-first (max-width). Un seul jeu, à respecter dans TOUS les
+   modules — un @media hors de ce jeu casse la cohérence (check-breakpoints.py) :
+     480px  — petit mobile
+     768px  — mobile / tablette portrait   (breakpoint principal)
+     1024px — tablette paysage / petit desktop
+   Les valeurs ne peuvent pas passer par une variable (les custom properties ne
+   sont pas résolues dans une media query) : elles restent littérales. */
+@media (max-width: 768px) { .btn-sidebar-toggle { display: none; } }
+
+/* ── Buttons — legacy .btn family ── */
+/* Unified button system — aligned with .ct-btn (neutral = outline surface +
+   line border; coloured variants = solid fill + matching border). All tokens
+   theme-aware so buttons never go white in dark mode. */
+
+/* ── Restore banner ── */
+.restore-banner {
+    position: fixed; top: 40px; left: 0; right: 0; z-index: 190;
+    background: var(--ct-neutral-tint); border-bottom: 1px solid var(--ct-accent); color: var(--ct-ink);
+    padding: 8px 20px; display: flex; align-items: center; gap: 12px; font-size: 0.85em;
+}
+.restore-banner button { padding: 4px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: 600; }
+.restore-banner .btn-restore { background: var(--ct-accent); color: var(--ct-onaccent); }
+.restore-banner .btn-discard { background: var(--ct-line); color: var(--ct-ink-1); }
+
+/* ── Layout ── */
+.app-layout { display: flex; position: fixed; top: 40px; left: 0; right: 0; bottom: 0; transition: top 0.15s; }
+.app-layout.with-banner { top: 80px; }
+
+/* ── Sidebar ── */
+.sidebar {
+    width: 200px; min-width: 200px; background: var(--sidebar-bg); padding: 8px 0;
+    overflow-y: auto; border-right: 1px solid rgba(255,255,255,0.1);
+    transition: width 0.2s, min-width 0.2s, padding 0.2s;
+    display: flex; flex-direction: column; position: relative;
+}
+.sidebar.collapsed { width: 0; min-width: 0; padding: 0; overflow: hidden; }
+.sidebar-collapse {
+    position: absolute; top: 6px; right: 6px;
+    background: none; border: none;
+    color: rgba(255,255,255,0.4); font-size: 1.1em; cursor: pointer;
+    transition: color 0.15s;
+}
+.sidebar-collapse:hover { color: white; }
+.sidebar-item {
+    padding: 8px 14px; cursor: pointer; color: rgba(255,255,255,0.85);
+    font-size: 0.9em; transition: all 0.15s; border-left: 3px solid transparent;
+}
+.sidebar-item:hover { background: rgba(255,255,255,0.08); color: white; }
+.sidebar-item.active { background: rgba(90,75,216,0.20); color: white; border-left-color: var(--ct-accent); font-weight: 600; }
+.sidebar-section { padding: 4px 14px; color: rgba(255,255,255,0.45); font-size: 0.7em; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; }
+.sidebar-expand {
+    position: fixed; top: 48px; left: 0; width: 24px; height: 24px;
+    background: var(--sidebar-bg); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 0 50% 50% 0; color: rgba(255,255,255,0.7); font-size: 0.8em;
+    cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 10;
+}
+.sidebar-expand:hover { background: var(--ct-accent); color: var(--ct-onaccent); }
+.sidebar.collapsed ~ .sidebar-expand { display: flex; }
+
+/* ── Main content ── */
+.main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.container { padding: 16px 20px; overflow-y: auto; flex: 1; background: var(--ct-surface); position: relative; z-index: 1; }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.panel-desc { background: var(--ct-neutral-tint); border-left: 4px solid var(--ct-accent); padding: 12px 16px; margin-bottom: 16px; border-radius: 0 6px 6px 0; font-size: 0.9em; color: var(--ct-ink); }
+
+/* ── Base form controls — theme-aware + uniform shape (dark mode: no UA white) ── */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+textarea, select {
+    background: var(--ct-surface); color: var(--ct-ink);
+    border: 1px solid var(--ct-line); border-radius: var(--ct-r-sm);
+    /* Les controles de formulaire n'heritent pas de la typographie : sans ces
+       deux lignes, le navigateur leur applique sa police systeme (Arial 13.33px)
+       au lieu de celle de l'application. Seul `td select` le corrigeait, donc
+       uniquement dans les tableaux. Selecteur d'element : les primitives
+       .ct-input / .ct-select gardent leur propre taille. */
+    font-family: inherit;
+    /* `inherit` et non une valeur fixe : cette regle a quatre :not(), donc une
+       specificite (0,4,1) superieure a celle de `td input` (0,3,2). Une taille
+       fixe ecraserait le contexte des cellules et gonflerait les champs des
+       tableaux. Heritee, elle vaut --ct-text-body hors tableau et la taille de
+       la cellule dedans. */
+    font-size: inherit;
+}
+
+/* ── Tables (legacy nu + .ct-table) ── */
+table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+th, td { padding: 6px 10px; border: 1px solid var(--ct-line); text-align: left; vertical-align: top; white-space: normal; word-wrap: break-word; }
+th { background: var(--ct-surface-2); color: var(--ct-ink-2); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; position: relative; }
+tbody tr td { background: var(--ct-surface); }
+th .col-hide { position: absolute; top: 2px; right: 2px; background: none; border: none; color: var(--ct-ink-2); cursor: pointer; font-size: 0.9em; padding: 0 3px; line-height: 1; }
+th .col-hide:hover { color: var(--ct-ink); }
+
+td > input:not([type="checkbox"]):not([type="radio"]),
+td > select,
+td input:not([type="checkbox"]):not([type="radio"]):not(.ref-search),
+td select,
+/* textarea : uniquement pour la typographie. Il est ecarte de la hauteur
+   imposee plus bas par sa propre regle, il doit grandir avec son contenu. */
+td textarea {
+    /* Hauteur imposee : chaque controle natif calcule la sienne (input 26px,
+       date 28px, select 25px), ce qui desaligne les lignes. Relative et non
+       absolue : Risk reduit la police de ses tableaux a 0.8em puis 0.75em selon
+       la largeur, et une hauteur figee s'y decalerait. A 11.9px, calc vaut 26px
+       — identique au rendu actuel. textarea est exclu, il doit s'etendre. */
+    height: calc(1.5em + 8px);
+    border: 1px solid var(--ct-line);
+    border-radius: 4px;
+    padding: 3px 6px;
+    background: var(--ct-surface);
+    color: var(--ct-ink);
+    font-size: inherit;
+    font-family: inherit;
+    max-width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.12s, box-shadow 0.12s;
+}
+td textarea { height: auto; min-height: calc(3em + 8px); }
+td > input:not([type="checkbox"]):not([type="radio"]):hover,
+td > select:hover { border-color: var(--ct-line-field); }
+td > input:not([type="checkbox"]):not([type="radio"]):focus,
+td > select:focus {
+    outline: none;
+    border-color: var(--ct-accent);
+    box-shadow: var(--ct-focus-soft);
+}
+td > select:disabled { background: var(--ct-canvas); color: var(--ct-ink-2); cursor: not-allowed; }
+td .ref-select, td .ref-select * { box-shadow: none; }
+
+/* ── Legacy buttons ── */
+/* Action buttons follow the theme accent (SPEC: accent = action/selection);
+   green stays reserved for semantic status (badges, ✓ fix, progress). */
+/* Destructive: tinted at rest, solid red only on hover (spec bouton Supprimer). */
+
+/* Small icon/text button used in table rows + cards (shared, theme-aware).
+   Modules may add tone modifiers (.btn-mini.btn-fix / .btn-fp). */
+
+/* Sans fond declare : une encre blanche s'ecrivait sur la surface, donc
+   invisible des qu'aucun data-tone ne rattrapait la regle. Le cas par defaut
+   doit etre lisible ; un appel sans ton reste un bug d'appelant. */
+.badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.8em; font-weight: 600;
+         background: var(--ct-neutral-tint); color: var(--ct-ink); }
+
+/* ── Undo / Redo ──
+   These used to be painted in translucent white, from the days when the rail
+   was always dark. The v2 rail follows the theme (--ct-surface-2, light in
+   light mode), so white-on-white made the buttons invisible while still
+   clickable — the keyboard shortcuts kept working, which is what made the
+   regression hard to spot. Tokens now, like every other control. */
+.btn-undo, .btn-redo {
+    background: var(--ct-surface); border: 1px solid var(--ct-line);
+    color: var(--ct-ink-1); font-size: 1.2em; border-radius: var(--ct-r-sm);
+    cursor: pointer; padding: 4px 0; transition: all 0.15s; flex: 1;
+    text-align: center; line-height: 1;
+}
+.btn-undo:hover:not(:disabled), .btn-redo:hover:not(:disabled) { background: var(--ct-surface-2); border-color: var(--ct-line-hover); color: var(--ct-ink); opacity: 1 !important; }
+.btn-undo:disabled, .btn-redo:disabled { cursor: not-allowed; }
+
+/* ── Column show/hide popup ── */
+.btn-show-cols { background: var(--ct-accent); color: var(--ct-onaccent); border: none; padding: 3px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8em; margin-bottom: 6px; transition: all 0.15s; }
+.btn-show-cols:hover { opacity: 0.9; }
+.cols-popup { display: none; position: absolute; background: var(--ct-surface); border: 1px solid var(--ct-line); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 8px; z-index: 300; max-height: 300px; overflow-y: auto; }
+.cols-popup.open { display: block; }
+.cols-popup label { display: block; padding: 3px 6px; font-size: 0.85em; cursor: pointer; }
+.cols-popup label:hover { background: var(--ct-neutral-tint); }
+
+/* ── Password dialog ── */
+.pwd-overlay {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--ct-scrim); z-index: 600;
+    justify-content: center; align-items: center;
+}
+.pwd-overlay.open { display: flex; }
+.pwd-panel {
+    background: var(--ct-surface); border-radius: 10px; padding: 24px; width: 360px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+.pwd-title { font-weight: 700; font-size: 1em; margin-bottom: 16px; color: var(--ct-ink); }
+.pwd-input {
+    width: 100%; padding: 10px 12px; border: 1.5px solid var(--ct-line); border-radius: 6px;
+    font-size: 0.95em; margin-bottom: 10px; outline: none;
+}
+.pwd-input:focus { border-color: var(--ct-accent); }
+.pwd-error { color: var(--ct-critical); font-size: 0.85em; margin-bottom: 10px; min-height: 1.2em; }
+.pwd-btn { padding: 8px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9em; }
+.pwd-cancel { background: var(--ct-surface-2); color: var(--ct-ink-1); border: 1px solid var(--ct-line); }
+.pwd-cancel:hover { background: var(--ct-neutral-tint); }
+.pwd-ok { background: var(--ct-accent); color: var(--ct-onaccent); }
+.pwd-ok:hover { opacity: 0.85; }
+
+/* ── Utility classes ── */
+.hidden { display: none; }
+.text-muted { color: var(--ct-ink-2); }
+.flex-spacer { flex: 1; }
+/* ── Utilitaires ct-* : typographie et espacement ────────────────────────
+   Les tailles en em arbitraires (0.85, 0.78, 0.82, 0.9…) convergent vers
+   l'echelle du socle ; l'ecart maximum est de 0.9px. Les marges convergent
+   vers --ct-s1..s6, ecart maximum 2px. Le prefixe dit d'ou vient la regle. */
+.ct-text-label   { font-size: var(--ct-text-label); }
+.ct-text-meta    { font-size: var(--ct-text-meta); }
+.ct-text-data    { font-size: var(--ct-text-data); }
+.ct-text-ui      { font-size: var(--ct-text-ui); }
+.ct-text-body    { font-size: var(--ct-text-body); }
+.ct-text-section { font-size: var(--ct-text-section); }
+.ct-text-page    { font-size: var(--ct-text-page); }
+
+/* ── Atomes ct-* : les combinaisons les plus repetees des styles inline ──────
+   Mesurees sur les neuf modules. Elles se composent avec .ct-text-* et
+   .ct-mt-/.ct-mb-* : `font-size:…;color:…` devient `ct-text-label ct-muted`. */
+.ct-muted         { color: var(--ct-ink-2); }
+.ct-text-critical { color: var(--ct-critical); }
+.ct-strong        { font-weight: 600; }
+.ct-flex-1        { flex: 1; }
+.ct-w-full        { width: 100%; }
+.ct-m-0           { margin: 0; }
+.ct-clickable     { cursor: pointer; }
+.ct-hidden        { display: none; }
+.ct-row           { display: flex; align-items: center; gap: var(--ct-s2); }
+.ct-row-wrap      { flex-wrap: wrap; }
+.ct-row-between   { justify-content: space-between; }
+
+/* Atomes de presentation (lot 2) : debloquent la decomposition des styles
+   inline residuels qui n'ont pas de sens metier. Mesures sur les neuf modules :
+   display:flex 140x, la bordure de bloc 108x, align-items 96x, gap 80x. */
+.ct-flex          { display: flex; }
+.ct-block         { display: block; }
+.ct-items-center  { align-items: center; }
+.ct-items-baseline { align-items: baseline; }
+.ct-gap-1         { gap: var(--ct-s1); }
+.ct-gap-2         { gap: var(--ct-s2); }
+.ct-gap-3         { gap: var(--ct-s3); }
+.ct-bordered      { border: 1px solid var(--ct-line); }
+.ct-no-border     { border: none; }
+.ct-r-sm          { border-radius: var(--ct-r-sm); }
+.ct-r-md          { border-radius: var(--ct-r-md); }
+.ct-ta-c          { text-align: center; }
+.ct-ta-r          { text-align: right; }
+.ct-ink-1         { color: var(--ct-ink-1); }
+.ct-bg-alt        { background: var(--ct-surface-2); }
+.ct-mono          { font-family: var(--ct-font-mono); }
+
+/* Rembourrage et espacement nommes (lot 3) : les valeurs etant deja
+   exprimees en jetons, ces classes ne font que leur donner un nom. */
+.ct-p-1  { padding: var(--ct-s1); }
+.ct-p-2  { padding: var(--ct-s2); }
+.ct-p-3  { padding: var(--ct-s3); }
+.ct-p-4  { padding: var(--ct-s4); }
+.ct-p-5  { padding: var(--ct-s5); }
+.ct-p-6  { padding: var(--ct-s6); }
+.ct-p-8  { padding: var(--ct-s8); }
+.ct-px-1 { padding-left: var(--ct-s1); padding-right: var(--ct-s1); }
+.ct-py-1 { padding-top: var(--ct-s1); padding-bottom: var(--ct-s1); }
+.ct-px-2 { padding-left: var(--ct-s2); padding-right: var(--ct-s2); }
+.ct-py-2 { padding-top: var(--ct-s2); padding-bottom: var(--ct-s2); }
+.ct-px-3 { padding-left: var(--ct-s3); padding-right: var(--ct-s3); }
+.ct-py-3 { padding-top: var(--ct-s3); padding-bottom: var(--ct-s3); }
+.ct-px-4 { padding-left: var(--ct-s4); padding-right: var(--ct-s4); }
+.ct-py-4 { padding-top: var(--ct-s4); padding-bottom: var(--ct-s4); }
+
+/* Atomes (lot 4) : mesures des declarations qui bloquaient encore la
+   decomposition — display:grid 28x, font-weight:700 23x, les bordures
+   directionnelles 27x, background:none 16x. */
+.ct-grid          { display: grid; }
+.ct-inline-flex   { display: inline-flex; }
+.ct-bold          { font-weight: 700; }
+.ct-r-lg          { border-radius: var(--ct-r-lg); }
+.ct-r-xl          { border-radius: var(--ct-r-xl); }
+.ct-ta-l          { text-align: left; }
+.ct-bg-none       { background: none; }
+.ct-bg-surface    { background: var(--ct-surface); }
+.ct-upper         { text-transform: uppercase; }
+.ct-justify-end   { justify-content: flex-end; }
+.ct-justify-between { justify-content: space-between; }
+.ct-ink-2         { color: var(--ct-ink-2); }
+.ct-border-top    { border-top: 1px solid var(--ct-line); }
+.ct-border-bottom { border-bottom: 1px solid var(--ct-line); }
+.ct-nowrap        { white-space: nowrap; }
+.ct-overflow-hidden { overflow: hidden; }
+.ct-ink           { color: var(--ct-ink); }
+.ct-font-inherit  { font-family: inherit; }
+/* Grille de formulaire à deux colonnes égales : motif inline répété (champs
+   côte à côte dans les modales). Le gap et la taille de donnée y sont fixes. */
+.ct-form-2col     { display: grid; grid-template-columns: 1fr 1fr; gap: var(--ct-s2) var(--ct-s3); font-size: var(--ct-text-data); }
+/* Surtitre de section : petite capitale espacée. Remplace le style inline
+   font-size/weight/uppercase/letter-spacing répété au-dessus des groupes. */
+.ct-overline      { font-size: var(--ct-text-label); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ct-ink-1); }
+.ct-px-0          { padding-left: 0; padding-right: 0; }
+.ct-py-0          { padding-top: 0; padding-bottom: 0; }
+
+/* Atomes (lot 5). .ct-truncate est le seul a porter un sens : la triade
+   overflow + ellipsis + nowrap est un motif, pas trois reglages. */
+.ct-truncate      { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ct-col           { flex-direction: column; }
+.ct-items-start   { align-items: flex-start; }
+.ct-scroll-y      { overflow-y: auto; }
+.ct-italic        { font-style: italic; }
+.ct-normal        { font-weight: 400; }
+.ct-collapse      { border-collapse: collapse; }
+.ct-resize-y      { resize: vertical; }
+.ct-grid-2        { grid-template-columns: 1fr 1fr; }
+.ct-bg-accent     { background: var(--ct-accent); }
+.ct-bg-canvas     { background: var(--ct-canvas); }
+.ct-border-bottom-alt { border-bottom: 1px solid var(--ct-surface-2); }
+.ct-ml-1          { margin-left: var(--ct-s1); }
+.ct-ml-2          { margin-left: var(--ct-s2); }
+.ct-box           { box-sizing: border-box; }
+
+/* Atomes (lot 6) : generes a partir des declarations restantes qui se
+   repetent au moins deux fois. Nommes selon la convention en place —
+   ct-text-<ton> et ct-bg-<ton> comme ct-text-critical. */
+/* couleur */
+.ct-bg-critical-fill        { background: var(--ct-critical-fill); }
+.ct-bg-critical-tint        { background: var(--ct-critical-tint); }
+.ct-bg-high-tint            { background: var(--ct-high-tint); }
+.ct-bg-info-tint            { background: var(--ct-info-tint); }
+.ct-bg-ink-2                { background: var(--ct-ink-2); }
+.ct-bg-line                 { background: var(--ct-line); }
+.ct-bg-low-tint             { background: var(--ct-low-tint); }
+.ct-bg-medium-tint          { background: var(--ct-medium-tint); }
+.ct-text-accent             { color: var(--ct-accent); }
+.ct-text-accent-ink         { color: var(--ct-accent-ink); }
+.ct-text-critical-ink       { color: var(--ct-critical-ink); }
+.ct-text-high               { color: var(--ct-high); }
+.ct-text-high-ink           { color: var(--ct-high-ink); }
+.ct-text-info               { color: var(--ct-info); }
+.ct-text-info-ink           { color: var(--ct-info-ink); }
+.ct-text-low                { color: var(--ct-low); }
+.ct-text-low-ink            { color: var(--ct-low-ink); }
+.ct-text-medium             { color: var(--ct-medium); }
+.ct-text-onsolid            { color: var(--ct-onsolid); }
+/* bordure */
+.ct-bordered-line-strong    { border: 1px solid var(--ct-line-strong); }
+/* dimension */
+.ct-h-14                    { height: 14px; }
+.ct-h-3                     { height: 3px; }
+.ct-h-8                     { height: 8px; }
+.ct-maxh-150                { max-height: 150px; }
+.ct-maxw-200                { max-width: 200px; }
+.ct-maxw-240                { max-width: 240px; }
+.ct-maxw-250                { max-width: 250px; }
+.ct-maxw-300                { max-width: 300px; }
+.ct-minh-40                 { min-height: 40px; }
+.ct-minw-0                  { min-width: 0; }
+.ct-minw-120                { min-width: 120px; }
+.ct-minw-140                { min-width: 140px; }
+.ct-minw-150                { min-width: 150px; }
+.ct-minw-160                { min-width: 160px; }
+.ct-minw-180                { min-width: 180px; }
+.ct-minw-200                { min-width: 200px; }
+.ct-minw-220                { min-width: 220px; }
+.ct-minw-320                { min-width: 320px; }
+.ct-minw-80                 { min-width: 80px; }
+.ct-w-110                   { width: 110px; }
+.ct-w-120                   { width: 120px; }
+.ct-w-14                    { width: 14px; }
+.ct-w-140                   { width: 140px; }
+.ct-w-160                   { width: 160px; }
+.ct-w-170                   { width: 170px; }
+.ct-w-30                    { width: 30px; }
+.ct-w-40                    { width: 40px; }
+.ct-w-50                    { width: 50px; }
+.ct-w-52                    { width: 52px; }
+.ct-w-60                    { width: 60px; }
+.ct-w-64                    { width: 64px; }
+.ct-w-70                    { width: 70px; }
+.ct-w-80                    { width: 80px; }
+.ct-w-90                    { width: 90px; }
+.ct-w-auto                  { width: auto; }
+/* mise en page */
+.ct-absolute                { position: absolute; }
+.ct-break-all               { word-break: break-all; }
+.ct-col-span-2              { grid-column: span 2; }
+.ct-ellipsis                { text-overflow: ellipsis; }
+.ct-justify-center          { justify-content: center; }
+.ct-ml-auto                 { margin-left: auto; }
+.ct-no-shrink               { flex-shrink: 0; }
+.ct-no-underline            { text-decoration: none; }
+.ct-scroll                  { overflow: auto; }
+.ct-scroll-x                { overflow-x: auto; }
+.ct-self-center             { align-self: center; }
+.ct-va-middle               { vertical-align: middle; }
+.ct-va-top                  { vertical-align: top; }
+.ct-gap-4 { gap: var(--ct-s4); }
+.ct-gap-5 { gap: var(--ct-s5); }
+.ct-gap-6 { gap: var(--ct-s6); }
+.ct-mt-1 { margin-top: var(--ct-s1); }    .ct-mb-1 { margin-bottom: var(--ct-s1); }
+.ct-mt-2 { margin-top: var(--ct-s2); }    .ct-mb-2 { margin-bottom: var(--ct-s2); }
+.ct-mt-3 { margin-top: var(--ct-s3); }    .ct-mb-3 { margin-bottom: var(--ct-s3); }
+.ct-mt-4 { margin-top: var(--ct-s4); }    .ct-mb-4 { margin-bottom: var(--ct-s4); }
+.ct-mt-5 { margin-top: var(--ct-s5); }    .ct-mb-5 { margin-bottom: var(--ct-s5); }
+.ct-mt-6 { margin-top: var(--ct-s6); }    .ct-mb-6 { margin-bottom: var(--ct-s6); }
+
+.fs-sm { font-size: 0.85em; }
+.fs-xs { font-size: 0.8em; }
+.w-full { width: 100%; }
+.mt-8 { margin-top: 8px; }
+.mb-4 { margin-bottom: 4px; }
+.mb-8 { margin-bottom: 8px; }
+.mb-12 { margin-bottom: 12px; }
+.mb-16 { margin-bottom: 16px; }
+.ta-c { text-align: center; }
+.fw-600 { font-weight: 600; }
+.desc-text { font-size: 0.82em; color: var(--ct-ink-2); line-height: 1.4; margin-top: 2px; }
+.slider-label { font-weight: 700; font-size: 0.82em; color: var(--ct-ink-2); min-width: 20px; }
+.slider-input { -webkit-appearance: none; appearance: none; height: 4px; border-radius: 2px; background: var(--ct-line); outline: none; margin: 0; padding: 0; width: 100%; cursor: pointer; }
+.slider-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--ct-accent); border: 2px solid var(--ct-surface); box-shadow: 0 1px 2px rgba(0,0,0,0.25); cursor: pointer; }
+.slider-input::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--ct-accent); border: 2px solid var(--ct-surface); box-shadow: 0 1px 2px rgba(0,0,0,0.25); cursor: pointer; }
+.section-heading { margin: 24px 0 8px; color: var(--ct-ink); }
+
+/* ── Shared component styles (legacy) ── */
+/* Discret dans les deux thèmes (l'ancien blanc translucide du rail sombre
+   legacy disparaissait sur le rail clair). */
+.sidebar-brand { display: block; text-align: center; padding: 10px 14px; font-size: 0.75em; color: var(--ct-ink-2); text-decoration: none; letter-spacing: 0.5px; }
+.sidebar-brand:hover { color: var(--ct-ink-1); }
+.empty-state { text-align: center; padding: 40px; color: var(--ct-ink-2); font-size: 0.9em; }
+.opacity-low { opacity: 0.4; }
+.btn-group-sm { display: inline-flex; gap: 2px; }
+.btn-group-sm button { font-size: 0.72em; padding: 2px 6px; }
+.meta { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; }
+/* Carte de méta-donnée (label + valeur). Définition canonique remontée depuis
+   les modules qui la déclaraient à l'identique ; l'ancien flex-column du socle
+   n'était utilisé nulle part. */
+.meta-item { background: var(--ct-surface); border: 1px solid var(--ct-line); border-radius: var(--ct-r-lg); padding: 10px 16px; flex: 1; min-width: 200px; }
+.meta-item label { font-size: 0.72em; font-weight: 600; color: var(--ct-ink-2); text-transform: uppercase; letter-spacing: 0.5px; }
+/* Formulaires & cartes partagés — remontés depuis 4 modules (audit v2 §3).
+   Base identique dans access/asset/pilot/vendor ; les modules ne gardent que
+   leurs raffinements (responsive, refinements de grille, règles spécifiques).
+   Pilot neutralise bordure/padding en inline sur son usage — rendu inchangé. */
+.tprm-form { background: var(--ct-surface); padding: 16px; border: 1px solid var(--ct-line); border-radius: 8px; }
+.tprm-form label { display: block; font-size: 0.75em; font-weight: 600; color: var(--ct-ink-2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+.tprm-form input, .tprm-form select, .tprm-form textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--ct-line); border-radius: 6px; font-size: 0.9em; font-family: inherit; box-sizing: border-box; }
+.tprm-form input:focus, .tprm-form select:focus, .tprm-form textarea:focus { border-color: var(--ct-accent); outline: none; }
+.form-row { margin-bottom: 10px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.groupe-card { background: var(--ct-surface); border: 1px solid var(--ct-line); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
+.groupe-card:hover { border-color: var(--ct-accent); }
+.compliance-tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.72em; font-weight: 700; }
+.compliance-tag.ok { background: var(--ct-low-tint); color: var(--ct-low-ink); }
+.compliance-tag.ko { background: var(--ct-critical-tint); color: var(--ct-critical-ink); }
+.synth-card { background: var(--ct-surface); border: 1px solid var(--ct-line); border-radius: var(--ct-r-lg); box-shadow: var(--ct-shadow-card); padding: 16px; }
+.ref-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 12px; font-size: 0.72em; font-weight: 600; cursor: pointer; border: 2px solid var(--ct-line); background: var(--ct-surface); transition: all 0.15s; }
+.ref-chip.active { border-color: var(--ct-accent); background: var(--ct-neutral-tint); color: var(--ct-accent); }
+.ref-chip .chip-x { font-size: 0.9em; color: var(--ct-critical); margin-left: 2px; }
+.ref-select { position: relative; }
+.ref-tags { display: flex; flex-wrap: wrap; gap: 3px; min-height: 24px; padding: 3px; border: 1px solid var(--ct-line); border-radius: 4px; cursor: pointer; font-size: 0.8em; }
+.ref-tags:hover { border-color: var(--ct-accent); }
+.ref-tag { display: inline-flex; align-items: center; gap: 3px; background: var(--ct-neutral-tint); padding: 1px 6px; border-radius: 3px; font-size: 0.85em; }
+.ref-tag-x { cursor: pointer; color: var(--ct-critical); font-weight: bold; margin-left: 2px; }
+.ref-dropdown { display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 200; background: var(--ct-surface); border: 1px solid var(--ct-accent); border-radius: 0 0 6px 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-height: 220px; overflow-y: auto; }
+.ref-dropdown.open { display: block; }
+.ref-search { width: 100%; padding: 6px 8px; border: none; border-bottom: 1px solid var(--ct-line); font-size: 0.85em; outline: none; box-sizing: border-box; }
+.ref-options { max-height: 160px; overflow-y: auto; }
+.ref-option { padding: 4px 8px; cursor: pointer; font-size: 0.82em; display: flex; align-items: center; gap: 6px; }
+.ref-option:hover { background: var(--ct-neutral-tint); }
+.ref-option input { margin: 0; }
+.filters-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+
+/* ── ct_table (legacy — collision, migrates with ct_table.ts) ── */
+.ct-table { width:100%; border-collapse:collapse; }
+.ct-table thead th { text-align:left; padding:8px 10px; background:var(--ct-surface-2); border-bottom:1px solid var(--ct-line); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ct-ink-2); white-space:nowrap; }
+.ct-table thead th.sortable { cursor:pointer; user-select:none; }
+.ct-table thead th.sortable:hover { background:var(--ct-neutral-tint); }
+.ct-table thead th .sort-indicator { opacity:0.5; margin-left:4px; font-size:0.75em; }
+.ct-table thead th.sort-active .sort-indicator { opacity:1; }
+.ct-table tbody td { padding:6px 10px; border-bottom:1px solid var(--ct-line); font-size:0.88em; vertical-align:middle; }
+.ct-table tbody tr:hover { background:var(--ct-surface-2); }
+.ct-table tbody tr.selected { background:var(--ct-accent-tint); }
+.ct-table .ct-bulk-col { width:32px; text-align:center; }
+
+/* ── Help overlay (legacy) ── */
+.help-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:var(--ct-scrim); z-index:400; overflow-y:auto; }
+.help-overlay.open { display:flex; justify-content:center; align-items:flex-start; padding:40px 20px; }
+.help-panel { --help-accent:var(--ct-accent); background:var(--ct-surface); border-radius:12px; max-width:900px; width:100%; max-height:90vh; overflow-y:auto; padding:32px; position:relative; box-shadow:0 8px 32px rgba(0,0,0,0.2); }
+.close-help, .help-close { position:absolute; top:12px; right:16px; background:none; border:none; font-size:1.5em; line-height:1; cursor:pointer; color:var(--ct-ink-2); padding:4px 8px; }
+.close-help:hover, .help-close:hover { color:var(--ct-ink); }
+.help-tabs { display:flex; gap:0; border-bottom:2px solid var(--ct-line); margin-bottom:20px; }
+.help-tab { padding:8px 16px; cursor:pointer; font-weight:600; font-size:0.85em; color:var(--ct-ink-2); border-bottom:2px solid transparent; margin-bottom:-2px; transition:all 0.15s; }
+.help-tab:hover { color:var(--ct-ink); }
+.help-tab.active { color:var(--help-accent); border-bottom-color:var(--help-accent); }
+.help-content { display:none; }
+.help-content.active { display:block; }
+.help-subtitle { font-size:0.9em; color:var(--ct-ink-2); margin-bottom:16px; }
+.help-panel h1 { font-size:1.3em; color:var(--ct-ink); margin:0 0 12px; }
+.help-panel h2 { font-size:1.1em; color:var(--ct-ink); margin:20px 0 8px; padding-bottom:4px; border-bottom:2px solid var(--help-accent); }
+.help-panel h3 { font-size:0.95em; color:var(--help-accent); margin:14px 0 6px; }
+.help-panel p { margin:8px 0; font-size:0.9em; line-height:1.6; }
+.help-panel ul, .help-panel ol { margin:8px 0 12px 20px; font-size:0.9em; line-height:1.6; }
+.help-panel li { margin:4px 0; }
+.help-panel table { width:100%; border-collapse:collapse; font-size:0.85em; margin:10px 0; }
+.help-panel th { background:var(--ct-surface-2); color:var(--ct-ink-2); text-align:left; padding:6px 10px; text-transform:uppercase; font-size:11px; letter-spacing:0.04em; }
+.help-panel td { padding:6px 10px; border-bottom:1px solid var(--ct-line); }
+.help-panel code { background:var(--ct-neutral-tint); padding:1px 6px; border-radius:3px; font-size:0.88em; }
+.help-panel strong { color:var(--ct-ink); }
+.help-panel .help-tip, .help-tip { background:var(--ct-neutral-tint); border-left:3px solid var(--help-accent); padding:8px 12px; margin:10px 0; border-radius:0 6px 6px 0; font-size:0.85em; }
+
+/* ── ct_bulkbar (legacy — collision, migrates with ct_bulkbar.ts) ── */
+.ct-bulkbar { position:fixed; bottom:0; left:0; right:0; z-index:999; background:var(--ct-surface); border-top:1px solid var(--ct-line); box-shadow:0 -4px 12px rgba(0,0,0,0.08); padding:10px 20px; display:flex; align-items:center; gap:12px; }
+.ct-bulkbar[hidden] { display:none !important; }
+.ct-bulkbar__count { font-weight:600; color:var(--ct-accent); font-size:0.9em; }
+.ct-bulkbar__actions { display:flex; gap:8px; flex:1; }
+.ct-bulkbar__btn { padding:6px 12px; border-radius:6px; border:1px solid var(--ct-line); background:var(--ct-surface); cursor:pointer; font-size:0.85em; display:inline-flex; align-items:center; gap:6px; }
+.ct-bulkbar__btn:hover { background:var(--ct-surface-2); }
+.ct-bulkbar__btn--danger { color: var(--ct-onsolid); background:var(--ct-critical); border-color:var(--ct-critical); }
+.ct-bulkbar__btn--success { color: var(--ct-onaccent); background:var(--ct-accent); border-color:var(--ct-accent); }
+.ct-bulkbar__btn--primary { color: var(--ct-onaccent); background:var(--ct-accent); border-color:var(--ct-accent); }
+.ct-bulkbar__btn--warning { color: var(--ct-onsolid); background:var(--ct-high); border-color:var(--ct-high); }
+.ct-bulkbar__btn--info { color: var(--ct-onaccent); background:var(--ct-accent); border-color:var(--ct-accent); }
+.ct-bulkbar__btn--muted { color: var(--ct-onsolid); background:var(--ct-neutral); border-color:var(--ct-neutral); }
+.ct-bulkbar__clear { color:var(--ct-ink-2); }
+
+/* ── Sidebar accordion (legacy) ── */
+.sidebar-group .sidebar-item { display: none; }
+.sidebar-group.open .sidebar-item { display: block; }
+.sidebar-toggle { cursor: pointer; transition: color 0.15s; }
+.sidebar-toggle:hover { color: rgba(255,255,255,0.7); }
+.sidebar-toggle::before { content: "›"; display: inline-block; width: 10px; font-size: 0.9em; transition: transform 0.15s; }
+.sidebar-group.open .sidebar-toggle::before { transform: rotate(90deg); }
+.sidebar-group .sidebar-item { padding-left: 24px; font-size: 0.82em; }
+
+/* ── Print (legacy) ── */
+@media print {
+    .toolbar, .sidebar, .subtabs, .btn-add, .btn-del, .col-toggles { display: none !important; }
+    .app-layout { display: block; position: static; }
+    .main-content { overflow: visible; }
+    .tab-panel { display: block !important; page-break-inside: avoid; }
+    input, select, textarea { border: none !important; background: transparent !important; }
+    body { overflow: visible; height: auto; }
+}
+
+/* ── Mobile toolbar + sidebar (legacy) ── */
+@media (max-width: 768px) {
+    .toolbar { flex-wrap: nowrap; height: 40px; padding: 4px 8px; }
+    .toolbar .app-title { font-size: 0.85em; min-width: 0; margin-right: auto; }
+    .toolbar .app-subtitle { display: none; }
+    .toolbar .status { display: none; }
+    .toolbar-right { gap: 4px; margin-left: 4px; flex-shrink: 0; }
+    .toolbar-logo { display: none; }
+    .app-layout { flex-direction: column; }
+    .sidebar {
+        width: 100%; min-width: 100%; height: auto; max-height: 0; overflow: hidden;
+        position: relative; top: 0; transition: max-height 0.3s ease;
+        flex-direction: column; display: flex; z-index: 50;
+    }
+    .sidebar.open { max-height: 80vh; overflow-y: auto; }
+    .sidebar-collapse { display: none; }
+    .sidebar-item { padding: 12px 16px; font-size: 0.85em; border-left: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .sidebar-item.active { background: rgba(255,255,255,0.15); border-left-color: transparent; }
+    .sidebar-section { padding: 10px 16px 4px; font-size: 0.7em; }
+    .container { padding: 8px; }
+}
+
+/* ── Chrome v2 — repli du rail + responsive ──
+   Le shell v2 (.ct-app / .ct-body / .ct-rail) a remplacé .app-layout /
+   .sidebar, mais seul le bloc responsive hérité ci-dessus avait été écrit.
+   Le JS basculait donc .open (hamburger) et .collapsed (toggleSidebar) sur un
+   rail qu'aucune règle ne rendait repliable : les classes changeaient, rien ne
+   bougeait à l'écran. Et faute de media query sur .ct-body / .ct-rail, le rail
+   gardait ses 232px fixes quelle que soit la largeur de l'écran. */
+.ct-rail.collapsed { width: 0; border-right-width: 0; }
+
+/* Un seul contrôle pour les deux mises en page — voir _toggleSidebarMobile().
+   La visibilité est portée par la déclaration de base, pas par un second
+   bloc du même sélecteur. */
+
+@media (max-width: 768px) {
+    .ct-appbar { height: auto; min-height: 44px; gap: 8px; padding: 4px 8px; flex-wrap: wrap; }
+    .ct-appbar-context, .ct-appbar-saved { display: none; }
+    .ct-modulepicker { height: 28px; padding: 0 8px; font-size: var(--ct-text-meta); }
+    .ct-modulemenu { width: calc(100vw - 24px); left: 12px; }
+    .ct-modulemenu-list { grid-template-columns: 1fr; }
+
+    /* Sous 768px le rail cesse d'être une colonne : il devient un tiroir qui
+       se déplie sous la barre, comme le faisait .sidebar avant la v2. */
+    .ct-body { flex-direction: column; }
+    /* .ct-content ne porte que min-width:0, ce qui suffit tant que .ct-body est
+       en ligne. En colonne c'est min-height qui gouverne : sans lui le flex
+       item garde min-height:auto, refuse de descendre sous la hauteur de son
+       contenu et ne devient donc jamais la zone scrollable. Il déborde alors
+       les 100vh de .ct-app, que l'overflow:hidden du shell rogne — le haut de
+       page s'affiche, tout ce qui suit devient invisible ET inatteignable. */
+    .ct-content { min-height: 0; padding: 12px 12px 20px; }
+    .ct-rail { width: 100%; max-height: 0;
+               border-right: 0; border-bottom: 1px solid var(--ct-line); }
+    .ct-rail.open { max-height: 70vh; overflow-y: auto; }
+    /* .collapsed est l'état bureau ; laissé tel quel il réduirait à néant un
+       tiroir que l'utilisateur vient d'ouvrir après avoir réduit la fenêtre. */
+    .ct-rail.collapsed { width: 100%; }
+}
+
+/* ── ct_modal (legacy — collision, migrates with ct_modal.ts) ── */
+.ct-modal-overlay { position:fixed; inset:0; z-index:1000; background:var(--ct-scrim); display:flex; align-items:center; justify-content:center; padding:24px; }
+.ct-modal-overlay[hidden] { display:none !important; }
+/* Pas de rembourrage sur la boite : .ct-modal-header, -body et -footer
+   portent chacun le leur. Les cumuler doublait l'espacement. */
+.ct-modal-box { background:var(--ct-surface); border-radius:12px; max-width:500px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,0.2); }
+.ct-modal-box--sm { max-width:360px; }
+.ct-modal-box--lg { max-width:800px; }
+.ct-modal-btn { padding:4px 12px; line-height:1.4; border-radius:6px; border:1px solid var(--ct-line); background:var(--ct-surface-2); color:var(--ct-ink); cursor:pointer; font-size:0.85em; transition: background 120ms, border-color 120ms, color 120ms; }
+.ct-modal-btn:hover { background:var(--ct-canvas); border-color:var(--ct-line-hover); }
+.ct-modal-btn--primary { background:var(--ct-accent); color: var(--ct-onaccent); border-color:var(--ct-accent); }
+.ct-modal-btn--primary:hover { background:var(--ct-accent-hover); border-color:var(--ct-accent-hover); }
+/* Destructif : teinté au repos, rouge plein au survol (spec bouton Supprimer). */
+.ct-modal-btn--danger { background:var(--ct-danger-tint); color:var(--ct-critical-ink); border-color:var(--ct-danger-line); }
+.ct-modal-btn--danger:hover { background:var(--ct-critical); color:var(--ct-onsolid); border-color:var(--ct-critical); }
+
+
+/* ── Matrices de risque (SVG généré par ctRenderMatrix) ──────────
+   Le générateur émettait ses couleurs en dur — stroke="white",
+   fill="#3c4453", fill="#6b7488" — et huit modules les rattrapaient en sombre
+   par des sélecteurs qui reconnaissaient la VALEUR : svg text[fill="#3c4453"].
+   Ces règles cassaient sans erreur et sans test rouge au premier ajustement de
+   teinte. Le générateur pose désormais des classes, et le thème fait le reste.
+   Le trait de séparation vaut --ct-surface, ce qui donne bien du blanc en clair
+   et la surface sombre en sombre : le rattrapage n'avait rien inventé. */
+.ct-matrix-cell { stroke: var(--ct-surface); }
+.ct-matrix-dot  { fill: var(--ct-accent); stroke: var(--ct-surface); }
+.ct-matrix-axis { fill: var(--ct-ink-1); }
+.ct-matrix-tick { fill: var(--ct-ink-2); }
+
+/* ── ct_actions (legacy) ── */
+.ct-actions { display:flex; gap:6px; align-items:center; }
+.ct-btn-action { width:28px; height:28px; border:1px solid var(--ct-line); background:var(--ct-surface); border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; color:var(--ct-ink-2); transition:all 0.15s; }
+.ct-btn-action:hover { color:var(--ct-accent); border-color:var(--ct-accent); }
+.ct-btn-action--danger:hover { color:var(--ct-critical); border-color:var(--ct-critical); }
+
+/* ── ct_status (legacy — .ct-badge collision, migrates with badge()) ── */
+/* Le .ct-badge legacy qui vivait ici redefinissait la primitive v2 mot pour
+   mot — meme selecteur, plus bas dans le fichier, donc gagnant. La primitive
+   etait morte : sa police, son rayon et son display n'ont jamais servi.
+   Le cas par defaut (badge sans data-tone) est remonte dans la primitive. */
+
+/* .ct-empty-state (legacy) retiré : 3e version de l'état vide, sans appelant,
+   et son icône en opacity:0.4 violait §9.12. .ct-empty est la seule référence.
+   (audit v2 §05) */
+
+/* ── ct_measure editor (legacy) ── */
+.ct-measure-form { display:flex; flex-direction:column; gap:10px; }
+.ct-measure-form label { display:flex; flex-direction:column; gap:4px; font-size:0.82em; font-weight:600; color:var(--ct-ink-2); }
+.ct-measure-form input,
+.ct-measure-form select,
+.ct-measure-form textarea { padding:6px 10px; border:1px solid var(--ct-line); border-radius:6px; font-size:0.9em; font-family:inherit; }
+.ct-measure-form textarea { resize:vertical; min-height:60px; }
+.ct-measure-form__row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.ct-measure-journal { display:flex; flex-direction:column; gap:6px; width:100%; box-sizing:border-box; }
+.ct-measure-journal .ct-journal-lbl { font-size:0.82em; font-weight:600; color:var(--ct-ink-2); }
+.ct-journal-body { width:100%; }
+.ct-journal-entry { font-size:0.8em; line-height:1.45; border-left:3px solid var(--ct-line); padding:1px 0 1px 8px; }
+.ct-journal-entry + .ct-journal-entry { margin-top:4px; }
+.ct-journal-meta { font-size:0.92em; color:var(--ct-ink-2); white-space:nowrap; }
+.ct-journal-sep { color:var(--ct-ink-2); }
+.ct-journal-text { white-space:pre-wrap; word-break:break-word; }
+.ct-journal-empty { font-size:0.8em; color:var(--ct-ink-2); font-style:italic; }
+.ct-journal-history-link { margin-top:4px; padding:0; background:none; border:none; color:var(--ct-accent); font-size:0.78em; cursor:pointer; text-decoration:underline; }
+.ct-journal-add { display:flex; gap:6px; align-items:flex-start; width:100%; }
+.ct-journal-add textarea { flex:1 1 auto; min-width:0; min-height:38px; }
+.ct-journal-add-btn { flex:0 0 auto; align-self:stretch; padding:6px 12px; border:1px solid var(--ct-line); border-radius:6px; background:var(--ct-surface-2); font-size:0.82em; font-weight:600; cursor:pointer; white-space:nowrap; }
+.ct-journal-add-btn:hover { background:var(--ct-line); }
+.ct-journal-add-btn:disabled { opacity:0.5; cursor:default; }
+.ct-journal-hist-overlay { position:fixed; inset:0; z-index:1100; background:var(--ct-scrim); display:flex; align-items:center; justify-content:center; padding:24px; }
+.ct-journal-hist-box { background:var(--ct-surface); border-radius:12px; padding:16px 20px; max-width:520px; width:100%; max-height:80vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,0.2); }
+.ct-journal-hist-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; font-size:0.9em; }
+.ct-journal-hist-close { background:none; border:none; font-size:1.4em; line-height:1; cursor:pointer; color:var(--ct-ink-2); }
+.ct-journal-hist-list { display:flex; flex-direction:column; gap:6px; }
+.ct-measure-overdue { color:var(--ct-critical); font-weight:600; }
+.ct-measure-overdue::after { content:" ⚠"; }
+
+/* ── ct_search (legacy) ── */
+.ct-search { position:relative; display:inline-flex; align-items:center; gap:6px; }
+.ct-search input { padding:6px 30px 6px 30px; border:1px solid var(--ct-line); border-radius:6px; font-size:0.9em; min-width:240px; }
+.ct-search__icon { position:absolute; left:8px; color:var(--ct-ink-2); pointer-events:none; }
+.ct-search__clear { position:absolute; right:8px; background:none; border:none; cursor:pointer; color:var(--ct-ink-2); }
+.ct-search__clear[hidden] { display:none; }
+
+/* ── ct_filter_pills (legacy) ── */
+.ct-pills-row { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+.ct-pills-row__label { font-size:0.82em; color:var(--ct-ink-2); font-weight:600; }
+.ct-pill { padding:3px 10px; border-radius:14px; border:1px solid var(--ct-line); background:var(--ct-surface); cursor:pointer; font-size:0.8em; transition:all 0.15s; }
+.ct-pill:hover { border-color:var(--ct-accent); }
+.ct-pill.active { background:var(--ct-accent); color: var(--ct-onaccent); border-color:var(--ct-accent); }
+.ct-pill__count { opacity:0.7; margin-left:4px; }
+.ct-pill--clear { color:var(--ct-ink-2); border-style:dashed; }
+
+/* ── ct_userpicker (legacy) ── */
+.ct-userpicker { position: relative; }
+.ct-userpicker input { width: 100%; padding: 6px 10px; border: 1px solid var(--ct-line); border-radius: 6px; font-size: 0.9em; }
+.ct-userpicker-dd {
+    z-index: 1100;
+    background: var(--ct-surface); border: 1px solid var(--ct-line); border-radius: 6px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.ct-userpicker-dd[hidden] { display: none; }
+.ct-userpicker-item { padding: 8px 10px; cursor: pointer; border-bottom: 1px solid var(--ct-line); }
+.ct-userpicker-item:hover { background: var(--ct-surface-2); }
+.ct-userpicker-item:last-child { border-bottom: none; }
+.ct-userpicker-create {
+    padding: 8px 10px; cursor: pointer; background: var(--ct-accent-tint);
+    border-top: 2px dashed var(--ct-accent); color: var(--ct-accent);
+    font-size: 0.88em; display: flex; align-items: center; gap: 4px;
+}
+.ct-userpicker-create:hover { background: var(--ct-accent-tint); }
+.ct-userpicker-empty { padding: 10px; color: var(--ct-ink-2); font-size: 0.85em; text-align: center; }
+.ct-userpicker-plain { width: 100%; padding: 6px 10px; border: 1px solid var(--ct-line); border-radius: 6px; font-size: 0.9em; }
+
+/* ── Role-based UI gating ── */
+body:not(.role-admin) .admin-only { display: none !important; }
+body:not(.role-admin):not(.role-editor):not(.role-manager):not(.role-contributor) .editor-up { display: none !important; }
+body.role-viewer [data-click^="delete"], body.role-reader [data-click^="delete"], body.role-triager [data-click^="delete"],
+body.role-viewer [data-click^="remove"], body.role-reader [data-click^="remove"], body.role-triager [data-click^="remove"],
+body.role-viewer [data-click^="add"],    body.role-reader [data-click^="add"],    body.role-triager [data-click^="add"],
+body.role-viewer [data-click^="create"], body.role-reader [data-click^="create"], body.role-triager [data-click^="create"],
+body.role-viewer [data-click^="new"],    body.role-reader [data-click^="new"],    body.role-triager [data-click^="new"],
+body.role-viewer [data-click^="save"],   body.role-reader [data-click^="save"],   body.role-triager [data-click^="save"],
+body.role-viewer [data-click^="edit"],   body.role-reader [data-click^="edit"],   body.role-triager [data-click^="edit"],
+body.role-viewer [data-click^="import"], body.role-reader [data-click^="import"], body.role-triager [data-click^="import"],
+body.role-viewer [data-write],   body.role-reader [data-write],   body.role-triager [data-write] { display: none !important; }
+
+/* ── ct_notifprefs — Notifications preferences modal (FEAT-34/35) ── */
+.np-form .form-row { margin-bottom: 14px; }
+.np-form .form-row > label[for], .np-form .np-label {
+    display: block; font-size: 0.78em; font-weight: 600;
+    color: var(--ct-ink-2); margin-bottom: 5px;
+}
+.np-form input[type="text"], .np-form select {
+    width: 100%; padding: 7px 10px; box-sizing: border-box;
+    border: 1px solid var(--ct-line); border-radius: 6px;
+    font-family: inherit; font-size: 0.9em;
+    background: var(--ct-surface); color: var(--ct-ink-1);
+}
+.np-form input[type="text"]:focus, .np-form select:focus {
+    border-color: var(--ct-accent); outline: none;
+}
+.np-form .np-group {
+    border: 1px solid var(--ct-line); border-radius: 8px;
+    padding: 14px 16px 4px; margin-bottom: 16px;
+    background: var(--ct-surface);
+}
+.np-form .np-section {
+    margin: 0 0 12px; padding-bottom: 6px; font-size: 0.82em;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--ct-ink-2); border-bottom: 1px solid var(--ct-line);
+}
+.np-form details.np-group > summary.np-section {
+    cursor: pointer; list-style: none; user-select: none; margin-bottom: 0;
+}
+.np-form details.np-group[open] > summary.np-section { margin-bottom: 12px; }
+.np-form details.np-group > summary.np-section::before {
+    content: "\25B8"; display: inline-block; margin-right: 6px;
+    transition: transform 0.15s;
+}
+.np-form details.np-group[open] > summary.np-section::before { transform: rotate(90deg); }
+.np-form details.np-group { padding-bottom: 12px; }
+.np-form details.np-group[open] { padding-bottom: 4px; }
+.np-form .np-modhint { margin: 0 0 12px; }
+.np-form .np-help {
+    margin-top: 4px; font-size: 0.78em; color: var(--ct-ink-2);
+}

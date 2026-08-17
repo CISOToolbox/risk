@@ -1,0 +1,30 @@
+# ── CISO Toolbox — risk webapp: security headers for nginx ─────────────
+# Apache users: copy .htaccess.example to .htaccess instead (mod_headers).
+# nginx users: include this file inside the server{} (or location{}) block
+# that serves the static webapp, e.g.:
+#
+#     server {
+#         listen 443 ssl;
+#         root /var/www/risk;
+#         include /var/www/risk/nginx-security.conf;   # this file
+#         location / { try_files $uri /index.html; }
+#     }
+#
+# The CSP mirrors .htaccess.example exactly — keep the two in sync. It is
+# strict on purpose: no inline scripts (script-src 'self'), no framing
+# (frame-ancestors 'none'). style-src keeps 'unsafe-inline' because the app
+# injects computed colours as inline styles; everything else is locked down.
+
+# 'always' so the headers are sent on error responses (4xx/5xx) too.
+add_header Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';" always;
+add_header X-Frame-Options "DENY" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()" always;
+# HSTS: enable once the site is HTTPS-only (don't send it over plain HTTP).
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+# Do not serve dotfiles (.git, .env, …) or the source manifests.
+location ~ /\.(?!well-known) { deny all; }
+server_tokens off;
+autoindex off;

@@ -1,0 +1,47 @@
+# ── Secrets — never commit ──────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+credentials*.json
+
+# ── Deployment / hosting specifics (kept out of the public repo) ────────
+deploy.sh
+deploy-staging.sh
+.htaccess
+
+# ── Real assessment data — never commit anything but demo-*.json ────────
+*.ctenc
+*.enc
+/*.xlsx
+!templates/*.xlsx
+mon_analyse.xlsx
+
+# ── Node / test artefacts ───────────────────────────────────────────────
+node_modules/
+e2e/playwright-report/
+e2e/test-results/
+e2e/screenshots/
+e2e/.playwright/
+
+# ── Python ──────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ── Editors / OS ────────────────────────────────────────────────────────
+.vscode/
+.idea/
+.claude/
+*.swp
+*~
+.DS_Store
+
+# ── Local tool artefacts ────────────────────────────────────────────────
+ruvector.db
+*.skill

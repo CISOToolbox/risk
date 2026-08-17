@@ -1,0 +1,15 @@
+fastapi==0.136.1
+uvicorn[standard]==0.44.0
+sqlalchemy[asyncio]==2.0.49
+asyncpg==0.31.0
+alembic==1.18.4
+pydantic==2.12.5
+httpx==0.28.1
+python-multipart==0.0.31
+authlib==1.6.12
+PyJWT[crypto]==2.13.0
+# --- transitive pins (security, wave 2) ---
+# mako: transitive of alembic — GHSA-2h4p-vjrc-8xpq / GHSA-v92g-xgxw-vvmm (2 HIGH)
+mako==1.3.12
+# idna: transitive of httpx/anyio (+requests) — GHSA-jjg7-2v4v-x38h
+idna==3.18

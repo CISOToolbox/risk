@@ -1,0 +1,60 @@
+# ── Content Security Policy ──────────────────────────────────────────────
+# script-src : pas de 'unsafe-inline' — tout le JS est dans des fichiers externes.
+# style-src  : 'unsafe-inline' encore nécessaire pour les styles dynamiques du JS (couleurs calculées).
+Header set Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';"
+
+# ── Headers de sécurité ─────────────────────────────────────────────────
+# Clickjacking : interdit l'intégration en iframe (doublon CSP frame-ancestors pour navigateurs anciens)
+Header set X-Frame-Options "DENY"
+# MIME sniffing : empêche le navigateur de deviner le Content-Type
+Header set X-Content-Type-Options "nosniff"
+# Referrer : ne transmet que l'origine (pas le chemin) vers d'autres sites
+Header set Referrer-Policy "strict-origin-when-cross-origin"
+# HSTS : géré par l'hébergeur (ne pas dupliquer ici)
+# Permissions : désactive les API navigateur non utilisées
+Header set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()"
+
+# ── Cache & compression ─────────────────────────────────────────────────
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html application/javascript text/css application/json
+</IfModule>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    # JS/CSS assets : revalider à chaque visite (ETag gère le 304)
+    ExpiresByType application/javascript "access plus 0 seconds"
+    ExpiresByType text/css "access plus 0 seconds"
+    # HTML : toujours revalider
+    ExpiresByType text/html "access plus 0 seconds"
+</IfModule>
+
+# === SÉCURITÉ : Rediriger fichiers/dossiers sensibles vers index.html ===
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # HTTP → HTTPS
+    RewriteCond %{HTTPS} off
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Fichiers et dossiers cachés (.git, .env, .svn, .htpasswd, etc.)
+    # Exception pour Let's Encrypt
+    RewriteRule ^\.well-known/ - [L]
+
+    # Puis le catch-all sur les dotfiles
+    RewriteRule (^|/)\. /index.html [L,R=301]
+
+    # Fichiers de config courants
+    RewriteRule (^|/)composer\.(json|lock)$ /index.html [L,R=301]
+    RewriteRule (^|/)package(-lock)?\.json$ /index.html [L,R=301]
+    RewriteRule (^|/)web\.config$          /index.html [L,R=301]
+    RewriteRule (^|/)Makefile$             /index.html [L,R=301]
+    RewriteRule (^|/)docker-compose\.yml$  /index.html [L,R=301]
+</IfModule>
+
+# === SÉCURITÉ : Désactiver la signature serveur et le listing de répertoires ===
+ServerSignature Off
+Options -Indexes
+
+# === Page d'erreur personnalisée (sans fuite d'info) ===
+ErrorDocument 404 /index.html
+ErrorDocument 403 /index.html

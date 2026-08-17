@@ -1,0 +1,62 @@
+# -- Secrets - never commit --------------------------------------
+.env
+.env.bak
+.env.backup
+.env.*
+!.env.example
+!.env.cloud.example
+.env.local
+*.env.local
+.smtp_password
+
+# -- TLS material / private keys ---------------------------------
+certs/*.pem
+certs/*.key
+certs/*.crt
+*.pem
+*.key
+*.p12
+!certs/cert.pem.example
+
+# -- Python ------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# -- Runtime data ------------------------------------------------
+data/
+logs/
+*.log
+*.sqlite
+*.sqlite3
+*.db
+*.db.enc
+pgdata/
+*-pgdata/
+
+# -- Docker local overrides --------------------------------------
+docker-compose.override.yml
+docker-compose.*.local.yml
+*.pid
+
+# -- Node / frontend build artefacts -----------------------------
+node_modules/
+dist/
+
+# -- OS / editors ------------------------------------------------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~
+
+# -- Local tooling -----------------------------------------------
+.claude/
