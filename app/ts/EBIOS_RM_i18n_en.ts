@@ -163,6 +163,7 @@ _registerTranslations("en", {
     "ebios.help.tab_usage": "Application User Guide",
 
     // ── Confirm dialog ──
+    "ebios.confirm.delete_referenced": "Delete {id}? {n} row(s) reference it: the link will be removed from them. Undo with Ctrl+Z.",
     "ebios.confirm.delete_sop": "Delete all of {sop} and its phases?",
     "ebios.confirm.duplicate_srov": "Pair {sr}/{ov} already exists. Change cancelled.",
 

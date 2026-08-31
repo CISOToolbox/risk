@@ -295,6 +295,11 @@ function _attackResolveId(value: string): string {
     const v = String(value || "").replace(/^\d+\.\s*/, "").trim();
     if (!v) return "";
     if (MITRE_TACTICS.indexOf(v) >= 0) return v;
+    // Forme mixte — "TA0001 Initial Access", "TA0001 - Accès initial",
+    // "(TA0001)". C'est ce que renvoie volontiers un modèle à qui l'on
+    // demande un identifiant en lui montrant la liste avec ses libellés.
+    const embedded = v.match(/\bTA\d{4}\b/);
+    if (embedded && MITRE_TACTICS.indexOf(embedded[0]) >= 0) return embedded[0];
     const lc = v.toLowerCase();
     for (const id of MITRE_TACTICS) if (t("ebios.attack." + id).toLowerCase() === lc) return id;
     return "";
@@ -340,7 +345,11 @@ function toggleDICT(section: string, idx: number, field: string, dim: string, el
     const order = ["D","I","C","T"];
     current.sort((a, b) => order.indexOf(a) - order.indexOf(b));
     D[section][idx][field] = current.join(", ");
-    el.classList.toggle("active");
+    // L'etat visuel et l'annonce vocale passent tous deux par aria-pressed
+    // (voir dictToggle et .ct-choice > button[aria-pressed="true"]). Basculer
+    // .active ne changeait rien : cette classe n'a aucune regle pour ces
+    // boutons, et l'etat n'apparaissait qu'au re-rendu suivant.
+    el.setAttribute("aria-pressed", String(current.includes(dim)));
     _persist(section);
     showStatus(t("ebios.status.modified"));
 }
@@ -596,6 +605,23 @@ function updateField(section: string, idx: number, field: string, val: any, type
     }, 0);
     _persist(section);
 }
+// Les SOP échappent à nextId() : leur identifiant vit dans deux tableaux
+// (sop_summary et sop_detail) et sous un champ nommé `sop`, pas `id`.
+// On balaie les deux — un SOP peut exister dans le résumé sans avoir encore
+// de phase, et l'inverse se produit sur des données importées.
+//
+// Surtout, on prend le MAXIMUM et non la longueur : après une suppression,
+// une numérotation par longueur redonne un identifiant déjà pris, et les
+// nouvelles phases s'agrègent silencieusement à un SOP existant.
+function nextSopId(): string {
+    let max = 0;
+    for (const row of ([] as any[]).concat(D.sop_summary || [], D.sop_detail || [])) {
+        const m = String(row.sop || "").match(/(\d+)/);
+        if (m) max = Math.max(max, parseInt(m[1]));
+    }
+    return "SOP-" + String(max + 1).padStart(3, "0");
+}
+
 function nextId(section: string): string {
     const prefixes: Record<string, string> = {
         vm: "VM", bs: "BS", pp: "PP", er: "ER", ss: "SS",
@@ -708,15 +734,15 @@ function renderContext() {
     ];
     let h = '<div class="grid-2col">';
     for (const [label, key] of shortFields) {
-        h += `<div class="meta-item"><div class="label">${label}</div><div class="value">
+        h += `<div class="ct-meta-item"><div class="label">${label}</div><div class="value">
             <input type="text" value="${esc(c[key])}" class="w-full" data-change="_setContextField" data-args='${_da(key)}' data-pass-value />
         </div></div>`;
     }
     h += '</div>';
-    h += `<div class="meta-item mb-12"><div class="label">${t("ebios.col.reglementation")}</div><div class="value">
+    h += `<div class="ct-meta-item mb-12"><div class="label">${t("ebios.col.reglementation")}</div><div class="value">
         <textarea rows="2" class="w-full" data-change="_setContextField" data-args='["reglementation"]' data-pass-value>${esc(c.reglementation||"")}</textarea>
     </div></div>`;
-    h += `<div class="meta-item mb-12"><div class="label">${t("ebios.col.ref_socle_securite")}</div><div class="value flex-row-center">`;
+    h += `<div class="ct-meta-item mb-12"><div class="label">${t("ebios.col.ref_socle_securite")}</div><div class="value flex-row-center">`;
     const isAnssi = D.socle_type !== "iso";
     h += `<label class="cursor-pointer flex-row-center">
         <input type="radio" name="socle_type" value="anssi" ${isAnssi?"checked":""} data-change="setSocleType" data-args='["anssi"]'> ${t("ebios.col.anssi_label")}
@@ -725,10 +751,10 @@ function renderContext() {
         <input type="radio" name="socle_type" value="iso" ${!isAnssi?"checked":""} data-change="setSocleType" data-args='["iso"]'> ${t("ebios.col.iso_label")}
     </label>`;
     h += `</div></div>`;
-    h += `<div class="meta-item mb-12"><div class="label">${t("ebios.col.commentaires")}</div><div class="value">
+    h += `<div class="ct-meta-item mb-12"><div class="label">${t("ebios.col.commentaires")}</div><div class="value">
         <textarea rows="4" class="w-full" data-change="_setContextField" data-args='["commentaires"]' data-pass-value>${esc(c.commentaires||"")}</textarea>
     </div></div>`;
-    h += `<div class="meta-item mb-12"><div class="label">${t("ebios.col.evolutions")}</div><div class="value">
+    h += `<div class="ct-meta-item mb-12"><div class="label">${t("ebios.col.evolutions")}</div><div class="value">
         <textarea rows="3" class="w-full" data-change="_setContextField" data-args='["evolutions"]' data-pass-value>${esc(c.evolutions||"")}</textarea>
     </div></div>`;
     document.getElementById("context-fields")!.innerHTML = h;
@@ -1611,12 +1637,7 @@ function renderSOP() {
 function addSOP() {
     _saveState();
     // Trouver le prochain numéro de SOP
-    let maxNum = 0;
-    D.sop_detail.forEach(s => {
-        const m = (s.sop||"").match(/(\d+)/);
-        if (m) maxNum = Math.max(maxNum, parseInt(m[1]));
-    });
-    const sopId = "SOP-" + String(maxNum + 1).padStart(3, "0");
+    const sopId = nextSopId();
     D.sop_detail.push({
         sop: sopId, ss: "", phase: "", action: "",
         bs: "", controle: "", ref: "", efficacite: "", commentaire: "",

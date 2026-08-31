@@ -45,6 +45,14 @@ BASE_URL = os.getenv("E2E_BASE_URL", "http://localhost:%d" % DEFAULT_PORT).rstri
 AUTH_TOKEN = os.getenv("E2E_AUTH_TOKEN") or _env_file_value("AUTH_TOKEN")
 TIMEOUT = float(os.getenv("E2E_TIMEOUT", "20"))
 
+# Ce que /auth/providers doit annoncer ici. Le meme fichier de test sert la
+# suite et le standalone ; c'est cette constante qui les distingue.
+POSTURE_FLAG = "standalone"
+
+# Pilot federe les autres modules : il est OAuth/OIDC seul, sans jeton local.
+HAS_OPENAPI = True
+HAS_TOKEN_LOGIN = True
+
 # A local standalone deployment normally carries a self-signed certificate.
 _CTX = ssl.create_default_context()
 _CTX.check_hostname = False

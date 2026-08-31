@@ -167,6 +167,7 @@ _registerTranslations("fr", {
     "ebios.help.tab_usage": "Utilisation de l'application",
 
     // ── Confirm dialog ──
+    "ebios.confirm.delete_referenced": "Supprimer {id} ? {n} ligne(s) y font référence : le lien y sera retiré. Annulable par Ctrl+Z.",
     "ebios.confirm.delete_sop": "Supprimer tout le {sop} et ses phases ?",
     "ebios.confirm.duplicate_srov": "Ce couple {sr}/{ov} existe deja. Modification annulee.",
 

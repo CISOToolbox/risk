@@ -205,7 +205,7 @@
                 h += '<span style="color:var(--ct-ink-1);font-size:var(--ct-text-label);margin:0 var(--ct-s1)">' + esc(user.name || user.email) + '</span>';
                 h += '<button class="ct-text-label ct-muted ct-bg-none ct-no-border ct-clickable ct-py-1 ct-px-2" data-click="_logout" title="Sign out">&#x23FB;</button>';
                 var container = document.createElement("span");
-                container.className = "toolbar-right";
+                container.className = "ct-toolbar-right";
                 container.style.cssText = "display:flex;align-items:center;gap:4px;margin-left:auto";
                 container.innerHTML = h;
                 right.parentNode.insertBefore(container, right);
@@ -215,9 +215,9 @@
                     var role = roleInfo.role || "";
                     window._moduleRole = role;
                     if (role)
-                        document.body.classList.add("role-" + role);
+                        document.body.classList.add("ct-role-" + role);
                     if (user.role === "admin")
-                        document.body.classList.add("role-admin");
+                        document.body.classList.add("ct-role-admin");
                 }).catch(function () { });
             });
         }).catch(function () { });

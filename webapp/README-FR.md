@@ -250,7 +250,7 @@ Cinq fichiers sont partagés entre l'application et les autres applications de l
 | `i18n.js` | Moteur de traduction : `t(clé)`, `switchLang()`, scan des attributs `data-i18n` |
 | `ai_common.js` | Configuration des fournisseurs IA, wrapper d'appel API, panneau de réglages, UI des suggestions, injection CSS |
 | `referentiels_catalog.js` | Métadonnées des 9 référentiels complémentaires (id, label, description, nombre de mesures) en FR et EN |
-| `cisotoolbox.css` | Styles partagés pour toolbar, sidebar, tableaux, dialogues, formulaires, widget ref-select |
+| `cisotoolbox.css` | Styles partagés pour toolbar, sidebar, tableaux, dialogues, formulaires, widget ct-ref-select |
 
 Chaque application vit dans son propre dépôt git. Les fichiers partagés sont maintenus à l'identique entre les deux applications.
 

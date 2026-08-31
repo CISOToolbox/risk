@@ -1,15 +1,27 @@
-"""End-to-end tests for the Risk standalone deployment.
+# -----------------------------------------------------------------------------
+# REPLICATED from the private shared repository (shared/e2e/test_posture.py).
+# DO NOT EDIT HERE - changes will be overwritten by the next propagation run.
+# Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
+# -----------------------------------------------------------------------------
+"""Deployment posture — end-to-end, over HTTP, no browser.
 
-Deliberately narrow: the things that must hold for *any* Risk instance a user
-has just started, and that break first when the packaging drifts.
+Deliberately narrow: the things that must hold for *any* instance of this
+module, and that break first when the packaging drifts.
 
   1. the stack boots and reports healthy
   2. the SPA is served and every asset it references resolves
   3. the assets replicated from the shared repository still carry their banner
-  4. the authentication posture is the standalone one, and it fails closed
-  5. the standalone login journey works end to end
+  4. the authentication posture is the expected one, and it fails closed
+  5. the login journey works end to end
 
-Run:  bash tests/e2e/run-e2e.sh
+This file is module-agnostic on purpose: the identity of the module and of the
+deployment (port or proxy, expected posture, credentials) lives in the sibling
+conftest.py, which each tree owns. It used to be copied once per module — nine
+files, four divergent lines, all of them the module's name in this docstring —
+so a fix to a shared check had to be applied nine times and never was.
+
+Run:  bash tests/e2e/run-e2e.sh      (standalone)
+      bash tests/run-posture.sh      (suite, through the proxy)
 """
 from __future__ import annotations
 
@@ -17,7 +29,10 @@ import re
 
 import pytest
 
-from conftest import AUTH_TOKEN, MODULE, auth_disabled
+BANNERS = ("GENERATED from shared/", "REPLICATED from the private shared repository")
+
+from conftest import (AUTH_TOKEN, HAS_OPENAPI, HAS_TOKEN_LOGIN, MODULE,
+                      POSTURE_FLAG, auth_disabled)
 
 
 # -- 1. Boot and health ------------------------------------------------------
@@ -35,6 +50,8 @@ def test_health_endpoint(client):
 
 def test_openapi_schema_is_served(client):
     """FastAPI is really wired up, and not degraded to a static-only fallback."""
+    if not HAS_OPENAPI:
+        pytest.skip("this deployment does not publish its schema (openapi_url=None)")
     r = client.get("/openapi.json")
     assert r.status == 200
     schema = r.json()
@@ -83,8 +100,12 @@ def test_replicated_frontend_assets_keep_their_generated_header(client):
         pytest.skip("this module serves no shared frontend asset")
     for path in shared:
         head = client.get(path).text[:400]
-        assert "GENERATED from shared/" in head, (
-            "%s lost its GENERATED header - it was probably hand-edited" % path
+        # Deux generateurs ecrivent ces fichiers, avec deux formulations :
+        # ts-build.sh ("GENERATED from shared/") et propagate.py ("REPLICATED
+        # from the private shared repository"). N'en attendre qu'une revenait a
+        # ne rien verifier — 176 fichiers portent la seconde, 3 la premiere.
+        assert any(b in head for b in BANNERS), (
+            "%s carries no replication banner - it was probably hand-edited" % path
         )
 
 
@@ -96,8 +117,12 @@ def test_auth_providers_reports_the_expected_posture(client):
     assert r.status == 200, r.text[:300]
     providers = r.json()
     assert "auth_enabled" in providers
-    assert providers.get("standalone") is True, (
-        "this deployment is not in standalone mode - check AUTH_MODE"
+    # Chaque posture annonce son propre drapeau : "standalone" pour un module
+    # deploye seul, "central" derriere Pilot dans la suite. Tester un booleen
+    # sur une cle unique ne marchait que d'un cote.
+    assert providers.get(POSTURE_FLAG) is True, (
+        "deployment is not in the %s posture (providers=%r) - check AUTH_MODE"
+        % (POSTURE_FLAG, providers)
     )
 
 def test_protected_api_refuses_anonymous_calls(anon):
@@ -114,17 +139,25 @@ def test_protected_api_refuses_anonymous_calls(anon):
 
 def test_login_rejects_a_wrong_token(anon):
     """The standalone login refuses a bad AUTH_TOKEN and sets no cookie."""
+    if not HAS_TOKEN_LOGIN:
+        pytest.skip("this module has no local token login")
     if auth_disabled(anon):
         pytest.skip("instance runs with AUTH_MODE=none")
     r = anon.post("/auth/login/token",
                   {"token": "definitely-not-the-token", "email": "e2e@example.com"})
-    assert r.status in (401, 503), "a wrong token was accepted with %s" % r.status
+    # 429 compte comme un refus : la limitation de debit rejette la tentative.
+    # L'ancienne liste ne la contenait pas, si bien qu'une salve de tests
+    # rapprochee faisait echouer le test sur un comportement correct — et pire,
+    # aurait masque le vrai probleme derriere un faux positif recurrent.
+    assert r.status in (401, 429, 503), "a wrong token was accepted with %s" % r.status
     assert not anon.cookie(MODULE + "_token"), "a session cookie was set for a bad token"
 
 
 def test_login_then_authenticated_call(client):
     """The full standalone journey: log in with AUTH_TOKEN, receive the module
     session cookie, then read the identity behind it."""
+    if not HAS_TOKEN_LOGIN:
+        pytest.skip("this module has no local token login")
     if not AUTH_TOKEN:
         pytest.skip("set E2E_AUTH_TOKEN (or AUTH_TOKEN in .env) to run the login journey")
     if auth_disabled(client):
@@ -151,6 +184,8 @@ def test_session_cookie_is_scoped_to_this_module(client):
     """The cookie name is module-specific, so two standalone modules served from
     localhost cannot overwrite each other's session (cookies are not
     port-scoped)."""
+    if not HAS_TOKEN_LOGIN:
+        pytest.skip("this module has no local token login")
     if not AUTH_TOKEN:
         pytest.skip("set E2E_AUTH_TOKEN to run the login journey")
     if auth_disabled(client):
@@ -161,3 +196,24 @@ def test_session_cookie_is_scoped_to_this_module(client):
     )
     assert client.cookie(MODULE + "_token"), "expected a %s_token cookie" % MODULE
 
+def test_no_local_token_login_when_the_module_has_none(anon):
+    """A module declared OAuth/OIDC-only must expose no AUTH_TOKEN login.
+
+    Such a route appearing in Pilot would reintroduce a shared bootstrap secret
+    in the one module that federates every other one. This assertion used to
+    live in a diverged copy of this file; carrying it here means every module
+    that declares HAS_TOKEN_LOGIN = False is held to it.
+    """
+    if HAS_TOKEN_LOGIN:
+        pytest.skip("this module offers a token login by design")
+    paths = anon.get("/openapi.json").json().get("paths", {})
+    assert "/auth/login/token" not in paths
+
+
+def test_login_page_is_served(client):
+    """The login landing page exists - where an unauthenticated user is sent,
+    and a 404 here means a broken deployment."""
+    if HAS_TOKEN_LOGIN:
+        pytest.skip("no dedicated login page in this posture")
+    r = client.get("/login.html")
+    assert r.status == 200, "/login.html -> %s" % r.status

@@ -44,14 +44,14 @@ select { padding: 4px 6px; border: 1px solid var(--ct-line); border-radius: 4px;
 .phase-actions { display: flex; flex-direction: column; gap: 2px; align-items: center; }
 
 .meta { gap: 12px; margin: 16px 0; }
-.meta-item .label { font-size: 0.75em; color: var(--ct-ink-2); text-transform: uppercase; }
-.meta-item .value { margin-top: 2px; }
+.ct-meta-item .label { font-size: 0.75em; color: var(--ct-ink-2); text-transform: uppercase; }
+.ct-meta-item .value { margin-top: 2px; }
 
 footer { display: none; text-align: center; padding: 20px; color: var(--ct-ink-2); font-size: 0.8em; }
 @media print { footer { display: block; } }
 
 .synth-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-.synth-card h3 { font-size: 0.9em; color: var(--ct-ink); margin-bottom: 8px; }
+.ct-synth-card h3 { font-size: 0.9em; color: var(--ct-ink); margin-bottom: 8px; }
 .risk-dist { display: flex; gap: 8px; margin-top: 8px; }
 /* Pas de color ici : les barres portent un fond -tint (pâle) et leur couleur
    de texte vient de .ct-text-*-ink (foncé). Forcer onsolid (clair) écrasait ces
@@ -67,16 +67,16 @@ footer { display: none; text-align: center; padding: 20px; color: var(--ct-ink-2
 }
 @media (max-width: 768px) {
     .synth-grid { grid-template-columns: 1fr; }
-    .meta-item { min-width: 100%; }
+    .ct-meta-item { min-width: 100%; }
     table { font-size: 0.75em; }
     th, td { padding: 3px 4px; }
 
-    .ref-tags { font-size: 0.75em; }
-    .panel-desc { font-size: 0.8em; padding: 8px 10px; }
+    .ct-ref-tags { font-size: 0.75em; }
+    .ct-panel-desc { font-size: 0.8em; padding: 8px 10px; }
 }
 @media (max-width: 480px) {
     table { font-size: 0.7em; }
-    .btn-add { font-size: 0.75em; padding: 4px 10px; }
+    .ct-btn-add { font-size: 0.75em; padding: 4px 10px; }
 }
 
 /* ── Additional utility classes (EBIOS-specific) ──────────────── */

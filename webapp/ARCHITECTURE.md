@@ -31,7 +31,7 @@ The application runs 100% client-side in the browser. No backend, no framework, 
 
 | File | Size | Purpose |
 |------|------|---------|
-| `cisotoolbox.css` | 18 KB | Shared styles: toolbar, sidebar, tables, buttons, layout, responsive, ref-select, sliders |
+| `cisotoolbox.css` | 18 KB | Shared styles: toolbar, sidebar, tables, buttons, layout, responsive, ct-ref-select, sliders |
 | `EBIOS_RM.css` | 14 KB | App-specific styles: catalog cards, DICT toggles, help panel, risk matrix, ecosystem map, sections, indicators, utility classes, responsive breakpoints |
 
 ### JavaScript: `risk/app/js/`

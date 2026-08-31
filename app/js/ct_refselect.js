@@ -24,7 +24,7 @@ function ctRefSelect(uid, value, options, opts) {
         else {
             tagContent = display;
         }
-        tags += '<span class="ref-tag">' + tagContent + '<span class="ref-tag-x" data-click="ctRefRemove" data-args=\'' + _da(uid, opt.id) + '\' data-stop>x</span></span>';
+        tags += '<span class="ct-ref-tag">' + tagContent + '<span class="ct-ref-tag-x" data-click="ctRefRemove" data-args=\'' + _da(uid, opt.id) + '\' data-stop>x</span></span>';
     }
     if (!tags)
         tags = '<span class="text-muted fs-xs">' + esc(opts.emptyText || "") + '</span>';
@@ -35,18 +35,18 @@ function ctRefSelect(uid, value, options, opts) {
         var o = options[j];
         var checked = selected.indexOf(o.id) >= 0 ? "checked" : "";
         var optDisp = hideId ? esc(o.label || o.id) : (esc(o.id) + ' - ' + esc(o.label));
-        oh += '<label class="ref-option"><input type="' + inputType + '" name="' + uid + '" value="' + esc(o.id) + '" ' + checked + ' data-change="ctRefToggle" data-args=\'' + _da(uid) + '\' data-pass-el>' + optDisp + '</label>';
+        oh += '<label class="ct-ref-option"><input type="' + inputType + '" name="' + uid + '" value="' + esc(o.id) + '" ' + checked + ' data-change="ctRefToggle" data-args=\'' + _da(uid) + '\' data-pass-el>' + optDisp + '</label>';
     }
     var placeholder = opts.placeholder || "";
-    return '<div class="ref-select" id="' + uid + '">' +
-        '<div class="ref-tags" data-click="ctRefOpen" data-args=\'' + _da(uid) + '\'>' + tags + '</div>' +
-        '<div class="ref-dropdown" id="' + uid + '-dd">' +
-        '<input class="ref-search" placeholder="' + esc(placeholder) + '" data-input="ctRefFilter" data-args=\'' + _da(uid) + '\' data-pass-value data-click="_noop" data-stop />' +
-        '<div class="ref-options">' + oh + '</div>' +
+    return '<div class="ct-ref-select" id="' + uid + '">' +
+        '<div class="ct-ref-tags" data-click="ctRefOpen" data-args=\'' + _da(uid) + '\'>' + tags + '</div>' +
+        '<div class="ct-ref-dropdown" id="' + uid + '-dd">' +
+        '<input class="ct-ref-search" placeholder="' + esc(placeholder) + '" data-input="ctRefFilter" data-args=\'' + _da(uid) + '\' data-pass-value data-click="_noop" data-stop />' +
+        '<div class="ct-ref-options">' + oh + '</div>' +
         '</div></div>';
 }
 function ctRefOpen(uid) {
-    document.querySelectorAll(".ref-dropdown.open").forEach(function (d) {
+    document.querySelectorAll(".ct-ref-dropdown.open").forEach(function (d) {
         if (d.id !== uid + "-dd") {
             d.classList.remove("open");
             _ctRefFlush(d);
@@ -61,7 +61,7 @@ function ctRefOpen(uid) {
         _ctRefFlush(dd);
     }
     else if (dd.classList.contains("open")) {
-        var search = dd.querySelector(".ref-search");
+        var search = dd.querySelector(".ct-ref-search");
         if (search) {
             search.value = "";
             ctRefFilter(uid, "");
@@ -74,7 +74,7 @@ function ctRefFilter(uid, query) {
     var dd = document.getElementById(uid + "-dd");
     if (!dd)
         return;
-    dd.querySelectorAll(".ref-option").forEach(function (opt) {
+    dd.querySelectorAll(".ct-ref-option").forEach(function (opt) {
         opt.style.display = opt.textContent.toLowerCase().indexOf(q) >= 0 ? "" : "none";
     });
 }
@@ -128,7 +128,7 @@ function _ctRefUpdateTags(uid, selectedIds, cfg) {
     var wrap = document.getElementById(uid);
     if (!wrap)
         return;
-    var tagsEl = wrap.querySelector(".ref-tags");
+    var tagsEl = wrap.querySelector(".ct-ref-tags");
     if (!tagsEl)
         return;
     var html = "";
@@ -147,14 +147,14 @@ function _ctRefUpdateTags(uid, selectedIds, cfg) {
         else {
             tagContent = display;
         }
-        html += '<span class="ref-tag">' + tagContent + '<span class="ref-tag-x" data-click="ctRefRemove" data-args=\'' + _da(uid, id) + '\' data-stop>x</span></span>';
+        html += '<span class="ct-ref-tag">' + tagContent + '<span class="ct-ref-tag-x" data-click="ctRefRemove" data-args=\'' + _da(uid, id) + '\' data-stop>x</span></span>';
     }
     if (!html)
         html = '<span class="text-muted fs-xs">' + esc(cfg.emptyText || "") + '</span>';
     tagsEl.innerHTML = html;
 }
 function _ctRefFlush(dd) {
-    var wrap = dd.closest(".ref-select");
+    var wrap = dd.closest(".ct-ref-select");
     if (!wrap || !wrap.dataset.dirty)
         return;
     delete wrap.dataset.dirty;
@@ -165,9 +165,9 @@ function _ctRefFlush(dd) {
 }
 // Close dropdowns on outside click
 document.addEventListener("click", function (e) {
-    if (e.target.closest(".ref-select"))
+    if (e.target.closest(".ct-ref-select"))
         return;
-    document.querySelectorAll(".ref-dropdown.open").forEach(function (d) {
+    document.querySelectorAll(".ct-ref-dropdown.open").forEach(function (d) {
         d.classList.remove("open");
         _ctRefFlush(d);
     });

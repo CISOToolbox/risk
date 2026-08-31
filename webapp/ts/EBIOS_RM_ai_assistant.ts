@@ -240,7 +240,7 @@ var PROMPTS: Record<string, (arg?: any) => { user: string } | null> = {
             user: "Context: " + JSON.stringify({societe: D.context.societe, socle: D.context.socle, reglementation: D.context.reglementation}) +
                 "\n\nTarget strategic scenario: " + JSON.stringify({id:targetSS.id, scenario:targetSS.scenario, couple_id:targetSS.couple_id, pp:targetSS.pp, bs:targetSS.bs, er:targetSS.er}) +
                 "\n\nSupporting assets: " + JSON.stringify(D.bs.map(function(b) { return {id:b.id, nom:b.nom, type:b.type}; })) +
-                "\n\nExisting SOP for this SS: " + JSON.stringify(D.sop_detail.filter(function(d) { return d.ss === ssId; }).map(function(d) { return {phase:_attackLabel(d.phase), action:d.action, bs:d.bs}; })) +
+                "\n\nExisting SOP for this SS: " + JSON.stringify(D.sop_detail.filter(function(d) { return d.ss === ssId; }).map(function(d) { return {phase:d.phase, phase_label:_attackLabel(d.phase), action:d.action, bs:d.bs}; })) +
                 "\n\nPropose a kill chain (SOP) for this strategic scenario. Use the step-by-step method (proche en proche): entry point → lateral movement → target. Keep it concise: 4-6 key phases maximum. Set each phase to the MITRE ATT&CK tactic id that best matches it, following the canonical order: TA0043 Reconnaissance, TA0042 Resource Development, TA0001 Initial Access, TA0002 Execution, TA0003 Persistence, TA0004 Privilege Escalation, TA0005 Defense Evasion, TA0006 Credential Access, TA0007 Discovery, TA0008 Lateral Movement, TA0009 Collection, TA0011 Command and Control, TA0010 Exfiltration, TA0040 Impact. Put the specific ATT&CK technique id (TXXXX) in the action description. For phases with Absent or Partiel effectiveness, also propose a security measure (mesure_proposee)." +
                 "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
                 '\n\nJSON schema: {"ss":"' + ssId + '","phases":[{"phase":"TA00XX (ATT&CK tactic id from the list above)","action":"Short description (TXXXX)","bs":"BS-XX - Name","controle":"existing control or empty","ref":"baseline ref or empty","efficacite":"Absent|Partiel|Efficace","mesure_proposee":"proposed security measure or empty"}]}'
@@ -264,7 +264,7 @@ var PROMPTS: Record<string, (arg?: any) => { user: string } | null> = {
             user: "Context: " + JSON.stringify(D.context) +
                 "\n\nWeak phases (Absent/Partial controls): " + JSON.stringify(weakPhases.map(function(s) { return {sop:s.sop, ss:s.ss, phase:_attackLabel(s.phase), action:s.action, bs:s.bs, efficacite:s.efficacite}; })) +
                 "\n\nExisting measures: " + JSON.stringify(D.measures.map(function(m) { return {id:m.id, mesure:m.mesure, origine:m.origine}; })) +
-                "\n\nPropose 3-5 security measures to address the weak phases. Prioritize baseline reinforcement, then ecosystem measures, then new complementary measures. Specify type (Prévention/Détection/Réaction), which SOP/phase it addresses, and baseline reference if applicable." +
+                "\n\nPropose 3-5 security measures to address the weak phases. Prioritize baseline reinforcement, then ecosystem measures, then new complementary measures. Specify type (Prévention/Détection/Réaction), which SOP/phase it addresses, and baseline reference if applicable. Each measure must have a short name (mesure) and a detailed implementation description (details) — do not put the whole description in the mesure field." +
                 "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
                 '\n\nJSON schema: [{"mesure":"short name","details":"detailed description of the measure","origine":"Socle|Écosystème|SOP|Complémentaire","type":"Prévention|Détection|Réaction","sop":"SOP-XX","phase":"Phase name","effet":"...","ref_socle":"#XX or A.X.X","responsable":"..."}]'
         };
@@ -383,7 +383,7 @@ function _renderCards(type: string, suggestions: any[], acceptFn?: (s: any) => s
             h += '<div style="font-size:0.75em;color:var(--ct-high);font-weight:600;margin-bottom:4px">&#9998; ' + t("ai.update_existing", {id: esc(s.id)}) + '</div>';
         }
         h += '<div class="ai-card-actions">';
-        h += '<button class="ct-btn ai-btn-accept ct-kpi-tone" data-variant="primary"' + (isUpdate ? '' : '') + ' data-click="_aiAccept" data-args=\'' + _da(type, i) + '\'>' + (isUpdate ? t("ai.update") : t("ai.accept")) + '</button>';
+        h += '<button class="ct-btn ai-btn-accept" data-variant="primary" data-click="_aiAccept" data-args=\'' + _da(type, i) + '\'>' + (isUpdate ? t("ai.update") : t("ai.accept")) + '</button>';
         h += '<button class="ct-btn ai-btn-ignore" data-click="_aiIgnore" data-args=\'' + _da(i) + '\'>' + t("ai.ignore") + '</button>';
         h += '</div></div>';
     });
@@ -490,7 +490,7 @@ var ACCEPT_HANDLERS: Record<string, (s: any) => string> = {
     },
     sop: function(s: any) {
         // s has {ss, phases:[...]}
-        var sopId = "SOP-" + String((D.sop_summary.length || 0) + 1).padStart(3, "0");
+        var sopId = nextSopId();
         D.sop_summary.push({sop: sopId, ss: s.ss});
         (s.phases || []).forEach(function(p: any) {
             var mesureRef = "";
@@ -501,7 +501,7 @@ var ACCEPT_HANDLERS: Record<string, (s: any) => string> = {
                     sop:sopId, phase:p.phase||"", effet:"", ref_socle:p.ref||"", responsable:"", echeance:"", cout:"", statut:"À étudier"});
                 mesureRef = mId + " - " + p.mesure_proposee;
             }
-            D.sop_detail.push({sop:sopId, ss:s.ss, phase:p.phase||"", action:p.action||"", bs:p.bs||"", controle:p.controle||"", ref:p.ref||"", efficacite:p.efficacite||"Absent", commentaire:"", mesure_proposee:mesureRef, type_mesure:""});
+            D.sop_detail.push({sop:sopId, ss:s.ss, phase:_attackResolveId(p.phase) || (p.phase || ""), action:p.action||"", bs:p.bs||"", controle:p.controle||"", ref:p.ref||"", efficacite:p.efficacite||"Absent", commentaire:"", mesure_proposee:mesureRef, type_mesure:""});
         });
         return sopId;
     },

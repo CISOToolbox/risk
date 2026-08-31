@@ -318,6 +318,12 @@ function _attackResolveId(value) {
         return "";
     if (MITRE_TACTICS.indexOf(v) >= 0)
         return v;
+    // Forme mixte — "TA0001 Initial Access", "TA0001 - Accès initial",
+    // "(TA0001)". C'est ce que renvoie volontiers un modèle à qui l'on
+    // demande un identifiant en lui montrant la liste avec ses libellés.
+    const embedded = v.match(/\bTA\d{4}\b/);
+    if (embedded && MITRE_TACTICS.indexOf(embedded[0]) >= 0)
+        return embedded[0];
     const lc = v.toLowerCase();
     for (const id of MITRE_TACTICS)
         if (t("ebios.attack." + id).toLowerCase() === lc)
@@ -368,7 +374,11 @@ function toggleDICT(section, idx, field, dim, el) {
     const order = ["D", "I", "C", "T"];
     current.sort((a, b) => order.indexOf(a) - order.indexOf(b));
     D[section][idx][field] = current.join(", ");
-    el.classList.toggle("active");
+    // L'etat visuel et l'annonce vocale passent tous deux par aria-pressed
+    // (voir dictToggle et .ct-choice > button[aria-pressed="true"]). Basculer
+    // .active ne changeait rien : cette classe n'a aucune regle pour ces
+    // boutons, et l'etat n'apparaissait qu'au re-rendu suivant.
+    el.setAttribute("aria-pressed", String(current.includes(dim)));
     _persist(section);
     showStatus(t("ebios.status.modified"));
 }
@@ -434,6 +444,16 @@ function _refOnFlush(section, field) {
         return;
     _reRenderForField(section, field);
 }
+// Quel champ pointe vers quelle section. Sert a resoudre un libelle, et a
+// retrouver ce qui reference une ligne avant de la supprimer.
+const _FIELD_TO_SOURCE = {
+    "vm": "vm", "bs": "bs", "pp": "pp", "er": "er",
+    "couple_id": "srov", "sop": "sop",
+    "mesures": "measures", "mesures_existantes": "measures", "mesures_complementaires": "measures",
+    "mesure_proposee": "measures", "mesures_prevues": "measures", "pp_id": "pp", "ss": "ss",
+    "sr_id": "sr", "ov_id": "ov",
+    "ref": "socle", "ref_socle": "socle",
+};
 function _refLabelFor(section, field, id) {
     const maps = {
         "vm": () => { const v = D.vm.find(x => x.id === id); return v ? v.nom : ""; },
@@ -454,15 +474,7 @@ function _refLabelFor(section, field, id) {
         "sop": () => { const s = D.sop_summary.find(x => x.sop === id); return s ? s.ss : ""; },
         "measures": () => { const m = D.measures.find(x => x.id === id); return m ? m.mesure : ""; },
     };
-    const fieldToSource = {
-        "vm": "vm", "bs": "bs", "pp": "pp", "er": "er",
-        "couple_id": "srov", "sop": "sop",
-        "mesures": "measures", "mesures_existantes": "measures", "mesures_complementaires": "measures",
-        "mesure_proposee": "measures", "mesures_prevues": "measures", "pp_id": "pp", "ss": "ss",
-        "sr_id": "sr", "ov_id": "ov",
-        "ref": "socle", "ref_socle": "socle",
-    };
-    const src = fieldToSource[field];
+    const src = _FIELD_TO_SOURCE[field];
     if (src && maps[src])
         return maps[src]();
     return "";
@@ -621,6 +633,23 @@ function updateField(section, idx, field, val, type) {
     }, 0);
     _persist(section);
 }
+// Les SOP échappent à nextId() : leur identifiant vit dans deux tableaux
+// (sop_summary et sop_detail) et sous un champ nommé `sop`, pas `id`.
+// On balaie les deux — un SOP peut exister dans le résumé sans avoir encore
+// de phase, et l'inverse se produit sur des données importées.
+//
+// Surtout, on prend le MAXIMUM et non la longueur : après une suppression,
+// une numérotation par longueur redonne un identifiant déjà pris, et les
+// nouvelles phases s'agrègent silencieusement à un SOP existant.
+function nextSopId() {
+    let max = 0;
+    for (const row of [].concat(D.sop_summary || [], D.sop_detail || [])) {
+        const m = String(row.sop || "").match(/(\d+)/);
+        if (m)
+            max = Math.max(max, parseInt(m[1]));
+    }
+    return "SOP-" + String(max + 1).padStart(3, "0");
+}
 function nextId(section) {
     const prefixes = {
         vm: "VM", bs: "BS", pp: "PP", er: "ER", ss: "SS",
@@ -660,11 +689,90 @@ function addRow(section) {
         _persist(section);
     }
 }
+// Une reference est stockee comme "ID - libelle", plusieurs separees par des
+// virgules (sauf srov.sr_id / srov.ov_id, qui portent l'identifiant nu). Le
+// libelle etant recopie dans la chaine, une reference morte continue
+// d'afficher l'ancien nom : c'est ce qui rend l'incoherence invisible.
+function _refParts(value) {
+    return String(value || "").split(",").map(x => x.trim()).filter(Boolean);
+}
+function _partMatches(part, id) {
+    // Comparaison exacte sur le jeton de tete, et non startsWith : au-dela de
+    // 999 lignes, "VM-100" prefixerait "VM-1000".
+    return part === id || part.startsWith(id + " - ");
+}
+// L'identifiant d'une ligne selon sa section (meme regle que nextId).
+function _rowIdField(section) {
+    return section === "srov" ? "couple" : (section === "eco" ? "pp_id" : "id");
+}
+// Toutes les lignes qui referencent `id`, une ligne de `source`.
+function _findRefsTo(source, id) {
+    const found = [];
+    if (!id)
+        return found;
+    Object.keys(D).forEach(section => {
+        const rows = D[section];
+        if (!Array.isArray(rows))
+            return;
+        rows.forEach((row, idx) => {
+            if (!row || typeof row !== "object")
+                return;
+            Object.keys(row).forEach(field => {
+                if (_FIELD_TO_SOURCE[field] !== source)
+                    return;
+                if (_refParts(row[field]).some(part => _partMatches(part, id))) {
+                    found.push({ section: section, idx: idx, field: field });
+                }
+            });
+        });
+    });
+    return found;
+}
+function _stripRefs(refs, id) {
+    // Une ligne eco est identifiee PAR sa reference (pp_id). Vider ce champ ne
+    // retirerait pas un lien : il laisserait une ligne sans identite. Ces
+    // lignes-la disparaissent avec ce qu'elles decrivaient.
+    const doomed = {};
+    refs.forEach(r => {
+        const row = D[r.section][r.idx];
+        if (!row)
+            return;
+        if (r.field === _rowIdField(r.section)) {
+            (doomed[r.section] = doomed[r.section] || []).push(r.idx);
+            return;
+        }
+        row[r.field] = _refParts(row[r.field]).filter(part => !_partMatches(part, id)).join(", ");
+    });
+    // Par index decroissant, sinon chaque suppression decale les suivantes.
+    Object.keys(doomed).forEach(section => {
+        doomed[section].sort((a, b) => b - a).forEach(i => {
+            D[section].splice(i, 1);
+        });
+    });
+}
 function delRow(section, idx) {
+    const row = D[section][idx];
+    const rowId = row ? String(row[_rowIdField(section)] || "") : "";
+    // Rien ne cascade dans ce modele : les liens sont des chaines. Supprimer
+    // une VM sans nettoyer laisserait les BS et les ER pointer vers un
+    // identifiant disparu, en continuant d'afficher son ancien nom.
+    const refs = _findRefsTo(section, rowId);
+    if (refs.length && !confirm(t("ebios.confirm.delete_referenced", { id: rowId, n: String(refs.length) })))
+        return;
     _saveState();
     D[section].splice(idx, 1);
+    _stripRefs(refs, rowId);
     // Re-render only the affected section (not renderAll which resets navigation)
     _reRenderForField(section, "");
+    const touched = {};
+    refs.forEach(r => {
+        const key = r.section + "|" + r.field;
+        if (touched[key])
+            return;
+        touched[key] = true;
+        _reRenderForField(r.section, r.field);
+        _persist(r.section);
+    });
     if (typeof renderIndicators === "function")
         renderIndicators();
     _persist(section);
@@ -736,15 +844,15 @@ function renderContext() {
     ];
     let h = '<div class="grid-2col">';
     for (const [label, key] of shortFields) {
-        h += `<div class="meta-item"><div class="label">${label}</div><div class="value">
+        h += `<div class="ct-meta-item"><div class="label">${label}</div><div class="value">
             <input type="text" value="${esc(c[key])}" class="w-full" data-change="_setContextField" data-args='${_da(key)}' data-pass-value />
         </div></div>`;
     }
     h += '</div>';
-    h += `<div class="meta-item mb-12"><div class="label">${t("ebios.col.reglementation")}</div><div class="value">
+    h += `<div class="ct-meta-item mb-12"><div class="label">${t("ebios.col.reglementation")}</div><div class="value">
         <textarea rows="2" class="w-full" data-change="_setContextField" data-args='["reglementation"]' data-pass-value>${esc(c.reglementation || "")}</textarea>
     </div></div>`;
-    h += `<div class="meta-item mb-12"><div class="label">${t("ebios.col.ref_socle_securite")}</div><div class="value flex-row-center">`;
+    h += `<div class="ct-meta-item mb-12"><div class="label">${t("ebios.col.ref_socle_securite")}</div><div class="value flex-row-center">`;
     const isAnssi = D.socle_type !== "iso";
     h += `<label class="cursor-pointer flex-row-center">
         <input type="radio" name="socle_type" value="anssi" ${isAnssi ? "checked" : ""} data-change="setSocleType" data-args='["anssi"]'> ${t("ebios.col.anssi_label")}
@@ -753,10 +861,10 @@ function renderContext() {
         <input type="radio" name="socle_type" value="iso" ${!isAnssi ? "checked" : ""} data-change="setSocleType" data-args='["iso"]'> ${t("ebios.col.iso_label")}
     </label>`;
     h += `</div></div>`;
-    h += `<div class="meta-item mb-12"><div class="label">${t("ebios.col.commentaires")}</div><div class="value">
+    h += `<div class="ct-meta-item mb-12"><div class="label">${t("ebios.col.commentaires")}</div><div class="value">
         <textarea rows="4" class="w-full" data-change="_setContextField" data-args='["commentaires"]' data-pass-value>${esc(c.commentaires || "")}</textarea>
     </div></div>`;
-    h += `<div class="meta-item mb-12"><div class="label">${t("ebios.col.evolutions")}</div><div class="value">
+    h += `<div class="ct-meta-item mb-12"><div class="label">${t("ebios.col.evolutions")}</div><div class="value">
         <textarea rows="3" class="w-full" data-change="_setContextField" data-args='["evolutions"]' data-pass-value>${esc(c.evolutions || "")}</textarea>
     </div></div>`;
     document.getElementById("context-fields").innerHTML = h;
@@ -1645,13 +1753,7 @@ function renderSOP() {
 function addSOP() {
     _saveState();
     // Trouver le prochain numéro de SOP
-    let maxNum = 0;
-    D.sop_detail.forEach(s => {
-        const m = (s.sop || "").match(/(\d+)/);
-        if (m)
-            maxNum = Math.max(maxNum, parseInt(m[1]));
-    });
-    const sopId = "SOP-" + String(maxNum + 1).padStart(3, "0");
+    const sopId = nextSopId();
     D.sop_detail.push({
         sop: sopId, ss: "", phase: "", action: "",
         bs: "", controle: "", ref: "", efficacite: "", commentaire: "",
