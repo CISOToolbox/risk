@@ -124,12 +124,24 @@ test.describe('EBIOS RM — local frontend journeys', () => {
     });
 
     // ── 5. Language preference persists locally ────────────────────────
-    test('language toggle persists across a reload (localStorage ct_lang)', async ({ page }) => {
+    // ct_toggleLang now opens a dropdown menu (#ct-lang-menu) of the available
+    // languages; the actual switch happens on clicking an item (ct_setLang).
+    // The old test clicked the trigger once and expected a direct flip — a
+    // journey that went stale when the menu landed.
+    test('language menu switches and the choice persists across a reload (ct_lang)', async ({ page }) => {
         await openApp(page);
 
         const before = await page.evaluate(() => localStorage.getItem('ct_lang'));
+
+        // Open the menu: at least two languages (fr + en) are deployed.
         await page.locator('[data-click="ct_toggleLang"]').click();
-        await page.waitForTimeout(400);
+        const menu = page.locator('#ct-lang-menu');
+        await expect(menu).toBeVisible();
+        expect(await menu.locator('.ct-lang-item').count()).toBeGreaterThanOrEqual(2);
+
+        // Pick the language that is not active → an effective switch.
+        await menu.locator('.ct-lang-item:not(.active)').first().click();
+        await expect(page.locator('#ct-lang-menu')).toHaveCount(0);
 
         const after = await page.evaluate(() => localStorage.getItem('ct_lang'));
         expect(after).not.toBe(before);
@@ -212,13 +224,12 @@ test.describe('EBIOS RM — local frontend journeys', () => {
     });
 
 
-    // ── Régression 2026-09-03 : Fichier → Ouvrir doit re-rendre ────────
-    // Le hook catalogue de _loadBuffer était resté synchrone quand
-    // l'original est devenu async : il avalait la promesse ET le booléen,
-    // loadJSON sortait sur `if (!ok) return;` et rien ne se re-rendait —
-    // données chargées dans D, indicateurs et tableaux figés à 0, aucune
-    // erreur. Ce parcours ouvre un fichier par le VRAI input et exige que
-    // l'écran reflète le contenu.
+    // ── Regression 2026-09-03: File → Open must re-render ──────────────
+    // The _loadBuffer catalog hook stayed synchronous when the original
+    // became async: it swallowed both the promise AND the boolean, loadJSON
+    // bailed on `if (!ok) return;` and nothing re-rendered — data loaded into
+    // D, indicators and tables frozen at 0, no error. This journey opens a
+    // file through the REAL input and requires the screen to reflect it.
     test('opening a JSON file renders its data (indicators included)', async ({ page }) => {
         await openApp(page);
         const analysis = {
@@ -231,23 +242,23 @@ test.describe('EBIOS RM — local frontend journeys', () => {
             name: 'e2e-analysis.json', mimeType: 'application/json',
             buffer: Buffer.from(JSON.stringify(analysis)),
         });
-        // L'indicateur VM du tableau de bord doit refleter le fichier — c'est
-        // l'assertion qui echouait : tout restait a 0, silencieusement.
+        // The dashboard VM indicator must reflect the file — this is the
+        // assertion that failed: everything silently stayed at 0.
         await expect(page.locator('#indicators')).toContainText('VM', { timeout: 5000 });
         await expect
             .poll(async () => (await page.locator('#indicators').textContent()).replace(/\s+/g, ''))
             .toContain('VM2');
         await expect(page.locator('#header-subtitle')).toHaveText('E2E FileOpen Co');
-        // Et la table VM porte bien les deux lignes.
+        // And the VM table carries both rows.
         await page.locator(NAV_ITEMS, { hasText: /Valeurs metier|Valeurs métier|Business value/i }).first().click();
         expect(await page.locator('#table-vm input[data-s="vm"][data-f="nom"]').count()).toBe(2);
     });
 
-    // ── Issue #2 : l'export multi chiffré doit être relisible ──────────
-    // catalogExportAll propose un .enc contenant un TABLEAU d'analyses. La
-    // détection multi du hook ne voyait que le clair : le fichier tombait
-    // dans le loader original qui, après déchiffrement, assignait le tableau
-    // dans D ("0","1"… comme clés) et créait une entrée catalogue corrompue.
+    // ── Issue #2: an encrypted multi-export must be readable ───────────
+    // catalogExportAll offers a .enc holding an ARRAY of analyses. The hook's
+    // multi-detection only saw plaintext: the file fell through to the
+    // original loader which, after decryption, assigned the array into D
+    // ("0","1"… as keys) and created a corrupted catalog entry.
     const MULTI_EXPORT = [
         {
             id: 'a1', name: 'Alpha', date: '2026-01-01',
@@ -270,8 +281,8 @@ test.describe('EBIOS RM — local frontend journeys', () => {
         const errors = trackErrors(page);
         await openApp(page);
 
-        // Construit le .enc exactement comme catalogExportAll : le même
-        // _encryptData que la production, sur le même JSON de tableau.
+        // Build the .enc exactly like catalogExportAll: the same production
+        // _encryptData, over the same array JSON.
         const encBytes = await page.evaluate(async (multi) => {
             const bytes = await _encryptData(JSON.stringify(multi), 'e2e-pass');
             return Array.from(bytes);
@@ -282,13 +293,13 @@ test.describe('EBIOS RM — local frontend journeys', () => {
             buffer: Buffer.from(encBytes),
         });
 
-        // Le déchiffrement demande le mot de passe via la modale partagée.
+        // Decryption asks for the password through the shared modal.
         await expect(page.locator('#pwd-overlay')).toHaveClass(/open/, { timeout: 5000 });
         await page.fill('#pwd-input', 'e2e-pass');
         await page.click('#pwd-ok');
 
-        // Les deux analyses doivent rejoindre le catalogue, la dernière
-        // devient active — et D est un objet analyse, jamais un tableau.
+        // Both analyses must join the catalog, the last one becomes active —
+        // and D is an analysis object, never an array.
         await expect(page.locator('#header-subtitle')).toHaveText('Bravo Co', { timeout: 5000 });
         await expect(page.locator('#analysis-catalog')).toContainText('Alpha');
         await expect(page.locator('#analysis-catalog')).toContainText('Bravo');
@@ -298,22 +309,22 @@ test.describe('EBIOS RM — local frontend journeys', () => {
         expect(errors, `uncaught page errors: ${errors.join(' | ')}`).toEqual([]);
     });
 
-    // ── Issue #3 : plus de liaison fichier périmée après un switch ─────
-    // _fileHandle/_filePwd restaient liés au fichier précédemment ouvert
-    // après un import multi ou un changement d'analyse via le catalogue :
-    // Ctrl+S (quickSaveJSON) écrasait alors silencieusement le fichier d'une
-    // AUTRE analyse. Le handle est simulé (l'API File System Access n'est pas
-    // scriptable) : ce qui est testé est l'invariant "switch ⇒ liaison nulle".
+    // ── Issue #3: no stale file binding after a switch ─────────────────
+    // _fileHandle/_filePwd stayed bound to the previously opened file after a
+    // multi-import or an analysis switch through the catalog: Ctrl+S
+    // (quickSaveJSON) then silently overwrote ANOTHER analysis's file. The
+    // handle is simulated (the File System Access API is not scriptable): what
+    // is tested is the invariant "switch ⇒ null binding".
     test('multi-import and catalog switch reset the file binding (_fileHandle/_filePwd)', async ({ page }) => {
         await openApp(page);
 
-        // Liaison simulée vers un fichier précédemment ouvert.
+        // Simulated binding to a previously opened file.
         await page.evaluate(() => {
             window._fileHandle = { name: 'stale.json' };
             window._filePwd = 'stale-pwd';
         });
 
-        // 1. Import multi (en clair) — doit couper la liaison.
+        // 1. Multi-import (plaintext) — must clear the binding.
         await page.locator('#file-input').setInputFiles({
             name: 'toutes.json', mimeType: 'application/json',
             buffer: Buffer.from(JSON.stringify(MULTI_EXPORT)),
@@ -322,7 +333,7 @@ test.describe('EBIOS RM — local frontend journeys', () => {
         expect(await page.evaluate(() => ({ h: window._fileHandle, p: window._filePwd })))
             .toEqual({ h: null, p: null });
 
-        // 2. Changement d'analyse via le catalogue — même invariant.
+        // 2. Analysis switch through the catalog — same invariant.
         await page.evaluate(() => {
             window._fileHandle = { name: 'stale.json' };
             window._filePwd = 'stale-pwd';
@@ -331,6 +342,33 @@ test.describe('EBIOS RM — local frontend journeys', () => {
         await expect(page.locator('#header-subtitle')).toHaveText('Alpha Co', { timeout: 5000 });
         expect(await page.evaluate(() => ({ h: window._fileHandle, p: window._filePwd })))
             .toEqual({ h: null, p: null });
+    });
+
+    // ── M1 (reviewer, PR #4): a malformed multi file must not corrupt D ─
+    // The hook detects the multi shape on parsed[0].data, but a later item
+    // may be malformed. If the multi branch ran inside the JSON.parse try, a
+    // _buildRecord throw would be swallowed and execution would fall through
+    // to the single loader, which Object.assign's the ARRAY into D — the very
+    // issue-#2 corruption, on the non-nominal path. The branch now runs
+    // outside the try, so the error surfaces and D is left untouched.
+    test('a malformed multi-analysis file surfaces an error without corrupting D', async ({ page }) => {
+        await openApp(page);
+        const org = await seedAnalysis(page); // a clean analysis is active first
+
+        const malformed = [
+            { id: 'a1', name: 'Alpha', data: { context: { societe: 'Alpha Co' }, vm: [] } },
+            { id: 'a2', name: 'Bravo' }, // no `data` — malformed
+        ];
+        const dialog = page.waitForEvent('dialog').then((d) => { const m = d.message(); d.dismiss(); return m; });
+        await page.locator('#file-input').setInputFiles({
+            name: 'broken.json', mimeType: 'application/json',
+            buffer: Buffer.from(JSON.stringify(malformed)),
+        });
+        // The load error reaches the user through the caller's alert.
+        expect(await dialog).toBeTruthy();
+        // D must never have become the array (no numeric keys, not an array).
+        const corrupted = await page.evaluate(() => ('0' in D) || Array.isArray(D));
+        expect(corrupted, 'D must not receive the malformed export array').toBe(false);
     });
 
 });

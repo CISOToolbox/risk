@@ -257,18 +257,17 @@ function newAnalysis() {
 }
 // Mot de passe du fichier courant (en mémoire uniquement)
 var _filePwd = null;
-// La liaison fichier (handle + mot de passe) ne vaut que pour l'analyse qui
-// en provient. Toute bascule de D vers autre chose (import multi, ouverture
-// depuis un catalogue) DOIT la couper, sinon quickSaveJSON écrase le fichier
-// d'une autre analyse.
+// The file binding (handle + password) belongs to the analysis it came from.
+// Any switch of D to something else (multi-import, opening from a catalog)
+// MUST clear it, otherwise quickSaveJSON overwrites another analysis's file.
 function _resetFileBinding() {
     _fileHandle = null;
     _filePwd = null;
 }
-// Décoder un buffer (déchiffré au besoin) en chaîne JSON. Retourne null si
-// l'utilisateur annule ou se trompe de mot de passe — l'appelant s'arrête.
-// Couture volontaire : les hooks catalogue (multi-analyses) doivent inspecter
-// le JSON APRÈS déchiffrement, sans re-demander le mot de passe.
+// Decode a buffer (decrypting if needed) into a JSON string. Returns null if
+// the user cancels or mistypes the password — the caller must stop. Deliberate
+// seam: the catalog hooks (multi-analysis) must inspect the JSON AFTER
+// decryption, without prompting for the password again.
 async function _decodeBuffer(buffer) {
     var bytes = new Uint8Array(buffer);
     var jsonStr;
@@ -293,7 +292,7 @@ async function _decodeBuffer(buffer) {
         throw new Error("File too large (>10MB)");
     return jsonStr;
 }
-// Charger une chaîne JSON (une analyse) dans D — seconde moitié de la couture.
+// Load one analysis's JSON string into D — second half of the seam.
 function _applyLoadedJson(jsonStr) {
     var parsed = JSON.parse(jsonStr);
     delete parsed.__proto__;
@@ -311,7 +310,7 @@ function _applyLoadedJson(jsonStr) {
         ctSchemaMigrate(D);
     return true;
 }
-// Charger un buffer (chiffré ou non) et retourner l'objet JSON
+// Load a buffer (encrypted or not) and return the JSON object.
 async function _loadBuffer(buffer, filename) {
     var jsonStr = await _decodeBuffer(buffer);
     if (jsonStr === null)
