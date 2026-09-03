@@ -245,7 +245,7 @@ function newAnalysis() {
     var lbl = t(_ct().labelKey || "analysis");
     if (!confirm(t("confirm_new", { label: lbl })))
         return;
-    _fileHandle = null;
+    _resetFileBinding();
     var initVar = _ct().initDataVar || "CT_INIT_DATA";
     var fresh = JSON.parse(JSON.stringify(window[initVar] || {}));
     Object.keys(D).forEach(function (k) { delete D[k]; });
@@ -257,8 +257,19 @@ function newAnalysis() {
 }
 // Mot de passe du fichier courant (en mémoire uniquement)
 var _filePwd = null;
-// Charger un buffer (chiffré ou non) et retourner l'objet JSON
-async function _loadBuffer(buffer, filename) {
+// La liaison fichier (handle + mot de passe) ne vaut que pour l'analyse qui
+// en provient. Toute bascule de D vers autre chose (import multi, ouverture
+// depuis un catalogue) DOIT la couper, sinon quickSaveJSON écrase le fichier
+// d'une autre analyse.
+function _resetFileBinding() {
+    _fileHandle = null;
+    _filePwd = null;
+}
+// Décoder un buffer (déchiffré au besoin) en chaîne JSON. Retourne null si
+// l'utilisateur annule ou se trompe de mot de passe — l'appelant s'arrête.
+// Couture volontaire : les hooks catalogue (multi-analyses) doivent inspecter
+// le JSON APRÈS déchiffrement, sans re-demander le mot de passe.
+async function _decodeBuffer(buffer) {
     var bytes = new Uint8Array(buffer);
     var jsonStr;
     if (_isEncrypted(bytes)) {
@@ -280,6 +291,10 @@ async function _loadBuffer(buffer, filename) {
     }
     if (jsonStr.length > 10000000)
         throw new Error("File too large (>10MB)");
+    return jsonStr;
+}
+// Charger une chaîne JSON (une analyse) dans D — seconde moitié de la couture.
+function _applyLoadedJson(jsonStr) {
     var parsed = JSON.parse(jsonStr);
     delete parsed.__proto__;
     delete parsed.constructor;
@@ -295,6 +310,13 @@ async function _loadBuffer(buffer, filename) {
     if (typeof ctSchemaMigrate === "function")
         ctSchemaMigrate(D);
     return true;
+}
+// Charger un buffer (chiffré ou non) et retourner l'objet JSON
+async function _loadBuffer(buffer, filename) {
+    var jsonStr = await _decodeBuffer(buffer);
+    if (jsonStr === null)
+        return null;
+    return _applyLoadedJson(jsonStr);
 }
 function loadJSON(event) {
     var input = event.target;

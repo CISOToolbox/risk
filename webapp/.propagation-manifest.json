@@ -1,6 +1,6 @@
 {
   "$comment": "Files replicated from a private upstream repository. Do NOT edit them here: the next propagation overwrites them and CI rejects local edits. See CONTRIBUTING.md, section 'Shared code'.",
-  "generated": "2026-09-03T19:20:38Z",
+  "generated": "2026-09-03T19:56:27Z",
   "checker": "check-replicated-files.py (run it in CI)",
   "files": {
     "css/cisotoolbox.css": "sha256:5ea2753462a3a7ca07305cd423ffb9668c2cc50d7662bfd47995dd948d660f6e",
@@ -12,7 +12,7 @@
     "fonts/LICENSE.txt": "sha256:ed00326e4573277ab21aaf0580b014c95ee234b3e3144e8516e7ba76156f6507",
     "js/ai_common.js": "sha256:bfed3b3bfcd5f38f0df3aa3c962dfdb592cd76eedc6ea7b012ac1c0edba5ac80",
     "js/cisotoolbox.js": "sha256:8c9b36e112d1d6e480fa6fd1f56b5405c38a648725ffc2fae7f4bbfa641f57c1",
-    "js/cisotoolbox_local.js": "sha256:dc1d38aacd3b1d29465c29e5779c9abc0aaff516b8035abf4d46c6f842898bb5",
+    "js/cisotoolbox_local.js": "sha256:49d0cfb3386cb8b56fb847e91db9c9027276a5d2bdcddfc79dcd5a4fbc7bf7f3",
     "js/ct_refselect.js": "sha256:bef99582c43a933675c5778f12a6eb64b57f3239d7dabc314270c88aeb5d93bf",
     "js/ct_schema.js": "sha256:ce331e31c329bc5d318232130fc7e7cd35dbaf04d7a4bf42fb1e3b6b05024003",
     "js/ct_settings.js": "sha256:cf67b92a1579bd8033dbb991ece1e7bd3ef5bb618e6dfc574b10bfd3b439c6ab",
@@ -22,7 +22,7 @@
     "js/referentiels_catalog.js": "sha256:58a0e68ce7473400e15ff7d3b76154fd11a9ea5fb7ce39752b0a3081dcbccb4b",
     "ts/types/ai_common.d.ts": "sha256:6ea3ba3c7fdd3ba691aee9f0fc5b906559f80cad3cd4fa49a1cb4303f4974e63",
     "ts/types/cisotoolbox.d.ts": "sha256:0913c641e051dfac7ef975c8ff63aedf290d8f4714021c8ad45b93598e9d8e05",
-    "ts/types/cisotoolbox_local.d.ts": "sha256:5174abdb00567c693baab7db78d7bfc282545f4b42949b7fc78bceac3ba0a265",
+    "ts/types/cisotoolbox_local.d.ts": "sha256:aeeb9c1832865c0a307158757bcf62a0508d59710bede44e9d138d09be887d4d",
     "ts/types/ct-core.d.ts": "sha256:ac627c017067264bfa047db2f8ef5169a7838bf461088d1d58f61b120401657d",
     "ts/types/ct-vendor-libs.d.ts": "sha256:13c379cefdd104ab44666d7a6c2782643f8f5e6598c2dd6519daca159ff70c9f",
     "ts/types/ct_refselect.d.ts": "sha256:af85266fe2155a58e3577b7f9a0d02eb40ec4e402164f1077f07ad1029d71fac",

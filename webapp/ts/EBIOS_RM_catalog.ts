@@ -149,6 +149,8 @@ window._autoSave = function() {
 // ═══════════════════════════════════════════════════════════════
 
 window.catalogCreate = function() {
+    // Même invariant que catalogOpen : nouvelle analyse ⇒ pas de fichier lié.
+    _resetFileBinding();
     var id = _genId();
     _activeId = id;
     localStorage.setItem("ebios_catalog_active", id);
@@ -169,6 +171,10 @@ window.catalogOpen = function(id: string) {
     if (id === _activeId) return;
     _get(id, function(record) {
         if (!record) return;
+        // D bascule vers une autre analyse : la liaison fichier de la
+        // précédente ne vaut plus — quick-save doit repasser par "enregistrer
+        // sous" (issue #3).
+        _resetFileBinding();
         _activeId = id;
         localStorage.setItem("ebios_catalog_active", id);
         try {
@@ -279,15 +285,26 @@ window.catalogExport = function(id: string) {
 // return;` et ne re-rendait jamais. Les données arrivaient quand même dans D
 // (promesse ignorée) : tableaux pleins au prochain rendu, indicateurs à 0,
 // aucune erreur. Le bug webapp-only du 2026-09-03.
-var _origLoadBuffer = window._loadBuffer;
-if (_origLoadBuffer) {
-    (window as any)._loadBuffer = async function(buffer: ArrayBuffer | string, filename?: string) {
-        // Try to detect multi-analysis format before passing to original
+// Le hook recompose _loadBuffer à partir des deux coutures partagées
+// (_decodeBuffer + _applyLoadedJson) — même contrat que l'original.
+if (typeof _decodeBuffer === "function" && typeof _applyLoadedJson === "function") {
+    (window as any)._loadBuffer = async function(buffer: ArrayBuffer, filename?: string) {
+        // Décoder D'ABORD (déchiffrement compris, via la couture partagée
+        // _decodeBuffer) : l'export multi peut être un .enc, et l'ancienne
+        // détection sur le texte brut le laissait tomber dans le loader
+        // original qui assignait le TABLEAU dans D (issue #2). Le mot de
+        // passe n'est demandé qu'une fois ; null = annulé / mauvais mot de
+        // passe — l'appelant ne doit pas continuer.
+        var jsonStr = await _decodeBuffer(buffer);
+        if (jsonStr === null) return null;
         try {
-            var text = typeof buffer === "string" ? buffer : new TextDecoder().decode(buffer);
-            var parsed = JSON.parse(text);
+            var parsed = JSON.parse(jsonStr);
             if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].data) {
-                // Multi-analysis import
+                // Multi-analysis import. La liaison fichier appartenait au
+                // fichier précédemment ouvert : la couper, sinon Ctrl+S
+                // écraserait son fichier avec une des analyses importées
+                // (issue #3).
+                _resetFileBinding();
                 var pending = parsed.length;
                 var lastId: string | null = null;
                 parsed.forEach(function(item: any) {
@@ -295,6 +312,7 @@ if (_origLoadBuffer) {
                     var record = _buildRecord(id, item.data);
                     record.name = item.name || record.name;
                     record.date = item.date || record.date;
+                    record.createdAt = item.createdAt || record.createdAt;
                     lastId = id;
                     _put(record, function() {
                         if (--pending === 0) {
@@ -309,13 +327,13 @@ if (_origLoadBuffer) {
                 return null;
             }
         } catch(e) {
-            // Not JSON or not multi — fall through to original
+            // Not JSON — let _applyLoadedJson raise the real parse error
+            // for the caller's alert, exactly like the original loader.
         }
-        // Single analysis: call original, then save to catalog.
-        // On ATTEND l'original (déchiffrement compris) et on ne crée l'entrée
-        // catalogue que s'il a réussi — l'ancien setTimeout(200) créait une
-        // entrée même sur un échec, en course avec le chargement.
-        var ok = await _origLoadBuffer(buffer as ArrayBuffer, filename);
+        // Single analysis: apply to D, then register in the catalog only on
+        // success — l'ancien setTimeout(200) créait une entrée même sur un
+        // échec, en course avec le chargement.
+        var ok = _applyLoadedJson(jsonStr);
         if (!ok) return ok;
         var id = _genId();
         _activeId = id;
@@ -387,50 +405,13 @@ window.catalogExportAll = function() {
 };
 
 window.catalogImport = function() {
-    var input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json";
-    input.onchange = function() {
-        if (!input.files || !input.files[0]) return;
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                var parsed = JSON.parse((e.target as FileReader).result as string);
-
-                // Detect multi-analysis export (array of {id, name, data})
-                if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].data) {
-                    var pending = parsed.length;
-                    var lastId: string | null = null;
-                    parsed.forEach(function(item: any) {
-                        var id = _genId();
-                        var record = _buildRecord(id, item.data);
-                        record.name = item.name || record.name;
-                        record.date = item.date || record.date;
-                        record.createdAt = item.createdAt || record.createdAt;
-                        lastId = id;
-                        _put(record, function() {
-                            if (--pending === 0) {
-                                window.catalogOpen!(lastId!);
-                                if (typeof showStatus === "function") showStatus(parsed.length + " " + t("catalog.imported_multi"));
-                            }
-                        });
-                    });
-                } else {
-                    // Single analysis import
-                    var id = _genId();
-                    var record = _buildRecord(id, parsed);
-                    _put(record, function() {
-                        window.catalogOpen!(id);
-                        if (typeof showStatus === "function") showStatus(t("catalog.imported"));
-                    });
-                }
-            } catch (err) {
-                alert(t("catalog.import_error"));
-            }
-        };
-        reader.readAsText(input.files![0]);
-    };
-    input.click();
+    // Même tuyau que Fichier → Ouvrir : #file-input (accepte .json ET .enc)
+    // → loadJSON → hook _loadBuffer ci-dessus, qui détecte le multi APRÈS
+    // déchiffrement et crée les entrées catalogue. La détection multi
+    // dupliquée qui vivait ici ne lisait que du texte brut : l'export .enc
+    // était illisible depuis ce bouton (issue #2).
+    var input = document.getElementById("file-input") as HTMLInputElement | null;
+    if (input) input.click();
 };
 
 // ═══════════════════════════════════════════════════════════════

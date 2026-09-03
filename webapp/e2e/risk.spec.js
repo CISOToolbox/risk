@@ -243,4 +243,94 @@ test.describe('EBIOS RM — local frontend journeys', () => {
         expect(await page.locator('#table-vm input[data-s="vm"][data-f="nom"]').count()).toBe(2);
     });
 
+    // ── Issue #2 : l'export multi chiffré doit être relisible ──────────
+    // catalogExportAll propose un .enc contenant un TABLEAU d'analyses. La
+    // détection multi du hook ne voyait que le clair : le fichier tombait
+    // dans le loader original qui, après déchiffrement, assignait le tableau
+    // dans D ("0","1"… comme clés) et créait une entrée catalogue corrompue.
+    const MULTI_EXPORT = [
+        {
+            id: 'a1', name: 'Alpha', date: '2026-01-01',
+            data: {
+                context: { societe: 'Alpha Co' },
+                vm: [{ id: 'VM-01', nom: 'Donnees' }],
+                bs: [], er: [], pp: [], ss: [], sop_summary: [], sop_detail: [], measures: [],
+            },
+        },
+        {
+            id: 'a2', name: 'Bravo', date: '2026-02-01',
+            data: {
+                context: { societe: 'Bravo Co' },
+                vm: [], bs: [], er: [], pp: [], ss: [], sop_summary: [], sop_detail: [], measures: [],
+            },
+        },
+    ];
+
+    test('an encrypted multi-analysis export is readable by File → Open', async ({ page }) => {
+        const errors = trackErrors(page);
+        await openApp(page);
+
+        // Construit le .enc exactement comme catalogExportAll : le même
+        // _encryptData que la production, sur le même JSON de tableau.
+        const encBytes = await page.evaluate(async (multi) => {
+            const bytes = await _encryptData(JSON.stringify(multi), 'e2e-pass');
+            return Array.from(bytes);
+        }, MULTI_EXPORT);
+
+        await page.locator('#file-input').setInputFiles({
+            name: 'EBIOS_RM_toutes_analyses.enc', mimeType: 'application/octet-stream',
+            buffer: Buffer.from(encBytes),
+        });
+
+        // Le déchiffrement demande le mot de passe via la modale partagée.
+        await expect(page.locator('#pwd-overlay')).toHaveClass(/open/, { timeout: 5000 });
+        await page.fill('#pwd-input', 'e2e-pass');
+        await page.click('#pwd-ok');
+
+        // Les deux analyses doivent rejoindre le catalogue, la dernière
+        // devient active — et D est un objet analyse, jamais un tableau.
+        await expect(page.locator('#header-subtitle')).toHaveText('Bravo Co', { timeout: 5000 });
+        await expect(page.locator('#analysis-catalog')).toContainText('Alpha');
+        await expect(page.locator('#analysis-catalog')).toContainText('Bravo');
+        const corrupted = await page.evaluate(() => ('0' in D) || Array.isArray(D));
+        expect(corrupted, 'D must never receive the export array itself').toBe(false);
+
+        expect(errors, `uncaught page errors: ${errors.join(' | ')}`).toEqual([]);
+    });
+
+    // ── Issue #3 : plus de liaison fichier périmée après un switch ─────
+    // _fileHandle/_filePwd restaient liés au fichier précédemment ouvert
+    // après un import multi ou un changement d'analyse via le catalogue :
+    // Ctrl+S (quickSaveJSON) écrasait alors silencieusement le fichier d'une
+    // AUTRE analyse. Le handle est simulé (l'API File System Access n'est pas
+    // scriptable) : ce qui est testé est l'invariant "switch ⇒ liaison nulle".
+    test('multi-import and catalog switch reset the file binding (_fileHandle/_filePwd)', async ({ page }) => {
+        await openApp(page);
+
+        // Liaison simulée vers un fichier précédemment ouvert.
+        await page.evaluate(() => {
+            window._fileHandle = { name: 'stale.json' };
+            window._filePwd = 'stale-pwd';
+        });
+
+        // 1. Import multi (en clair) — doit couper la liaison.
+        await page.locator('#file-input').setInputFiles({
+            name: 'toutes.json', mimeType: 'application/json',
+            buffer: Buffer.from(JSON.stringify(MULTI_EXPORT)),
+        });
+        await expect(page.locator('#header-subtitle')).toHaveText('Bravo Co', { timeout: 5000 });
+        expect(await page.evaluate(() => ({ h: window._fileHandle, p: window._filePwd })))
+            .toEqual({ h: null, p: null });
+
+        // 2. Changement d'analyse via le catalogue — même invariant.
+        await page.evaluate(() => {
+            window._fileHandle = { name: 'stale.json' };
+            window._filePwd = 'stale-pwd';
+        });
+        await page.locator('.catalog-card', { hasText: 'Alpha' }).click();
+        await expect(page.locator('#header-subtitle')).toHaveText('Alpha Co', { timeout: 5000 });
+        expect(await page.evaluate(() => ({ h: window._fileHandle, p: window._filePwd })))
+            .toEqual({ h: null, p: null });
+    });
+
 });
