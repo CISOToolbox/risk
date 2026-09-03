@@ -38,7 +38,7 @@ class TestNotifyPilotMeasureNoOp:
     def test_noop_when_pilot_url_empty(self):
         with patch("pilot_notify.PILOT_URL", ""), \
              patch("pilot_notify.SERVICE_TOKEN", "some-token"):
-            result = asyncio.get_event_loop().run_until_complete(
+            result = asyncio.run(
                 notify_pilot_measure({"source_id": "test"})
             )
             assert result is None
@@ -46,7 +46,7 @@ class TestNotifyPilotMeasureNoOp:
     def test_noop_when_service_token_empty(self):
         with patch("pilot_notify.PILOT_URL", "http://pilot:8080"), \
              patch("pilot_notify.SERVICE_TOKEN", ""):
-            result = asyncio.get_event_loop().run_until_complete(
+            result = asyncio.run(
                 notify_pilot_measure({"source_id": "test"})
             )
             assert result is None
@@ -54,7 +54,7 @@ class TestNotifyPilotMeasureNoOp:
     def test_noop_when_both_empty(self):
         with patch("pilot_notify.PILOT_URL", ""), \
              patch("pilot_notify.SERVICE_TOKEN", ""):
-            result = asyncio.get_event_loop().run_until_complete(
+            result = asyncio.run(
                 notify_pilot_measure({"source_id": "test"})
             )
             assert result is None
@@ -69,7 +69,7 @@ class TestNotifyPilotMeasurePayload:
         # but still check setdefault was applied
         with patch("pilot_notify.PILOT_URL", ""), \
              patch("pilot_notify.MODULE_NAME", "risk"):
-            asyncio.get_event_loop().run_until_complete(
+            asyncio.run(
                 notify_pilot_measure(payload)
             )
             # When PILOT_URL is empty the function returns early before

@@ -296,9 +296,17 @@
     // HOOKS INTO FILE MENU (openFile / saveJSON)
     // ═══════════════════════════════════════════════════════════════
     // Hook openFile: detect multi-analysis JSON and import all
+    //
+    // Le wrapper doit rester FIDÈLE au contrat de _loadBuffer : async, et il
+    // PROPAGE le booléen. L'original est devenu async (mot de passe des .enc,
+    // FEAT-36) pendant que ce hook restait synchrone : il avalait la promesse ET
+    // la valeur de retour — loadJSON recevait undefined, faisait `if (!ok)
+    // return;` et ne re-rendait jamais. Les données arrivaient quand même dans D
+    // (promesse ignorée) : tableaux pleins au prochain rendu, indicateurs à 0,
+    // aucune erreur. Le bug webapp-only du 2026-09-03.
     var _origLoadBuffer = window._loadBuffer;
     if (_origLoadBuffer) {
-        window._loadBuffer = function (buffer, filename) {
+        window._loadBuffer = async function (buffer, filename) {
             // Try to detect multi-analysis format before passing to original
             try {
                 var text = typeof buffer === "string" ? buffer : new TextDecoder().decode(buffer);
@@ -321,21 +329,28 @@
                             }
                         });
                     });
-                    return; // Don't call original
+                    // Tout est pris en charge ici (catalogOpen re-rend) : même
+                    // contrat que l'annulation de mot de passe — l'appelant ne
+                    // doit pas continuer.
+                    return null;
                 }
             }
             catch (e) {
                 // Not JSON or not multi — fall through to original
             }
-            // Single analysis: call original, then save to catalog
-            _origLoadBuffer(buffer, filename);
-            // After load, save the new D to catalog as a new entry
-            setTimeout(function () {
-                var id = _genId();
-                _activeId = id;
-                localStorage.setItem("ebios_catalog_active", id);
-                _autoSave();
-            }, 200);
+            // Single analysis: call original, then save to catalog.
+            // On ATTEND l'original (déchiffrement compris) et on ne crée l'entrée
+            // catalogue que s'il a réussi — l'ancien setTimeout(200) créait une
+            // entrée même sur un échec, en course avec le chargement.
+            var ok = await _origLoadBuffer(buffer, filename);
+            if (!ok)
+                return ok;
+            var id = _genId();
+            _activeId = id;
+            localStorage.setItem("ebios_catalog_active", id);
+            // Pas d'_autoSave ici : loadJSON enchaîne _initDataAndRender puis
+            // _autoSave — qui écrira sous ce nouvel id actif.
+            return ok;
         };
     }
     // Hook saveJSON: offer choice between single and all

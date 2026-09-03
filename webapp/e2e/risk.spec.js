@@ -211,4 +211,36 @@ test.describe('EBIOS RM — local frontend journeys', () => {
         await expect(page.locator('#table-vm')).not.toBeEmpty();
     });
 
+
+    // ── Régression 2026-09-03 : Fichier → Ouvrir doit re-rendre ────────
+    // Le hook catalogue de _loadBuffer était resté synchrone quand
+    // l'original est devenu async : il avalait la promesse ET le booléen,
+    // loadJSON sortait sur `if (!ok) return;` et rien ne se re-rendait —
+    // données chargées dans D, indicateurs et tableaux figés à 0, aucune
+    // erreur. Ce parcours ouvre un fichier par le VRAI input et exige que
+    // l'écran reflète le contenu.
+    test('opening a JSON file renders its data (indicators included)', async ({ page }) => {
+        await openApp(page);
+        const analysis = {
+            context: { societe: 'E2E FileOpen Co' },
+            vm: [{ id: 'VM-01', nom: 'Donnees patients' }, { id: 'VM-02', nom: 'Production' }],
+            bs: [{ id: 'BS-01', nom: 'Serveur HDS', vm: 'VM-01' }],
+            er: [], pp: [], ss: [], sop_summary: [], sop_detail: [], measures: [],
+        };
+        await page.locator('#file-input').setInputFiles({
+            name: 'e2e-analysis.json', mimeType: 'application/json',
+            buffer: Buffer.from(JSON.stringify(analysis)),
+        });
+        // L'indicateur VM du tableau de bord doit refleter le fichier — c'est
+        // l'assertion qui echouait : tout restait a 0, silencieusement.
+        await expect(page.locator('#indicators')).toContainText('VM', { timeout: 5000 });
+        await expect
+            .poll(async () => (await page.locator('#indicators').textContent()).replace(/\s+/g, ''))
+            .toContain('VM2');
+        await expect(page.locator('#header-subtitle')).toHaveText('E2E FileOpen Co');
+        // Et la table VM porte bien les deux lignes.
+        await page.locator(NAV_ITEMS, { hasText: /Valeurs metier|Valeurs métier|Business value/i }).first().click();
+        expect(await page.locator('#table-vm input[data-s="vm"][data-f="nom"]').count()).toBe(2);
+    });
+
 });
