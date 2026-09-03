@@ -1,6 +1,6 @@
 {
   "$comment": "Files replicated from a private upstream repository. Do NOT edit them here: the next propagation overwrites them and CI rejects local edits. See CONTRIBUTING.md, section 'Shared code'.",
-  "generated": "2026-09-03T17:27:56Z",
+  "generated": "2026-09-03T19:20:38Z",
   "checker": "check-replicated-files.py (run it in CI)",
   "files": {
     "Dockerfile": "sha256:013fb7e624fb6cb1e5c6a557610a383cb176ab418c3a9e009c70a94195b3714f",
@@ -169,7 +169,7 @@
     "tests/unit/test_measure_context.py": "sha256:fe032cbb0fc362c9d59e5f3cde720dfd54e6df2f4974f71603379bd8e412c84d",
     "tests/unit/test_measure_payload.py": "sha256:6862515efd66a105ceae7ca0f68d717db08d3c09fb1e5eb057b5e7f4fd4d5922",
     "tests/unit/test_permissions.py": "sha256:46e407a0282cd943fe8da2d56bc72d694d884f2256879b33a37bd742b452ccc8",
-    "tests/unit/test_pilot_notify.py": "sha256:dc07c709898c0f922ce8de8a257fa88e1f798dbe584ee35ce5dc0b0e768ec273",
+    "tests/unit/test_pilot_notify.py": "sha256:f575646a6bf5878eb0d77f21cad4b2d61bed3ea00be1a94c66f2e9e9de0d1c4b",
     "tests/unit/test_role_ladder.py": "sha256:0918363a53e0e58950938b7aabc6fce39686f51350510141d920f8943b7b783a",
     "tests/unit/test_role_refresh.py": "sha256:ada36f928a48112b3c22b4151ca2bb9675e5bbc0b28c2a9b2ee3f87323e94b3d",
     "tests/unit/test_ssrf_egress.py": "sha256:6af884bb297ce1d7c1ce1a43af37b761ff4abb998aa1912ea5ceea6ea8ce8601",
