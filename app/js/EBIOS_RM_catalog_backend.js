@@ -126,6 +126,45 @@
     window.addEventListener("pagehide", _flushNow);
     document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden")
         _flushNow(); });
+    // FEAT-41 — vidage ATTENDABLE des écritures en attente.
+    //
+    // Depuis que le serveur relit l'analyse en base pour composer les prompts IA,
+    // l'autosave débouncé (800 ms) est devenu un piège : éditer puis cliquer
+    // aussitôt sur l'assistant ferait travailler le modèle sur l'état d'avant
+    // l'édition, sans que rien ne le signale. `_flushNow` ne convient pas ici —
+    // il tire en keepalive, sans rien à attendre.
+    window._riskFlushPending = function () {
+        if (!_activeId || _saveLocked)
+            return Promise.resolve();
+        if (_saveTimer) {
+            clearTimeout(_saveTimer);
+            _saveTimer = null;
+        }
+        if (_sectionFlushTimer) {
+            clearTimeout(_sectionFlushTimer);
+            _sectionFlushTimer = null;
+        }
+        var batch = _sectionDirty;
+        _sectionDirty = {};
+        var jobs = [];
+        for (var section in batch) {
+            var data = D[section];
+            if (data === undefined)
+                continue;
+            jobs.push(RiskAPI._putSection(_activeId, _SECTION_MAP[section] || section, data));
+        }
+        // Le blob PUT couvre les mutations non encore migrées vers _persist.
+        jobs.push(RiskAPI.update(_activeId, {
+            name: (D.context && D.context.societe) || "",
+            data: D,
+            expected_server_rev: _serverRev
+        }));
+        // Un échec d'écriture ne doit pas bloquer la suggestion : le serveur
+        // travaillera sur le dernier état enregistré, ce qui reste préférable à
+        // un assistant qui refuse de répondre.
+        return Promise.all(jobs.map(function (p) { return p.catch(function () { }); }))
+            .then(function () { return; });
+    };
     window._persist = function (entityType, entityId, fields) {
         if (!_activeId || _saveLocked)
             return;

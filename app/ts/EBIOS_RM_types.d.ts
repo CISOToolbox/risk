@@ -231,6 +231,10 @@ interface EbiosData {
 /* ── Globals fournis par les fichiers de données lazy / compagnons ── */
 
 interface Window {
+    /** FEAT-41 — vide les écritures débouncées et resout quand elles sont
+     *  parties. L'assistant IA doit l'attendre : le serveur relit l'analyse
+     *  en base pour composer le prompt. */
+    _riskFlushPending?: () => Promise<void>;
     EBIOS_INIT_DATA?: EbiosData;
     EBIOS_DESCRIPTIONS?: { anssi: Record<string, string>; iso: Record<string, string>;
                            anssi_en?: Record<string, string>; iso_en?: Record<string, string>; };
@@ -272,7 +276,7 @@ interface Window {
     suggestSocleMeasure?: (socleIdx: number) => Promise<void>;
     suggestEcoMeasure?: (ecoIdx: number) => Promise<void>;
     suggestSOPMeasure?: (sopIdx: number) => Promise<void>;
-    suggestResidualMeasures?: (ssIdx: number) => Promise<void>;
+    suggestResidualMeasures?: (ssIdx: number, avecMesures?: boolean) => Promise<void>;
     _aiResidualForSS?: (ssIdx: number) => void;
     _aiAcceptResidual?: () => void;
     _aiResidualResult?: any;
@@ -331,6 +335,9 @@ interface EbReportImg {
    localStorage ; la variante backend lit ce 1er argument). À remonter au
    coordinateur (entityId/fields devraient être optionnels). ── */
 declare function _persist(entityType: string): void;
+/** Rafraîchit les références "ID - libellé" figées dans les autres sections
+ *  quand un élément est renommé (EBIOS_RM_app.ts). */
+declare function propagateNameChange(id: string, newName: string): void;
 // Lives in cisotoolbox_local.js (not loaded by backend apps; snapshots managed
 // by Pilot in suite mode). Possibly-undefined + called with ! — same pattern as vendor.
 declare var _renderSnapshotsPanel: ((opts: any) => Promise<void>) | undefined;

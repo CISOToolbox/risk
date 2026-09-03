@@ -379,19 +379,37 @@ def _parse_lax_or_refuse(text: str):
     return parsed
 
 
-def make_ai_router() -> APIRouter:
+def make_ai_router(generic_complete: bool = True) -> APIRouter:
     """Build the common `/api/ai` endpoints. The module appends its own métier
-    `*_suggest_*` endpoints to the returned router."""
+    `*_suggest_*` endpoints to the returned router.
+
+    ``generic_complete=False`` — pour les modules dont TOUS les prompts sont
+    composés côté serveur (FEAT-41 : risk, compliance, vendor). Le proxy
+    générique y relayerait une chaîne arbitraire du client sous les clés de
+    l'organisation, en contournant toutes les garanties des endpoints métier
+    (contexte de mesures lu en base, validation de sortie, plafonds). Il
+    répond 410 avec le chemin de remplacement, plutôt qu'un 404 muet.
+    Les modules non migrés (asset, access, audit, appsec, watch) le gardent :
+    leur frontend compose encore — chaque migration doit couper ce chemin.
+    """
     router = APIRouter(prefix="/api/ai", tags=["ai"])
 
-    @router.post("/complete", response_model=AICompleteResponse)
-    async def ai_complete(body: AICompleteRequest, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-        """Generic low-level proxy: relays a pre-built {system, user} prompt to
-        the provider. Métier endpoints are preferred — they own the prompt."""
-        _check_ai_access(user)
-        _check_rate_limit(str(user.id) if user else "anonymous")
-        text = await call_llm(db, body.system, body.user, body.provider, body.model)
-        return AICompleteResponse(text=text)
+    if generic_complete:
+        @router.post("/complete", response_model=AICompleteResponse)
+        async def ai_complete(body: AICompleteRequest, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+            """Generic low-level proxy: relays a pre-built {system, user} prompt to
+            the provider. Métier endpoints are preferred — they own the prompt."""
+            _check_ai_access(user)
+            _check_rate_limit(str(user.id) if user else "anonymous")
+            text = await call_llm(db, body.system, body.user, body.provider, body.model)
+            return AICompleteResponse(text=text)
+    else:
+        @router.post("/complete")
+        async def ai_complete_gone():
+            raise HTTPException(
+                status_code=410,
+                detail="This module composes AI prompts server-side (FEAT-41): "
+                       "use its /api/ai/* metier endpoints.")
 
     @router.get("/runtime", response_model=AIRuntimeResponse)
     async def get_ai_runtime(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):

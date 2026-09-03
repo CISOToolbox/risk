@@ -66,7 +66,6 @@ interface RiskAPIClient {
     duplicate(id: string | number): Promise<RiskAnalysis>;
     importFile(file: File): Promise<RiskAnalysis>;
     exportUrl(id: string | number): string;
-    aiComplete(systemPrompt: string, userPrompt: string, provider?: string, model?: string): Promise<{ text?: string; [k: string]: unknown }>;
     aiConfig(): Promise<Record<string, unknown>>;
     aiValidateKey(provider?: string): Promise<Record<string, unknown>>;
     authMe(): Promise<RiskUser | null>;
@@ -197,22 +196,6 @@ window.RiskAPI = {
         return BASE + "/analyses/" + id + "/export";
     },
 
-    // ═══════════════════════════════════════════════════════════════
-    // AI PROXY
-    // ═══════════════════════════════════════════════════════════════
-
-    // Call AI completion via server proxy (no API key needed client-side)
-    aiComplete: function(systemPrompt, userPrompt, provider, model) {
-        return _fetch("/ai/complete", {
-            method: "POST",
-            body: {
-                system: systemPrompt,
-                user: userPrompt,
-                provider: provider || (window._aiRuntime && window._aiRuntime.provider) || "anthropic",
-                model: model || (window._aiRuntime && window._aiRuntime.model) || "claude-sonnet-4-6"
-            }
-        });
-    },
 
     // Get AI configuration (which providers are available)
     aiConfig: function() {

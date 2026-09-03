@@ -461,11 +461,26 @@
             p.footer.innerHTML = '<button class="ai-btn-all">' + esc(opts.acceptAllLabel || t("ai.accept_all")) + '</button>' +
                 '<button class="ai-btn-close">' + esc(opts.closeLabel || t("ai.close")) + '</button>' + (opts.extraHTML || "");
             p.footer.querySelector(".ai-btn-all").onclick = function () {
-                items.slice().forEach(function (s, i) { opts.onAccept(s, i); });
+                // FEAT-40 — « Tout accepter » n'applique pas les enrichissements :
+                // un enrich ÉCRIT dans une mesure existante, et l'aperçu
+                // avant/après de sa carte est le seul contrôle humain sur cette
+                // écriture. Il reste dans la liste, à accepter carte par carte.
+                var gardes = [];
+                items.slice().forEach(function (s, i) {
+                    if (s && s.action === "enrich") {
+                        gardes.push(s);
+                        return;
+                    }
+                    opts.onAccept(s, i);
+                });
                 items.length = 0;
+                gardes.forEach(function (s) { items.push(s); });
                 if (opts.onChange)
                     opts.onChange();
                 draw();
+                if (gardes.length && typeof window.showStatus === "function") {
+                    window.showStatus(t("ai.accept_all_enrich_kept"));
+                }
             };
             p.footer.querySelector(".ai-btn-close").onclick = function () { window._aiClosePanel(); };
             if (opts.onRendered)
@@ -494,6 +509,7 @@
         "ai.accept": "Accepter",
         "ai.ignore": "Ignorer",
         "ai.accept_all": "Tout accepter",
+        "ai.accept_all_enrich_kept": "Les enrichissements de mesures existantes restent à valider carte par carte.",
         "ai.close": "Fermer",
         "ai.all_done": "Terminé",
         "ai.no_suggestions": "Aucune suggestion générée."
@@ -505,6 +521,7 @@
         "ai.accept": "Accept",
         "ai.ignore": "Ignore",
         "ai.accept_all": "Accept all",
+        "ai.accept_all_enrich_kept": "Enrichments of existing measures still need card-by-card review.",
         "ai.close": "Close",
         "ai.all_done": "All done",
         "ai.no_suggestions": "No suggestions generated."

@@ -519,6 +519,14 @@ function propagateNameChange(id: string, newName: string) {
         ["er", "vm"], ["ss", "couple_id"], ["ss", "couple_desc"],
         ["ss", "pp"], ["ss", "bs"], ["ss", "er"],
         ["eco", "pp_id"], ["measures", "sop"], ["residuals", "mesures"],
+        // Champs portant des références de MESURES. Ils manquaient : renommer
+        // une mesure laissait son ancien libellé figé ici, car _csvAppendRef
+        // écrit "ID - libellé" et ne le relit jamais. Invisible dans les
+        // sélecteurs (qui résolvent le libellé depuis l'id), mais bien présent
+        // dans les exports Word et Excel.
+        ["sop_detail", "mesure_proposee"],
+        ["socle_anssi", "mesures_prevues"], ["socle_iso", "mesures_prevues"],
+        ["eco", "mesures_existantes"], ["eco", "mesures_complementaires"],
     ];
     for (const [sec, fld] of refFields) {
         if (!D[sec]) continue;

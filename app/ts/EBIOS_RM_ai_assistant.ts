@@ -62,6 +62,21 @@ if (typeof _registerTranslations === "function") {
         "ai.apikey_placeholder": "sk-ant-...",
         "ai.apikey_empty": "Veuillez saisir votre clé API.",
         "ai.apikey_invalid": "Clé API invalide. Veuillez réessayer.",
+        "ai.no_analysis": "Aucune analyse ouverte : ouvrez ou créez une analyse avant d'utiliser l'assistant.",
+        "ai.include_measures": "Tenir compte des mesures déjà identifiées",
+        "ai.include_measures_help": "Transmet le plan de mesures complet pour éviter les doublons. À décocher sur un plan volumineux si le modèle a une petite fenêtre de contexte.",
+        "ai.measure.completes": "Complète la mesure {id} — {nom}.",
+        "ai.preview.title": "Ce que l'acceptation va écrire",
+        "ai.preview.name": "Titre :",
+        "ai.preview.name_kept": "Titre inchangé",
+        "ai.preview.details": "Description :",
+        "ai.preview.no_change": "déjà couvert, rien à ajouter",
+        "ai.sop.measure_col": "Mesure",
+        "ai.sop.adjusted": "ajustée",
+        "ai.sop.reused": "réutilisée",
+        "ai.sop.new": "à créer",
+        "ai.sop.unknown_measure": "mesure {id} inconnue — sera créée",
+        "ai.added_count_partial": "{count} ajoutée(s). {differes} modifient une mesure existante : à valider une par une.",
         "ai.label.vm": "Valeurs Métier (VM)",
         "ai.label.bs": "Biens Supports (BS)",
         "ai.label.er": "Événements Redoutés (ER)",
@@ -104,6 +119,21 @@ if (typeof _registerTranslations === "function") {
         "ai.apikey_placeholder": "sk-ant-...",
         "ai.apikey_empty": "Please enter your API key.",
         "ai.apikey_invalid": "Invalid API key. Please try again.",
+        "ai.no_analysis": "No analysis open: open or create one before using the assistant.",
+        "ai.include_measures": "Take existing measures into account",
+        "ai.include_measures_help": "Sends the full measure plan so the model avoids duplicates. Uncheck on a large plan if your model has a small context window.",
+        "ai.measure.completes": "Complements measure {id} — {nom}.",
+        "ai.preview.title": "What accepting will write",
+        "ai.preview.name": "Title:",
+        "ai.preview.name_kept": "Title unchanged",
+        "ai.preview.details": "Description:",
+        "ai.preview.no_change": "already covered, nothing to add",
+        "ai.sop.measure_col": "Measure",
+        "ai.sop.adjusted": "adjusted",
+        "ai.sop.reused": "reused",
+        "ai.sop.new": "to create",
+        "ai.sop.unknown_measure": "measure {id} unknown — will be created",
+        "ai.added_count_partial": "{count} added. {differes} modify an existing measure: review them one by one.",
         "ai.label.vm": "Business Assets (VM)",
         "ai.label.bs": "Supporting Assets (BS)",
         "ai.label.er": "Feared Events (ER)",
@@ -127,172 +157,20 @@ if (typeof _registerTranslations === "function") {
 // The opensource (browser-local) build keeps the prompt here instead.
 
 // ═══════════════════════════════════════════════════════════════════════
-// PROMPT BUILDERS (one per panel type)
+// FEAT-41 — les prompts ne sont plus construits ici.
+//
+// Le serveur relit l'analyse en base et compose le prompt (src/ai_prompts.py).
+// Le frontend ne déclare plus QUE ce qu'il veut : le panneau, la langue, et
+// l'éventuelle instruction libre. Voir CLAUDE.md §5.1.
+//
+// La variante navigateur (webapp/) garde ses constructeurs : sans backend,
+// elle appelle le fournisseur directement. Divergence déclarée.
 // ═══════════════════════════════════════════════════════════════════════
 
-var PROMPTS: Record<string, (arg?: any) => { user: string } | null> = {
-    vm: function() {
-        var lang = typeof _locale !== "undefined" ? _locale : "fr";
-        return {
-            user: "Context: " + JSON.stringify(D.context) + "\n\nExisting business assets (VM): " + JSON.stringify(D.vm.map(function(v) { return {id:v.id, nom:v.nom, nature:v.nature}; })) +
-                "\n\nPropose 3-5 additional business assets (VM) that are missing for this organization. Consider the sector, activities, and regulatory context. You may also suggest updates to existing VMs by including their id." +
-                "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
-                '\n\nJSON schema: [{"id":"VM-XX (only if updating existing)","nom":"...","nature":"Information|Processus","description":"...","responsable":"..."}]'
-        };
-    },
-    bs: function() {
-        var lang = typeof _locale !== "undefined" ? _locale : "fr";
-        return {
-            user: "Context: " + JSON.stringify(D.context) +
-                "\n\nBusiness assets: " + JSON.stringify(D.vm.map(function(v) { return {id:v.id, nom:v.nom}; })) +
-                "\n\nExisting supporting assets: " + JSON.stringify(D.bs.map(function(b) { return {id:b.id, nom:b.nom, type:b.type, vm:b.vm}; })) +
-                "\n\nPropose 3-5 additional supporting assets (BS) missing to support these business assets. Include type and which VMs they support (use VM IDs). You may also suggest updates to existing BSs by including their id." +
-                "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
-                '\n\nJSON schema: [{"id":"BS-XX (only if updating existing)","nom":"...","type":"...","vm":"VM-01 - Name, VM-02 - Name","localisation":"...","proprietaire":"..."}]'
-        };
-    },
-    er: function() {
-        var lang = typeof _locale !== "undefined" ? _locale : "fr";
-        var maxG = D.gravity_scale.length > 0 ? D.gravity_scale[0].niveau : 4;
-        var byCat = !!(D.context && D.context.gravite_par_categorie);
-        var base = "Context: " + JSON.stringify(D.context) +
-            "\n\nBusiness assets: " + JSON.stringify(D.vm.map(function(v) { return {id:v.id, nom:v.nom}; })) +
-            "\n\nExisting feared events: " + JSON.stringify(D.er.map(function(e) { return {id:e.id, evenement:e.evenement, vm:e.vm, gravite:e.gravite}; }));
-        var common = "\n\nPropose 3-5 additional feared events (ER) for business assets not yet covered or with missing DICT dimensions. Specify the VM (using ID - Name format), DICT criteria and impacts. To update an existing ER, include its id field." +
-            "\n\nRespond in " + (lang === "fr" ? "French" : "English") + ".";
-        if (byCat) {
-            var scale = D.gravity_scale.map(function(g) { return {niveau:g.niveau, label:g.label, financier:g.impact_financier||"", reputation:g.impact_reputation||"", reglementaire:g.impact_reglementaire||"", donnees_perso:g.impact_donnees_perso||"", operationnel:g.impact_operationnel||""}; });
-            return { user: base +
-                "\n\nSeverity is assessed PER CATEGORY across five impact criteria: financier, reputation, reglementaire, donnees_perso, operationnel. Severity scale per category (level 1 to " + maxG + ", with the meaning of each level): " + JSON.stringify(scale) +
-                "\n\nFor each feared event, give a level from 1 to " + maxG + " for every category in gravite_cat (the overall severity is the maximum of the five)." + common +
-                '\n\nJSON schema: [{"id":"ER-XX (only if updating existing)","evenement":"...","vm":"VM-01 - Name","dict":"D|I|C|T","impacts":"...","gravite_cat":{"financier":1-' + maxG + ',"reputation":1-' + maxG + ',"reglementaire":1-' + maxG + ',"donnees_perso":1-' + maxG + ',"operationnel":1-' + maxG + '}}]'
-            };
-        }
-        return { user: base +
-            "\n\nGravity scale: 1 (low) to " + maxG + " (critical). Specify a single severity." + common +
-            '\n\nJSON schema: [{"id":"ER-XX (only if updating existing)","evenement":"...","vm":"VM-01 - Name","dict":"D|I|C|T","impacts":"...","gravite":1-' + maxG + '}]'
-        };
-    },
-    srov: function() {
-        var lang = typeof _locale !== "undefined" ? _locale : "fr";
-        return {
-            user: "Context: " + JSON.stringify(D.context) +
-                "\n\nBusiness assets: " + JSON.stringify(D.vm.map(function(v) { return {id:v.id, nom:v.nom}; })) +
-                "\n\nExisting risk origins (SR): " + JSON.stringify(D.sr_list.map(function(s) { return {id:s.id, nom:s.nom}; })) +
-                "\n\nExisting target objectives (OV): " + JSON.stringify(D.ov_list.map(function(s) { return {id:s.id, nom:s.nom}; })) +
-                "\n\nExisting RO/TO pairs: " + JSON.stringify(D.srov.map(function(s) { return {couple:s.couple, sr_id:s.sr_id, ov_id:s.ov_id, motivation:s.motivation, ressources:s.ressources, activite:s.activite}; })) +
-                "\n\nPropose 3-5 additional RO/TO pairs that are missing. You may suggest new risk origins (SR) or target objectives (OV) if needed. Score Motivation/Resources/Activity from 0 to 4. Include a detailed justification for each pair. Use existing SR/OV IDs when possible, and include the name (sr_nom, ov_nom) for clarity." +
-                "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
-                '\n\nJSON schema: {"new_sr":[{"id":"SR-XX","nom":"..."}], "new_ov":[{"id":"OV-XX","nom":"..."}], "pairs":[{"sr_id":"SR-XX","sr_nom":"name of the risk origin","ov_id":"OV-XX","ov_nom":"name of the target objective","motivation":0-4,"ressources":0-4,"activite":0-4,"justification":"detailed justification (2-3 sentences)"}]}'
-        };
-    },
-    pp: function() {
-        var lang = typeof _locale !== "undefined" ? _locale : "fr";
-        return {
-            user: "Context: " + JSON.stringify(D.context) +
-                "\n\nSupporting assets: " + JSON.stringify(D.bs.map(function(b) { return {id:b.id, nom:b.nom, type:b.type}; })) +
-                "\n\nExisting stakeholders: " + JSON.stringify(D.pp.map(function(p) { return {id:p.id, nom:p.nom, type:p.type}; })) +
-                "\n\nPropose 3-5 additional stakeholders (PP) in the ecosystem. Only EXTERNAL actors (suppliers, partners, clients). Assess Dependency/Penetration/Maturity/Trust from 1 to 4. Link to relevant BS (using ID - Name format)." +
-                "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
-                '\n\nJSON schema: [{"id":"PP-XX (only if updating existing)","nom":"...","type":"Fournisseur|Partenaire|Client","dependance":1-4,"penetration":1-4,"maturite":1-4,"confiance":1-4,"bs":"BS-01 - Name"}]'
-        };
-    },
-    ss: function() {
-        var lang = typeof _locale !== "undefined" ? _locale : "fr";
-        return {
-            user: "Context: " + JSON.stringify(D.context) +
-                "\n\nRO/TO pairs (P1+P2): " + JSON.stringify(D.srov.filter(function(s) { return (Number(s.motivation) || 0) + (Number(s.ressources) || 0) + (Number(s.activite) || 0) > 4; }).map(function(s) { return {couple:s.couple, sr_id:s.sr_id, ov_id:s.ov_id}; })) +
-                "\n\nStakeholders: " + JSON.stringify(D.pp.map(function(p) { return {id:p.id, nom:p.nom}; })) +
-                "\n\nSupporting assets: " + JSON.stringify(D.bs.map(function(b) { return {id:b.id, nom:b.nom}; })) +
-                "\n\nFeared events: " + JSON.stringify(D.er.map(function(e) { return {id:e.id, evenement:e.evenement, vm:e.vm, gravite:e.gravite}; })) +
-                "\n\nExisting strategic scenarios: " + JSON.stringify(D.ss.map(function(s) { return {id:s.id, scenario:s.scenario}; })) +
-                "\n\nPropose 2-4 additional strategic scenarios (SS) linking: WHO (RO/TO pair) → THROUGH WHOM (PP) → targeting WHAT (BS) → causing WHICH feared event (ER). Use existing element IDs." +
-                "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
-                '\n\nJSON schema: [{"id":"SS-XX (only if updating existing)","scenario":"...","couple_id":"SR-XX/OV-XX","pp":"PP-01 - Name","bs":"BS-01 - Name","er":"ER-01 - Name"}]'
-        };
-    },
-    sop: function(ssId?: string) {
-        var lang = typeof _locale !== "undefined" ? _locale : "fr";
-        var targetSS = D.ss.find(function(s) { return s.id === ssId; });
-        if (!targetSS) return null;
-        return {
-            user: "Context: " + JSON.stringify({societe: D.context.societe, socle: D.context.socle, reglementation: D.context.reglementation}) +
-                "\n\nTarget strategic scenario: " + JSON.stringify({id:targetSS.id, scenario:targetSS.scenario, couple_id:targetSS.couple_id, pp:targetSS.pp, bs:targetSS.bs, er:targetSS.er}) +
-                "\n\nSupporting assets: " + JSON.stringify(D.bs.map(function(b) { return {id:b.id, nom:b.nom, type:b.type}; })) +
-                "\n\nExisting SOP for this SS: " + JSON.stringify(D.sop_detail.filter(function(d) { return d.ss === ssId; }).map(function(d) { return {phase:d.phase, phase_label:_attackLabel(d.phase), action:d.action, bs:d.bs}; })) +
-                "\n\nPropose a kill chain (SOP) for this strategic scenario. Use the step-by-step method (proche en proche): entry point → lateral movement → target. Keep it concise: 4-6 key phases maximum. Set each phase to the MITRE ATT&CK tactic id that best matches it, following the canonical order: TA0043 Reconnaissance, TA0042 Resource Development, TA0001 Initial Access, TA0002 Execution, TA0003 Persistence, TA0004 Privilege Escalation, TA0005 Defense Evasion, TA0006 Credential Access, TA0007 Discovery, TA0008 Lateral Movement, TA0009 Collection, TA0011 Command and Control, TA0010 Exfiltration, TA0040 Impact. Put the specific ATT&CK technique id (TXXXX) in the action description. For phases with Absent or Partiel effectiveness, also propose a security measure (mesure_proposee)." +
-                "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
-                '\n\nJSON schema: {"ss":"' + ssId + '","phases":[{"phase":"TA00XX (ATT&CK tactic id from the list above)","action":"Short description (TXXXX)","bs":"BS-XX - Name","controle":"existing control or empty","ref":"baseline ref or empty","efficacite":"Absent|Partiel|Efficace","mesure_proposee":"proposed security measure or empty"}]}'
-        };
-    },
-    eco: function() {
-        var lang = typeof _locale !== "undefined" ? _locale : "fr";
-        return {
-            user: "Context: " + JSON.stringify({societe: D.context.societe, socle: D.context.socle}) +
-                "\n\nStakeholders (PP): " + JSON.stringify(D.pp.map(function(p) { return {id:p.id, nom:p.nom, type:p.type, dependance:p.dependance, penetration:p.penetration, maturite:p.maturite, confiance:p.confiance}; })) +
-                "\n\nEcosystem measures already defined: " + JSON.stringify(D.eco.map(function(e) { return {pp:e.pp_id, existantes:e.mesures_existantes, complementaires:e.mesures_complementaires}; })) +
-                "\n\nPropose 3-5 ecosystem security measures to reduce the threat level of the most exposed stakeholders. Each measure must target a specific PP (use PP ID - Name format). Include contractual, technical, organizational or monitoring measures. Each measure must have a short name (mesure) and detailed implementation description (details)." +
-                "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
-                '\n\nJSON schema: [{"mesure":"short name","details":"detailed implementation description","pp_id":"PP-XX - Name","type":"Contractuelle|Technique|Organisationnelle|Surveillance","ref_socle":"baseline reference (#XX for ANSSI or A.X.X for ISO) or empty","responsable":"suggested owner"}]'
-        };
-    },
-    measures: function() {
-        var lang = typeof _locale !== "undefined" ? _locale : "fr";
-        var weakPhases = D.sop_detail.filter(function(s) { return s.efficacite === "Absent" || s.efficacite === "Partiel"; });
-        return {
-            user: "Context: " + JSON.stringify(D.context) +
-                "\n\nWeak phases (Absent/Partial controls): " + JSON.stringify(weakPhases.map(function(s) { return {sop:s.sop, ss:s.ss, phase:_attackLabel(s.phase), action:s.action, bs:s.bs, efficacite:s.efficacite}; })) +
-                "\n\nExisting measures: " + JSON.stringify(D.measures.map(function(m) { return {id:m.id, mesure:m.mesure, origine:m.origine}; })) +
-                "\n\nPropose 3-5 security measures to address the weak phases. Prioritize baseline reinforcement, then ecosystem measures, then new complementary measures. Specify type (Prévention/Détection/Réaction), which SOP/phase it addresses, and baseline reference if applicable. Each measure must have a short name (mesure) and a detailed implementation description (details) — do not put the whole description in the mesure field." +
-                "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
-                '\n\nJSON schema: [{"mesure":"short name","details":"detailed description of the measure","origine":"Socle|Écosystème|SOP|Complémentaire","type":"Prévention|Détection|Réaction","sop":"SOP-XX","phase":"Phase name","effet":"...","ref_socle":"#XX or A.X.X","responsable":"..."}]'
-        };
-    },
-    residuals: function() {
-        var lang = typeof _locale !== "undefined" ? _locale : "fr";
-        return {
-            user: "Context: " + JSON.stringify(D.context) +
-                "\n\nStrategic scenarios: " + JSON.stringify(D.ss.map(function(s) { return {id:s.id, scenario:s.scenario}; })) +
-                "\n\nAll measures: " + JSON.stringify(D.measures.map(function(m) { return {id:m.id, mesure:m.mesure, origine:m.origine, statut:m.statut}; })) +
-                "\n\nCurrent residuals: " + JSON.stringify(D.residuals) +
-                "\n\nPropose treatment improvements for the residual risks." +
-                "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
-                '\n\nRespond with valid JSON.'
-        };
-    },
-    socle: function() {
-        var lang = typeof _locale !== "undefined" ? _locale : "fr";
-        var isAnssi = D.socle_type !== "iso";
-        var section: "socle_anssi" | "socle_iso" = isAnssi ? "socle_anssi" : "socle_iso";
-        var entries = D[section] || [];
-        // Focus the prompt on entries that are NOT fully conformant (conformite
-        // is a 0-100 percentage; 100 = fully covered) and have a documented gap
-        // — that's where measures are needed.
-        var gaps = entries.filter(function(e) {
-            return e.conformite !== 100 && (e.ecart || "").trim() !== "";
-        }).slice(0, 40);
-        var existing = (D.measures || [])
-            .filter(function(m) { return m.origine === "Socle"; })
-            .map(function(m) { return {id: m.id, mesure: m.mesure, ref_socle: m.ref_socle}; });
-        return {
-            user: "Context: " + JSON.stringify({societe: D.context.societe, socle: D.context.socle, reglementation: D.context.reglementation}) +
-                "\n\nBaseline framework: " + (isAnssi ? "ANSSI Guide d'hygiène (42 measures)" : "ISO 27001 Annex A") +
-                "\n\nBaseline controls with gaps (not fully conformant, with a documented écart): " + JSON.stringify(gaps.map(function(e) {
-                    return {
-                        ref: isAnssi ? "#" + e.num : e.ref,
-                        theme: e.thematique || e.theme || "",
-                        mesure: e.mesure,
-                        conformite: e.conformite,
-                        ecart: e.ecart
-                    };
-                })) +
-                "\n\nExisting baseline measures already planned: " + JSON.stringify(existing) +
-                "\n\nPropose 3-5 priority security measures to close the most critical baseline gaps. Target gaps not already covered by an existing measure. Each measure MUST reference the baseline control id it addresses (ref_socle). Each measure must have a short name (mesure) and a detailed implementation description (details) — do not put the whole description in the mesure field." +
-                "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
-                '\n\nJSON schema: [{"mesure":"short name","details":"detailed description","type":"Prévention|Détection|Réaction","ref_socle":"#XX for ANSSI or A.X.X for ISO","responsable":"suggested owner role"}]'
-        };
-    }
-};
+// Panneaux acceptés par POST api/ai/risk/suggest (doit rester aligné sur
+// PANELS dans src/ai_prompts.py — un panneau inconnu répond 422).
+var AI_PANELS = ["vm", "bs", "er", "srov", "pp", "ss", "sop", "eco",
+                 "measures", "residuals", "socle"];
 
 // API key is now managed via openSettings() in ai_common.js
 // No separate prompt dialog needed
@@ -301,21 +179,41 @@ var PROMPTS: Record<string, (arg?: any) => { user: string } | null> = {
 // API CALL (wrapper using shared _aiCallAPI)
 // ═══════════════════════════════════════════════════════════════════════
 
-async function _callAI(promptObj: { user: string }): Promise<any> {
+interface AiAsk { panel: string; ssId?: string; custom?: string; row?: number;
+                  includeMeasures?: boolean; }
+
+async function _callAI(ask: AiAsk): Promise<any> {
     if (!_aiIsEnabled()) {
         openSettings();
         return null;
     }
-    var userContent = promptObj.user + (_extraContext ? "\n\nAdditional user instruction: " + _extraContext : "");
+    var analysisId = localStorage.getItem("ebios_catalog_active") || "";
+    if (!analysisId) throw new Error(t("ai.no_analysis"));
+
+    // Le serveur relit l'analyse EN BASE (FEAT-41) : les écritures encore
+    // débouncées doivent partir d'abord, sinon le modèle travaillerait sur
+    // l'état d'avant la dernière édition sans que rien ne le signale.
+    if (typeof window._riskFlushPending === "function") {
+        await window._riskFlushPending();
+    }
+
+    var extra = _extraContext;
     _extraContext = ""; // reset after use
 
-    // Backend deployment: the EBIOS RM methodology system prompt is owned
-    // server-side. POST the per-panel user prompt to the métier endpoint.
     var resp = await fetch("api/ai/risk/suggest", {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user: userContent })
+        body: JSON.stringify({
+            analysis_id: analysisId,
+            panel: ask.panel,
+            ss_id: ask.ssId || null,
+            language: typeof _locale !== "undefined" ? _locale : "fr",
+            row: (ask.row === undefined ? null : ask.row),
+            include_existing_measures: ask.includeMeasures !== false,
+            custom_instruction: ask.custom || null,
+            extra_instruction: extra || null
+        })
     });
     if (!resp.ok) {
         var errTxt = await resp.text();
@@ -358,6 +256,55 @@ var _HIDDEN_FIELDS: Record<string, number> = {"_title":1,"_socleIdx":1,"_ref":1,
 var _SUMMARY_FIELDS: Record<string, number> = {"details":1,"description":1,"impacts":1,"effet":1};
 // Fields to skip in SROV (shown in custom rendering)
 var _SROV_SKIP: Record<string, number> = {"sr_id":1,"ov_id":1,"sr_nom":1,"ov_nom":1,"motivation":1,"ressources":1,"activite":1};
+
+/** FEAT-40 — ce que l'acceptation va réellement écrire dans la mesure visée.
+ *
+ *  Sans cet aperçu, la carte montre le fragment proposé par le modèle et
+ *  l'utilisateur ne peut pas savoir s'il complète ou s'il écrase — ni ce que
+ *  devient le titre. On rend donc l'avant et l'après, calculés avec les MÊMES
+ *  fonctions que l'acceptation, sinon l'aperçu mentirait.
+ */
+/** Ce que _mergeDetails ajoutera réellement : "" si rien ne change. */
+function _detailsAddition(ancien: string, ajout: string): string {
+    var a = (ancien || "").trim();
+    var b = (ajout || "").trim();
+    if (!b) return "";
+    if (a && a.indexOf(b) !== -1) return "";
+    return b;
+}
+
+function _enrichPreviewHTML(s: any): string {
+    if (!s || s.action !== "enrich" || !s.id) return "";
+    var cible = D.measures.find(function(m) { return m.id === s.id; }) as any;
+    if (!cible) return "";
+
+    var h = '<div class="ai-diff ct-mt-2 ct-p-2 ct-r-md" style="background:var(--ct-bg-alt)">';
+    h += '<div class="ct-text-label ct-strong ct-mb-1">' + esc(t("ai.preview.title")) + '</div>';
+
+    var nouveauTitre = (s.mesure || "").trim();
+    if (nouveauTitre && nouveauTitre !== cible.mesure) {
+        h += '<div class="ct-text-label ct-muted">' + esc(t("ai.preview.name")) + '</div>';
+        h += '<div class="ct-text-label"><s class="ct-muted">' + esc(cible.mesure) + '</s></div>';
+        h += '<div class="ct-text-label ct-strong">' + esc(nouveauTitre) + '</div>';
+    } else {
+        h += '<div class="ct-text-label ct-muted">' + esc(t("ai.preview.name_kept")) + '</div>';
+    }
+
+    if (s.details) {
+        h += '<div class="ct-text-label ct-muted ct-mt-2">' + esc(t("ai.preview.details")) + '</div>';
+        if (cible.details) {
+            h += '<div class="ct-text-label ct-muted">' + esc(cible.details) + '</div>';
+        }
+        // Ce qui s'ajoute réellement, avec la MÊME règle que _mergeDetails —
+        // pas une soustraction de chaînes, qui dérape sur les espaces de fin.
+        var ajout = _detailsAddition(cible.details || "", s.details);
+        h += ajout
+            ? '<div class="ct-text-label ct-text-ok ct-strong">+ ' + esc(ajout) + '</div>'
+            : '<div class="ct-text-label ct-muted"><em>' + esc(t("ai.preview.no_change")) + '</em></div>';
+    }
+    h += '</div>';
+    return h;
+}
 
 function _renderCards(type: string, suggestions: any[], acceptFn?: (s: any) => string) {
     var p = _aiEnsurePanel();
@@ -403,6 +350,11 @@ function _renderCards(type: string, suggestions: any[], acceptFn?: (s: any) => s
             }
             h += '<div class="ai-card-field"><strong>' + esc(k) + ':</strong> ' + esc(val) + '</div>';
         }
+        // FEAT-40 — aperçu avant/après. Accepter un enrichissement écrit dans
+        // une mesure existante : l'utilisateur doit voir CE QUI CHANGE avant,
+        // pas seulement le fragment proposé.
+        h += _enrichPreviewHTML(s);
+
         // Detect if this is an update (existing ID) or a new element
         var isUpdate = s.id && _aiIdExists(type, s.id);
         if (isUpdate) {
@@ -432,6 +384,17 @@ function _aiIdExists(type: string, id: string) {
     var arr = arrays[type];
     if (!arr) return false;
     return arr.some(function(e) { return e.id === id; });
+}
+
+/** FEAT-40 — fusionne une description existante et son enrichissement.
+ *  Concaténer plutôt que remplacer : le travail de rédaction déjà fait ne
+ *  doit pas disparaître parce que le modèle a proposé un complément. */
+function _mergeDetails(ancien: string, ajout: string): string {
+    var a = (ancien || "").trim();
+    var b = (ajout || "").trim();
+    if (!a) return b;
+    if (!b || a.indexOf(b) !== -1) return a;
+    return a + "\n\n" + b;
 }
 
 // Helper: find existing element by ID in an array, update its fields, return true if found
@@ -523,8 +486,35 @@ var ACCEPT_HANDLERS: Record<string, (s: any) => string> = {
         D.sop_summary.push({sop: sopId, ss: s.ss});
         (s.phases || []).forEach(function(p: any) {
             var mesureRef = "";
-            // If the AI proposed a control for a weak phase, create a measure in the registry
-            if ((p.efficacite === "Absent" || p.efficacite === "Partiel") && p.mesure_proposee) {
+            // FEAT-40 — réutiliser AVANT de créer. Ce handler créait une mesure
+            // pour CHAQUE phase faible : générer un SOP pour un second scénario
+            // aux phases voisines dupliquait le plan à chaque fois, avec en
+            // prime une description vide.
+            if (p.mesure_existante_id) {
+                var deja = D.measures.find(function(m) { return m.id === p.mesure_existante_id; }) as any;
+                if (deja) {
+                    // « Ajustée » : la mesure couvre la phase PARTIELLEMENT et
+                    // reçoit un complément. Concaténé, jamais substitué — même
+                    // règle que l'enrichissement des autres panneaux.
+                    if (p.mesure_ajustement) {
+                        deja.details = _mergeDetails(deja.details || "", p.mesure_ajustement);
+                    }
+                    // Titre corrigé si l'élargissement rend l'existant inexact.
+                    // Les références figées ailleurs ("M-01 - libellé") doivent
+                    // alors être rafraîchies, sinon l'ancien libellé survit
+                    // dans les exports.
+                    var nt = (p.mesure_titre || "").trim();
+                    if (nt && nt !== deja.mesure) {
+                        deja.mesure = nt;
+                        if (typeof propagateNameChange === "function") {
+                            propagateNameChange(deja.id, nt);
+                        }
+                    }
+                    mesureRef = deja.id + " - " + deja.mesure;
+                }
+            }
+            // Sinon seulement, on crée.
+            if (!mesureRef && (p.efficacite === "Absent" || p.efficacite === "Partiel") && p.mesure_proposee) {
                 var mId = nextId("measures");
                 D.measures.push({id:mId, mesure:p.mesure_proposee, details:"", origine:"SOP", type:"Prévention",
                     sop:sopId, phase:_attackResolveId(p.phase) || (p.phase || ""), effet:"", ref_socle:p.ref||"", responsable:"", echeance:"", cout:"", statut:"À étudier"});
@@ -536,9 +526,49 @@ var ACCEPT_HANDLERS: Record<string, (s: any) => string> = {
         return sopId;
     },
     measures: function(s: any) {
-        if (_updateIfExists(D.measures, s, ["mesure","details","origine","type","sop","phase","effet","ref_socle","responsable"])) return s.id + " ✓";
+        // FEAT-40 — enrichir NE DOIT PAS écraser. _updateIfExists remplace
+        // champ par champ : appliqué tel quel à un enrichissement il détruit
+        // ce qu'il est censé étendre — la description déjà rédigée, et le
+        // champ `sop`, qui est une chaîne SIMPLE : enrichir une mesure pour
+        // couvrir un SOP de plus effacerait le SOP d'origine, soit exactement
+        // le geste que la feature sert.
+        if (s.action === "enrich" && s.id) {
+            var cible = D.measures.find(function(m) { return m.id === s.id; }) as any;
+            if (cible) {
+                if (s.details) cible.details = _mergeDetails(cible.details || "", s.details);
+                // Le titre n'est ajusté que si le modèle en propose un AUTRE :
+                // c'est sous ce libellé que la mesure est connue dans le plan
+                // d'action et les rapports. Et il faut alors rafraîchir les
+                // références stockées ("M-01 - libellé" figé par _csvAppendRef),
+                // sinon l'ancien libellé survit dans les exports.
+                if (s.mesure && s.mesure.trim() && s.mesure.trim() !== cible.mesure) {
+                    cible.mesure = s.mesure.trim();
+                    if (typeof propagateNameChange === "function") {
+                        propagateNameChange(cible.id, cible.mesure);
+                    }
+                }
+                // `origine`, `sop`, `phase` ne sont PAS touchés : un
+                // enrichissement ajoute, il ne déplace pas.
+                ["type", "effet", "ref_socle", "responsable"].forEach(function(f) {
+                    if (!cible[f] && s[f]) cible[f] = s[f];
+                });
+                _persist("measures");
+                return s.id + " ✓";
+            }
+            // id inventé par le modèle : on retombe sur une création plutôt
+            // que de perdre la suggestion.
+        }
+        if (s.action !== "enrich" && s.action !== "complement"
+            && _updateIfExists(D.measures, s, ["mesure","details","origine","type","sop","phase","effet","ref_socle","responsable"])) return s.id + " ✓";
         var id = nextId("measures");
-        D.measures.push({id:id, mesure:s.mesure||"", details:s.details||"", origine:s.origine||"Complémentaire", type:s.type||"", sop:s.sop||"", phase:s.phase||"", effet:s.effet||"", ref_socle:s.ref_socle||"", responsable:s.responsable||"", echeance:"", cout:"", statut:"À étudier"});
+        var details = s.details || "";
+        // « complément » : la mesure complétée est NOMMÉE dans la description,
+        // sinon le lien se perd dès que la carte disparaît.
+        if (s.action === "complement" && s.complete_id) {
+            var base = D.measures.find(function(m) { return m.id === s.complete_id; });
+            if (base) details = t("ai.measure.completes", {id: s.complete_id, nom: base.mesure}) + "\n\n" + details;
+        }
+        D.measures.push({id:id, mesure:s.mesure||"", details:details, origine:s.origine||"Complémentaire", type:s.type||"", sop:s.sop||"", phase:s.phase||"", effet:s.effet||"", ref_socle:s.ref_socle||"", responsable:s.responsable||"", echeance:"", cout:"", statut:"À étudier"});
         return id;
     }
 };
@@ -618,14 +648,22 @@ window._aiAcceptAll = function(type: string) {
     _saveState();
     var handler = ACCEPT_HANDLERS[type];
     if (!handler) return;
-    var count = 0;
+    var count = 0, differes = 0;
     (window._aiSuggestions || []).forEach(function(s: any, i: number) {
-        if (document.getElementById("ai-card-" + i)) {
-            handler(s);
-            count++;
-        }
+        if (!document.getElementById("ai-card-" + i)) return;
+        // « Tout accepter » ne CRÉE que. Une suggestion qui ÉCRIT dans une
+        // mesure existante (enrich, complement) exige d'avoir vu son
+        // avant/après — c'est le seul contrôle qui protège d'une injection
+        // de prompt : un texte hostile stocké dans une mesure (un plan
+        // d'action saisi par un fournisseur, par exemple) peut pousser le
+        // modèle à renvoyer un `enrich` sur une mesure sans rapport.
+        if (s && (s.action === "enrich" || s.action === "complement")) { differes++; return; }
+        handler(s);
+        count++;
     });
-    showStatus(t("ai.added_count", {count: count}));
+    showStatus(differes
+        ? t("ai.added_count_partial", {count: count, differes: differes})
+        : t("ai.added_count", {count: count}));
     _autoSave();
     _aiRerender(type);
     _aiClosePanel();
@@ -636,8 +674,7 @@ window._aiAcceptAll = function(type: string) {
 // ═══════════════════════════════════════════════════════════════════════
 
 async function suggestFor(type: string) {
-    var promptBuilder = PROMPTS[type];
-    if (!promptBuilder) { alert(t("ai.no_prompt", {type: type})); return; }
+    if (AI_PANELS.indexOf(type) === -1) { alert(t("ai.no_prompt", {type: type})); return; }
 
     var labels: Record<string, string> = {
         vm: t("ai.label.vm"), bs: t("ai.label.bs"), er: t("ai.label.er"),
@@ -654,7 +691,10 @@ async function suggestFor(type: string) {
         if (D.ss.length === 0) { alert(t("ai.no_ss")); return; }
         var p = _aiEnsurePanel();
         _aiOpenPanel("✨ " + labels.sop);
-        var h = '<div class="ct-py-2 ct-px-0 ct-text-data ct-strong ct-mb-2">' + t("ai.select_ss") + '</div>';
+        // Ce panneau ne passe pas par l'écran d'options : la case est posée
+        // ici, avant le choix du scénario, donc lisible au clic.
+        var h = _measureCtxToggleHTML("sop");
+        h += '<div class="ct-py-2 ct-px-0 ct-text-data ct-strong ct-mb-2">' + t("ai.select_ss") + '</div>';
         D.ss.forEach(function(s) {
             h += '<div class="ai-card ct-clickable" data-click="_aiGenSOP" data-args=\'' + _da(s.id) + '\'>';
             h += '<div class="ai-card-title">' + esc(s.id + " — " + s.scenario) + '</div>';
@@ -671,6 +711,9 @@ async function suggestFor(type: string) {
         var p = _aiEnsurePanel();
         _aiOpenPanel("✨ " + t("ai.label.residuals"));
         var h = '<p class="fs-sm ct-mb-3 ct-muted">' + t("ai.prompt_intro") + '</p>';
+        // Ce panneau ne passe pas par l'écran d'options générique : la case y
+        // est posée ici, avant la sélection du scénario, donc lisible au clic.
+        h += _measureCtxToggleHTML("residuals");
         h += '<div class="settings-label fs-sm ct-mb-2">' + t("ai.select_ss") + '</div>';
         D.ss.forEach(function(s, i) {
             h += '<div class="ai-card ct-clickable" data-click="_aiResidualForSS" data-args=\'' + _da(i) + '\'>';
@@ -693,12 +736,47 @@ async function suggestFor(type: string) {
     _aiOpenPanel(panelTitle);
     pp.body.innerHTML =
         '<p class="fs-sm ct-mb-4 ct-muted">' + t("ai.prompt_intro") + '</p>' +
+        _measureCtxToggleHTML(type) +
         '<button class="ct-btn ai-btn-accept ct-w-full ct-p-2 ct-text-data ct-mb-4" data-variant="primary" data-click="_aiRunSuggest" data-args=\'' + _da(type, "") + '\'>' + t("ai.auto_suggest") + '</button>' +
         '<div class="settings-label fs-sm ct-mb-1">' + t("ai.custom_instruction_label") + '</div>' +
         '<textarea id="ai-custom-instruction" class="w-full ct-bordered ct-r-md ct-p-2 ct-text-meta ct-resize-y" rows="4" placeholder="' + esc(t("ai.custom_instruction_placeholder")) + '"></textarea>' +
         '<button class="ct-btn ai-btn-accept ct-journal-body ct-p-2 ct-text-data ct-mt-2 ct-bg-accent" data-variant="primary" data-click="_aiRunSuggest" data-args=\'' + _da(type, "__custom__") + '\'>' + t("ai.send_instruction") + '</button>';
     pp.footer.innerHTML = '<button class="ct-btn ai-btn-close" data-click="_aiClosePanel">' + t("ai.close") + '</button>';
     return;
+}
+
+// FEAT-40 — l'option « inclure les mesures existantes ».
+//
+// Cochée par défaut : le cas normal est de ne pas vouloir de doublon.
+// L'option sert l'exception — plan volumineux et modèle à petite fenêtre,
+// démarrage d'analyse où le plan est vide, ou exploration délibérée sans
+// être bridé par l'existant.
+//
+// Elle ne s'affiche que sur les panneaux qui proposent des mesures.
+// Panneaux qui affichent l'écran d'options AVANT de lancer. Les boutons IA
+// « en ligne » (socle_row, eco_row, sop_row) s'exécutent d'un clic, sans
+// écran intermédiaire : pas de case à cocher pour eux, ils gardent le
+// défaut — mesures incluses.
+// Le panneau SOP se lance en deux temps (choix du scénario, puis mode) :
+// la case n'existe plus au moment de l'appel, on retient donc sa valeur.
+var _aiSopIncludeMeasures = true;
+
+var MEASURE_PANELS = ["measures", "socle", "eco", "residuals", "sop"];
+
+function _measureCtxToggleHTML(type: string): string {
+    if (MEASURE_PANELS.indexOf(type) === -1) return "";
+    return '<label class="ct-flex ct-items-start ct-gap-2 ct-mb-4 ct-clickable">'
+         + '<input type="checkbox" id="ai-include-measures" class="ct-mt-1" checked>'
+         + '<span class="fs-sm"><strong>' + esc(t("ai.include_measures")) + '</strong>'
+         + '<br><span class="ct-muted">' + esc(t("ai.include_measures_help")) + '</span></span>'
+         + '</label>';
+}
+
+/** Lu au moment de l'appel : la case peut avoir disparu du DOM (panneau
+ *  remplacé par l'écran de chargement), auquel cas on garde le défaut. */
+function _includeMeasures(): boolean {
+    var el = document.getElementById("ai-include-measures") as HTMLInputElement | null;
+    return el ? el.checked : true;
 }
 
 // Internal: actually run the suggestion after the prompt panel
@@ -719,50 +797,34 @@ window._aiRunSuggest = async function(type: string, mode: string) {
         var textarea = document.getElementById("ai-custom-instruction") as HTMLTextAreaElement | null;
         userText = textarea ? textarea.value.trim() : "";
     }
+    // Lu AVANT que _aiShowLoading ne remplace le panneau : après, la case
+    // n'est plus dans le DOM et on retomberait silencieusement sur le défaut.
+    var avecMesures = _includeMeasures();
 
     _aiShowLoading("✨ " + (labels[type] || type));
 
-    // Custom mode: use the page-specific prompt but replace the auto instruction with the user's text
+    // Mode personnalisé : le serveur conserve les données et le schéma du
+    // panneau et remplace la seule instruction automatique (FEAT-41 —
+    // build_prompt/custom_instruction reproduit la découpe que faisait
+    // _aiPromptContext / _aiPromptSchema ici même).
     if (mode === "__custom__") {
         if (!userText) { _aiClosePanel(); return; }
-
-        var lang = typeof _locale !== "undefined" ? _locale : "fr";
-        // Get the auto prompt to extract all context data, then replace the instruction
-        var promptBuilder = PROMPTS[type];
-        if (!promptBuilder) return;
-        var autoPrompt = promptBuilder();
-        if (!autoPrompt) return;
-        // Find where the auto instruction starts and replace it
-        var contextData = window._aiPromptContext!(autoPrompt.user);
-        // Extract the JSON schema from the auto prompt
-        var schema = window._aiPromptSchema!(autoPrompt.user);
-
-        var customPrompt = {
-            user: contextData +
-                "\n\nIMPORTANT: You are working on this specific section of the analysis. You must ONLY propose elements that fit this section." +
-                "\n\nUser instruction: " + userText +
-                "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
-                (schema ? "\n\nRespond with valid JSON matching this schema: " + schema : "\n\nRespond with valid JSON.")
-        };
         try {
-            var result = await _callAI(customPrompt);
-            var suggestions = _normalizeSuggestions(type, result);
-            _renderCards(type, suggestions, ACCEPT_HANDLERS[type]);
+            var cResult = await _callAI({ panel: type, custom: userText, includeMeasures: avecMesures });
+            _renderCards(type, _normalizeSuggestions(type, cResult), ACCEPT_HANDLERS[type]);
         } catch (e: any) {
-            var p = _aiEnsurePanel();
-            p.body.innerHTML = '<div class="ai-error">' + t("ai.error", {msg: esc(e.message)}) + '</div>';
-            p.footer.innerHTML = '<button class="ct-btn ai-btn-close" data-click="_aiClosePanel">' + t("ai.close") + '</button>';
+            var cp = _aiEnsurePanel();
+            cp.body.innerHTML = '<div class="ai-error">' + t("ai.error", {msg: esc(e.message)}) + '</div>';
+            cp.footer.innerHTML = '<button class="ct-btn ai-btn-close" data-click="_aiClosePanel">' + t("ai.close") + '</button>';
         }
         return;
     }
 
-    // Auto mode: use the page-specific prompt builder
-    var promptBuilder = PROMPTS[type];
-    if (!promptBuilder) return;
+    // Mode automatique
+    if (AI_PANELS.indexOf(type) === -1) return;
 
     try {
-        var promptObj = promptBuilder();
-        var result = await _callAI(promptObj as { user: string });
+        var result = await _callAI({ panel: type, includeMeasures: avecMesures });
 
         var suggestions = _normalizeSuggestions(type, result);
         _renderCards(type, suggestions, ACCEPT_HANDLERS[type]);
@@ -775,7 +837,47 @@ window._aiRunSuggest = async function(type: string, mode: string) {
 window.suggestFor = suggestFor;
 
 // SOP generation after SS selection — show prompt panel
+/** FEAT-40 — ce que la phase fera de sa mesure : réutiliser, ou créer.
+ *  Le panneau SOP n'a pas d'action `enrich` (son schéma est par phase, pas par
+ *  mesure) : la réutilisation s'y exprime par `mesure_existante_id`. Sans
+ *  affichage dédié, elle était indiscernable d'une création. */
+function _sopMeasureCellHTML(ph: any): string {
+    if (ph && ph.mesure_existante_id) {
+        var m = D.measures.find(function(x) { return x.id === ph.mesure_existante_id; }) as any;
+        if (m) {
+            // Réutilisée telle quelle, ou réutilisée AVEC un complément : les
+            // deux touchent une mesure existante, mais la seconde la modifie.
+            // Les confondre masquerait une écriture derrière une simple
+            // référence.
+            var ajout = ph.mesure_ajustement
+                ? _detailsAddition(m.details || "", ph.mesure_ajustement) : "";
+            var nouveauTitre = (ph.mesure_titre || "").trim();
+            var titreChange = nouveauTitre && nouveauTitre !== m.mesure;
+            if (ajout || titreChange) {
+                var c = '<span class="ct-text-high ct-strong">&#9998; ' + esc(t("ai.sop.adjusted")) + '</span>';
+                c += titreChange
+                    ? '<br><span class="ct-muted"><s>' + esc(m.id + " — " + m.mesure) + '</s></span>'
+                      + '<br><span class="ct-strong">' + esc(m.id + " — " + nouveauTitre) + '</span>'
+                    : '<br><span class="ct-muted">' + esc(m.id + " — " + m.mesure) + '</span>';
+                if (ajout) c += '<br><span class="ct-text-ok">+ ' + esc(ajout) + '</span>';
+                return c;
+            }
+            return '<span class="ct-text-ok ct-strong">&#8635; ' + esc(t("ai.sop.reused")) + '</span>'
+                 + '<br><span class="ct-muted">' + esc(m.id + " — " + m.mesure) + '</span>';
+        }
+        // Identifiant inconnu : le handler retombera sur une création, on le dit.
+        return '<span class="ct-text-high">' + esc(t("ai.sop.unknown_measure", {id: ph.mesure_existante_id})) + '</span>';
+    }
+    if (ph && ph.mesure_proposee) {
+        return '<span class="ct-text-high ct-strong">+ ' + esc(t("ai.sop.new")) + '</span>'
+             + '<br><span class="ct-muted">' + esc(ph.mesure_proposee) + '</span>';
+    }
+    return '<span class="ct-muted">—</span>';
+}
+
 window._aiGenSOP = function(ssId: string) {
+    // Lu MAINTENANT : le panneau va être remplacé par le sélecteur de mode.
+    _aiSopIncludeMeasures = _includeMeasures();
     _lastSuggestType = "_aiGenSOP";
     _lastSuggestArgs = [ssId];
     var ssLabel = (D.ss.find(function(s){return s.id===ssId;})||{}).scenario || ssId;
@@ -806,19 +908,10 @@ window._aiRunSOP = async function(ssId: string, mode: string) {
     p.body.innerHTML = '<div class="ai-loading"><div class="spinner"></div><p class="ct-mt-3">' + t("ai.generating_sop", {id: ssId}) + '</p></div>';
     p.footer.innerHTML = "";
     try {
-        var promptObj = PROMPTS.sop(ssId);
-        if (!promptObj) throw new Error("Strategic scenario " + ssId + " not found");
-        if (userText) {
-            // Replace auto instruction with user text, keep context
-            var contextData = window._aiPromptContext!(promptObj.user);
-            var schema = window._aiPromptSchema!(promptObj.user);
-            var lang = typeof _locale !== "undefined" ? _locale : "fr";
-            promptObj.user = contextData +
-                "\n\nUser instruction: " + userText +
-                "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
-                (schema ? "\n\nRespond with valid JSON matching this schema: " + schema : "");
-        }
-        var result = await _callAI(promptObj);
+        // Un scénario stratégique inconnu est refusé par le serveur (422),
+        // qui seul connaît l'analyse en base.
+        var result = await _callAI({ panel: "sop", ssId: ssId, custom: userText || undefined,
+            includeMeasures: _aiSopIncludeMeasures });
         // Render as a single SOP card with phases listed
         var suggestions;
         if (result.phases) {
@@ -836,7 +929,7 @@ window._aiRunSOP = async function(ssId: string, mode: string) {
             h += '<div class="ai-card-title">' + esc(sop._title || "SOP") + '</div>';
             if (sop.phases && sop.phases.length) {
                 h += '<table style="width:100%;font-size:var(--ct-text-label);border-collapse:collapse;margin:var(--ct-s1) 0">';
-                h += '<tr class="ct-bg-info-tint"><th class="ct-py-1 ct-px-1 ct-ta-l">Phase</th><th class="ct-py-1 ct-px-1 ct-ta-l">Action</th><th class="ct-py-1 ct-px-1 ct-ta-l">BS</th><th class="ct-py-1 ct-px-1 ct-ta-l">Eff.</th></tr>';
+                h += '<tr class="ct-bg-info-tint"><th class="ct-py-1 ct-px-1 ct-ta-l">Phase</th><th class="ct-py-1 ct-px-1 ct-ta-l">Action</th><th class="ct-py-1 ct-px-1 ct-ta-l">BS</th><th class="ct-py-1 ct-px-1 ct-ta-l">Eff.</th><th class="ct-py-1 ct-px-1 ct-ta-l">' + t("ai.sop.measure_col") + '</th></tr>';
                 sop.phases.forEach(function(ph: any) {
                     var effColor = ph.efficacite === "Efficace" ? "#27ae60" : ph.efficacite === "Partiel" ? "#f39c12" : "#e74c3c";
                     h += '<tr class="ct-border-bottom">';
@@ -844,6 +937,10 @@ window._aiRunSOP = async function(ssId: string, mode: string) {
                     h += '<td class="ct-p-1">' + esc(ph.action || "") + '</td>';
                     h += '<td class="ct-py-1 ct-px-1 ct-nowrap">' + esc((ph.bs || "").split(" - ")[0]) + '</td>';
                     h += '<td style="padding:3px 6px;color:' + effColor + ';font-weight:600">' + esc(ph.efficacite || "Absent") + '</td>';
+                    // FEAT-40 — sans cette colonne, réutiliser une mesure
+                    // existante ou en inventer une produisait exactement le
+                    // même affichage : l'anti-doublon était invisible.
+                    h += '<td class="ct-py-1 ct-px-1">' + _sopMeasureCellHTML(ph) + '</td>';
                     h += '</tr>';
                 });
                 h += '</table>';
@@ -879,14 +976,7 @@ window.suggestSocleMeasure = async function(socleIdx: number) {
 
     _aiShowLoading("✨ " + t("ai.label.measures") + " — " + ref);
     try {
-        var result = await _callAI({
-            user: "Context: " + JSON.stringify({societe: D.context.societe, socle: D.context.socle}) +
-                "\n\nBaseline control with gap: " + JSON.stringify({ref: ref, theme: entry.thematique || entry.theme, mesure: entry.mesure, conformite: entry.conformite, ecart: entry.ecart}) +
-                "\n\nExisting planned measures: " + (entry.mesures_prevues || "none") +
-                "\n\nPropose 2-3 concrete security measures to close this gap. Each measure should be actionable and specific to this control." +
-                "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
-                '\n\nJSON schema: [{"mesure":"short name","details":"detailed description","type":"Prévention|Détection|Réaction","ref_socle":"baseline reference (#XX for ANSSI or A.X.X for ISO) or empty","responsable":"suggested owner role"}]'
-        });
+        var result = await _callAI({ panel: "socle_row", row: socleIdx });
         var suggestions = Array.isArray(result) ? result : [result];
 
         // Add context for accept handler
@@ -917,15 +1007,7 @@ window.suggestEcoMeasure = async function(ecoIdx: number) {
 
     _aiShowLoading("✨ " + t("ai.label.measures") + " — " + (ppNom || ppId));
     try {
-        var result = await _callAI({
-            user: "Context: " + JSON.stringify({societe: D.context.societe}) +
-                "\n\nStakeholder: " + JSON.stringify({id: ppId, nom: ppNom, type: pp ? pp.type : "", dependance: pp ? pp.dependance : "", penetration: pp ? pp.penetration : "", maturite: pp ? pp.maturite : "", confiance: pp ? pp.confiance : ""}) +
-                "\n\nExisting ecosystem measures: " + (entry.mesures_existantes || "none") +
-                "\n\nAdditional measures already planned: " + (entry.mesures_complementaires || "none") +
-                "\n\nPropose 2-3 security measures to reduce the threat level of this stakeholder. Consider contractual, technical, organizational and monitoring measures. Each measure must have a short name (mesure) and a detailed implementation description (details)." +
-                "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
-                '\n\nJSON schema: [{"mesure":"short name","details":"detailed implementation description (2-3 sentences)","type":"Contractuelle|Technique|Organisationnelle|Surveillance","ref_socle":"baseline reference (#XX for ANSSI or A.X.X for ISO) or empty","responsable":"suggested owner role"}]'
-        });
+        var result = await _callAI({ panel: "eco_row", row: ecoIdx });
         var suggestions = Array.isArray(result) ? result : [result];
 
         suggestions.forEach(function(s: any) {
@@ -953,14 +1035,7 @@ window.suggestSOPMeasure = async function(sopIdx: number) {
 
     _aiShowLoading("✨ " + t("ai.label.measures") + " — " + (entry.sop || "") + " " + (_attackLabel(entry.phase) || ""));
     try {
-        var result = await _callAI({
-            user: "Context: " + JSON.stringify({societe: D.context.societe}) +
-                "\n\nSOP phase with weak control: " + JSON.stringify({sop: entry.sop, ss: entry.ss, phase: entry.phase, action: entry.action, bs: entry.bs, controle: entry.controle, efficacite: entry.efficacite}) +
-                "\n\nExisting proposed measure: " + (entry.mesure_proposee || "none") +
-                "\n\nPropose 2-3 security measures to address this attack phase. Reference MITRE ATT&CK mitigations when relevant." +
-                "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
-                '\n\nJSON schema: [{"mesure":"short name","details":"detailed description","type":"Prévention|Détection|Réaction","ref_socle":"baseline reference (#XX for ANSSI or A.X.X for ISO) or empty","responsable":"suggested owner role","effet":"expected effect"}]'
-        });
+        var result = await _callAI({ panel: "sop_row", row: sopIdx });
         var suggestions = Array.isArray(result) ? result : [result];
 
         suggestions.forEach(function(s: any) {
@@ -980,53 +1055,115 @@ window.suggestSOPMeasure = async function(sopIdx: number) {
 
 // Accept handlers for inline measure suggestions
 ACCEPT_HANDLERS.eco = function(s: any) {
-    var id = nextId("measures");
     var ppRef = s.pp_id || "";
     var ppId = ppRef.split(" - ")[0].trim();
     var ppNom = ppRef.split(" - ").slice(1).join(" - ").trim();
-    D.measures.push({id:id, mesure:s.mesure||"", details:s.details||"", origine:"Écosystème", type:s.type||"",
+    var reutilise = _reuseMeasure(s, function(mid, lib) { _linkEcoRef(ppId, mid, lib); });
+    if (reutilise) return reutilise + " ✓";
+    var id = nextId("measures");
+    D.measures.push({id:id, mesure:s.mesure||"", details:_complementPrefix(s) + (s.details||""), origine:"Écosystème", type:s.type||"",
         sop:"", phase:"", effet:t("ebios.m.mesure_eco_pour",{pp:ppNom||ppId}),
         ref_socle:"", responsable:s.responsable||"", echeance:"", cout:"", statut:"À étudier"});
-    // Find the eco entry for this PP and link the measure
-    var ecoIdx = D.eco.findIndex(function(e) { return (e.pp_id||"").split(" - ")[0].trim() === ppId; });
-    if (ecoIdx >= 0) {
-        var cur = D.eco[ecoIdx].mesures_complementaires || "";
-        D.eco[ecoIdx].mesures_complementaires = _csvAppendRef(cur, id, s.mesure);
-    }
+    _linkEcoRef(ppId, id, s.mesure);
     return id;
 };
+
+/** Rattache une mesure à la fiche écosystème de la partie prenante `ppId`. */
+function _linkEcoRef(ppId: string, mid: string, libelle: string) {
+    var i = D.eco.findIndex(function(e) { return (e.pp_id||"").split(" - ")[0].trim() === ppId; });
+    if (i < 0) return;
+    var cur = D.eco[i].mesures_complementaires || "";
+    if (cur.indexOf(mid + " - ") === -1) {
+        D.eco[i].mesures_complementaires = _csvAppendRef(cur, mid, libelle);
+    }
+}
 
 // General socle accept handler — used by the page-level IA button. The
 // suggestion carries the baseline ref it targets (s.ref_socle); we match
 // it back to the right row in socle_anssi / socle_iso to keep the
 // mesures_prevues column in sync.
+/** FEAT-40 — l'issue « réutiliser » commune à TOUS les handlers de mesure.
+ *
+ *  Rend l'id de la mesure existante quand la suggestion demande de l'enrichir,
+ *  après y avoir écrit ; rend "" quand il faut créer. Les handlers l'appellent
+ *  AVANT de créer, sinon le prompt demande `enrich` et le handler fabrique
+ *  quand même un doublon — à partir d'un fragment de description, ce qui est
+ *  pire que l'état d'origine.
+ *
+ *  `rattacher(id, libelle)` relie la mesure réutilisée à l'élément traité
+ *  (ligne de socle, PP, phase SOP) : sans cet effet visible, accepter ne
+ *  produit rien et l'utilisateur recrée la mesure à la main.
+ */
+function _reuseMeasure(s: any, rattacher?: (id: string, libelle: string) => void): string {
+    if (!s || s.action !== "enrich" || !s.id) return "";
+    var cible = D.measures.find(function(m) { return m.id === s.id; }) as any;
+    if (!cible) return "";   // id inventé : l'appelant crée, plutôt que perdre la suggestion
+    if (s.details) cible.details = _mergeDetails(cible.details || "", s.details);
+    var nt = (s.mesure || "").trim();
+    if (nt && nt !== cible.mesure) {
+        cible.mesure = nt;
+        if (typeof propagateNameChange === "function") propagateNameChange(cible.id, nt);
+    }
+    ["type", "effet", "ref_socle", "responsable"].forEach(function(f) {
+        if (!cible[f] && s[f]) cible[f] = s[f];
+    });
+    if (rattacher) rattacher(cible.id, cible.mesure);
+    _persist("measures");
+    return cible.id;
+}
+
+/** Préfixe de description pour une mesure créée EN COMPLÉMENT d'une autre. */
+function _complementPrefix(s: any): string {
+    if (!s || s.action !== "complement" || !s.complete_id) return "";
+    var base = D.measures.find(function(m) { return m.id === s.complete_id; });
+    return base ? t("ai.measure.completes", {id: s.complete_id, nom: base.mesure}) + "\n\n" : "";
+}
+
 ACCEPT_HANDLERS.socle = function(s: any) {
-    var id = nextId("measures");
     var refSocle = s.ref_socle || "";
-    D.measures.push({id:id, mesure:s.mesure||"", details:s.details||"", origine:"Socle", type:s.type||"Prévention",
+    var lier = function(mid: string, lib: string) { _linkSocleRef(refSocle, mid, lib); };
+    var reutilise = _reuseMeasure(s, lier);
+    if (reutilise) return reutilise + " ✓";
+    var id = nextId("measures");
+    D.measures.push({id:id, mesure:s.mesure||"", details:_complementPrefix(s) + (s.details||""), origine:"Socle", type:s.type||"Prévention",
         sop:"", phase:"", effet:t("ebios.m.renforcement_socle",{ref:refSocle}),
         ref_socle:refSocle, responsable:s.responsable||"", echeance:"", cout:"", statut:"À étudier"});
+    _linkSocleRef(refSocle, id, s.mesure);
+    return id;
+};
+
+/** Rattache une mesure à la ligne de socle portant `refSocle`. */
+function _linkSocleRef(refSocle: string, mid: string, libelle: string) {
     var isAnssi = D.socle_type !== "iso";
     var section: "socle_anssi" | "socle_iso" = isAnssi ? "socle_anssi" : "socle_iso";
     var socle = D[section] || [];
     var idx = socle.findIndex(function(e) {
-        var ref = isAnssi ? ("#" + e.num) : e.ref;
-        return ref === refSocle;
+        return (isAnssi ? ("#" + e.num) : e.ref) === refSocle;
     });
     if (idx >= 0) {
         var cur = socle[idx].mesures_prevues || "";
-        socle[idx].mesures_prevues = _csvAppendRef(cur, id, s.mesure);
+        if (cur.indexOf(mid + " - ") === -1) {
+            socle[idx].mesures_prevues = _csvAppendRef(cur, mid, libelle);
+        }
     }
-    return id;
-};
+}
 
 ACCEPT_HANDLERS.socle_measure = function(s: any) {
+    var lierLigne = function(mid: string, lib: string) {
+        var sec = D.socle_type !== "iso" ? "socle_anssi" : "socle_iso";
+        var row = (D as any)[sec][s._socleIdx];
+        if (row && (row.mesures_prevues || "").indexOf(mid + " - ") === -1) {
+            row.mesures_prevues = _csvAppendRef(row.mesures_prevues || "", mid, lib);
+        }
+    };
+    var reutilise = _reuseMeasure(s, lierLigne);
+    if (reutilise) return reutilise + " ✓";
     var id = nextId("measures");
     var isAnssi = D.socle_type !== "iso";
     var section = isAnssi ? "socle_anssi" : "socle_iso";
     var socle = D[section];
     var refNum = s._ref || "";
-    D.measures.push({id:id, mesure:s.mesure||"", details:s.details||"", origine:"Socle", type:s.type||"Prévention",
+    D.measures.push({id:id, mesure:s.mesure||"", details:_complementPrefix(s) + (s.details||""), origine:"Socle", type:s.type||"Prévention",
         sop:"", phase:"", effet:t("ebios.m.renforcement_socle",{ref:refNum}),
         ref_socle:refNum, responsable:s.responsable||"", echeance:"", cout:"", statut:"En cours"});
     // Link to socle entry
@@ -1038,8 +1175,16 @@ ACCEPT_HANDLERS.socle_measure = function(s: any) {
 };
 
 ACCEPT_HANDLERS.eco_measure = function(s: any) {
+    var lierEco = function(mid: string, lib: string) {
+        var e = D.eco[s._ecoIdx];
+        if (e && (e.mesures_complementaires || "").indexOf(mid + " - ") === -1) {
+            e.mesures_complementaires = _csvAppendRef(e.mesures_complementaires || "", mid, lib);
+        }
+    };
+    var reutilise = _reuseMeasure(s, lierEco);
+    if (reutilise) return reutilise + " ✓";
     var id = nextId("measures");
-    D.measures.push({id:id, mesure:s.mesure||"", details:s.details||"", origine:"Écosystème", type:s.type||"Prévention",
+    D.measures.push({id:id, mesure:s.mesure||"", details:_complementPrefix(s) + (s.details||""), origine:"Écosystème", type:s.type||"Prévention",
         sop:"", phase:"", effet:t("ebios.m.mesure_eco_pour",{pp:s._ppNom||s._ppId}),
         ref_socle:s.ref_socle||"", responsable:s.responsable||"", echeance:"", cout:"", statut:"À étudier"});
     // Link to eco entry
@@ -1051,8 +1196,16 @@ ACCEPT_HANDLERS.eco_measure = function(s: any) {
 };
 
 ACCEPT_HANDLERS.sop_measure = function(s: any) {
+    var lierPhase = function(mid: string, lib: string) {
+        var d = D.sop_detail[s._sopIdx];
+        if (d && (d.mesure_proposee || "").indexOf(mid + " - ") === -1) {
+            d.mesure_proposee = _csvAppendRef(d.mesure_proposee || "", mid, lib);
+        }
+    };
+    var reutilise = _reuseMeasure(s, lierPhase);
+    if (reutilise) return reutilise + " ✓";
     var id = nextId("measures");
-    D.measures.push({id:id, mesure:s.mesure||"", details:s.details||"", origine:"SOP", type:s.type||"Prévention",
+    D.measures.push({id:id, mesure:s.mesure||"", details:_complementPrefix(s) + (s.details||""), origine:"SOP", type:s.type||"Prévention",
         sop:s._sop||"", phase:s._phase||"", effet:s.effet||"",
         ref_socle:s.ref_socle||"", responsable:s.responsable||"", echeance:"", cout:"", statut:"À étudier"});
     // Link to SOP phase
@@ -1064,7 +1217,7 @@ ACCEPT_HANDLERS.sop_measure = function(s: any) {
 };
 
 // ── Residual risk: suggest measures + likelihood for a specific SS ──
-window.suggestResidualMeasures = async function(ssIdx: number) {
+window.suggestResidualMeasures = async function(ssIdx: number, avecMesures?: boolean) {
     if (!_aiIsEnabled()) return;
     var ss = D.ss[ssIdx];
     if (!ss) return;
@@ -1083,20 +1236,8 @@ window.suggestResidualMeasures = async function(ssIdx: number) {
     _aiShowLoading("✨ " + ss.id + " — " + t("ebios.col.r_mesures"));
 
     try {
-        var result = await _callAI({
-            user: "Context: " + JSON.stringify({societe: D.context.societe, socle: D.context.socle}) +
-                "\n\nStrategic scenario: " + JSON.stringify({id:ss.id, scenario:ss.scenario, couple_id:ss.couple_id, pp:ss.pp, bs:ss.bs, er:ss.er}) +
-                "\n\nSeverity: " + gNum + ", Initial likelihood: V" + vInit +
-                "\n\nWeak SOP phases (Absent/Partial): " + JSON.stringify(weakPhases.map(function(p) { return {phase:_attackLabel(p.phase), action:p.action, bs:p.bs, efficacite:p.efficacite}; })) +
-                "\n\nAll available measures in the registry: " + JSON.stringify(existingMeasures) +
-                "\n\nCurrently linked measures: " + (currentLinked.join(", ") || "none") +
-                "\n\nFor this strategic scenario, propose:" +
-                "\n1. A selection of existing measures (by ID) from the registry that should be applied to reduce the likelihood" +
-                "\n2. If needed, 1-3 new measures to create" +
-                "\n3. An estimated residual likelihood (v_resid) from 1 to " + (vInit || 4) + " after applying these measures, with justification" +
-                "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
-                '\n\nJSON schema: {"selected_measures":["M-XX","M-YY"],"new_measures":[{"mesure":"short name","details":"description","type":"Prévention|Détection|Réaction","responsable":"..."}],"v_resid":1-' + (vInit || 4) + ',"justification":"why this residual likelihood"}'
-        });
+        var result = await _callAI({ panel: "residual_ss", row: ssIdx,
+            includeMeasures: avecMesures !== false });
 
         // Normalize field names
         // Parse and render
@@ -1129,6 +1270,13 @@ window.suggestResidualMeasures = async function(ssIdx: number) {
                 h += '<div><div class="ai-card-title ct-mb-1">' + esc(m.mesure) + '</div>';
                 if (m.details) h += '<div class="ai-card-details">' + esc(m.details) + '</div>';
                 if (m.responsable) h += '<div class="ai-card-meta">' + t("ai.residual.owner") + ' : ' + esc(m.responsable) + '</div>';
+                // FEAT-40 — accepter cette carte peut ÉCRIRE dans une mesure
+                // existante (via _reuseMeasure) : c'était le seul endroit où
+                // cela se faisait sans badge ni aperçu avant/après.
+                if (m.action === "enrich" && m.id && D.measures.some(function(x) { return x.id === m.id; })) {
+                    h += '<div class="ct-text-label ct-text-high ct-strong ct-mt-1">&#9998; ' + t("ai.update_existing", {id: esc(m.id)}) + '</div>';
+                    h += _enrichPreviewHTML(m);
+                }
                 h += '</div></label></div>';
             });
         }
@@ -1163,7 +1311,8 @@ window.suggestResidualMeasures = async function(ssIdx: number) {
 };
 
 window._aiResidualForSS = function(ssIdx: number) {
-    window.suggestResidualMeasures!(ssIdx);
+    // Lu MAINTENANT : suggestResidualMeasures remplace aussitôt le panneau.
+    window.suggestResidualMeasures!(ssIdx, _includeMeasures());
 };
 
 window._aiAcceptResidual = function() {
@@ -1199,9 +1348,24 @@ window._aiAcceptResidual = function() {
     });
     if (result.new_measures) {
         result.new_measures.forEach(function(nm: any, i: number) {
+            // Décochée = AUCUNE écriture. `_reuseMeasure` écrivait dans la
+            // mesure existante (fusion de details, renommage) AVANT ce test :
+            // décocher la carte ne bloquait que la création, pas
+            // l'enrichissement — une écriture sans consentement.
             if (checkedNewIdxs.indexOf(i) === -1) return; // skip unchecked
+            // FEAT-40 — ce panneau propose aussi des mesures NEUVES à côté de
+            // celles qu'il sélectionne. Sans ce court-circuit, un `enrich`
+            // renvoyé par le modèle devenait une mesure de plus, construite à
+            // partir d'un simple incrément de description.
+            var reutilise = _reuseMeasure(nm, function(mid, lib) {
+                var r = D.residuals[ssIdx] || (D.residuals[ssIdx] = {} as any);
+                if ((r.mesures || "").indexOf(mid + " - ") === -1) {
+                    r.mesures = _csvAppendRef(r.mesures || "", mid, lib);
+                }
+            });
+            if (reutilise) return;
             var id = nextId("measures");
-            D.measures.push({id:id, mesure:nm.mesure||"", details:nm.details||"", origine:"Complémentaire", type:nm.type||"Prévention",
+            D.measures.push({id:id, mesure:nm.mesure||"", details:_complementPrefix(nm) + (nm.details||""), origine:"Complémentaire", type:nm.type||"Prévention",
                 sop:"", phase:"", effet:"", ref_socle:"", responsable:nm.responsable||"", echeance:"", cout:"", statut:"En cours"});
             // Link to residual
             if (!D.residuals[ssIdx]) D.residuals[ssIdx] = {};

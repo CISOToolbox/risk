@@ -8,10 +8,13 @@ See docs/CHANTIER_IA_BACKEND.md §Phase 2.
 """
 from __future__ import annotations
 
+import uuid
+
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.ai_prompts import PANELS, build_prompt, validate_output
 from src.ai_proxy_common import (
     _check_ai_access,
     _check_rate_limit,
@@ -22,10 +25,14 @@ from src.ai_proxy_common import (
 )
 from src.auth import get_current_user
 from src.database import get_db
-from src.models import User
+from src.models import Analysis, User
+# _can / _reconstruct_data vivent dans routes/analyses.py : l'assistant applique
+# EXACTEMENT le même contrôle d'accès et la même reconstruction que la lecture
+# normale d'une analyse. Les redéfinir ici ferait diverger les deux chemins.
+from src.routes.analyses import _can, _reconstruct_data
 
 # Common /api/ai endpoints; the métier endpoint below is appended to it.
-router = make_ai_router()
+router = make_ai_router(generic_complete=False)
 
 
 RISK_SYSTEM_PROMPT = "\n".join([
@@ -70,20 +77,68 @@ def _parse_lax_or_refuse(text: str):
 
 
 class RiskSuggestRequest(BaseModel):
-    user: str
+    """FEAT-41 — le client déclare QUOI suggérer, pas quoi envoyer au modèle.
+
+    Il n'y a **pas** de champ portant un prompt pré-composé, et il ne doit pas
+    en réapparaître : voir `CLAUDE.md` §5.1 et le test de contrat
+    `test_ai_requests_carry_no_precomposed_prompt`.
+    """
+    analysis_id: uuid.UUID
+    panel: str
+    ss_id: str | None = None          # panneau `sop` uniquement
+    row: int | None = None            # panneaux « en ligne » : la ligne visée
+    language: str = "fr"
+    # Deux sémantiques distinctes, héritées du frontend : `custom_instruction`
+    # REMPLACE l'instruction automatique du panneau (données et schéma JSON
+    # conservés), `extra_instruction` s'y AJOUTE (boîte « affiner »).
+    custom_instruction: str | None = None
+    extra_instruction: str | None = None
+    # FEAT-40 — le client exprime une INTENTION, pas des données : le serveur
+    # lit le plan de mesures en base. Un client ne peut donc ni le fabriquer
+    # ni le tronquer, seulement demander à s'en passer.
+    include_existing_measures: bool = True
 
 
 @router.post("/risk/suggest")
 async def risk_suggest(body: RiskSuggestRequest,
                        user: User = Depends(get_current_user),
                        db: AsyncSession = Depends(get_db)):
-    """EBIOS RM suggestion endpoint. The frontend builds the per-panel user
-    prompt from the live analysis; the EBIOS RM methodology system prompt is
-    owned here, server-side. Returns the lax-parsed JSON suggestion payload
-    (shape varies per panel: array for vm/bs/er/pp/ss, object for srov/sop).
+    """Point d'entrée des suggestions EBIOS RM.
+
+    Le serveur relit l'analyse en base et compose lui-même le prompt (FEAT-41).
+    Avant, le navigateur envoyait la chaîne complète : le contenu réellement
+    soumis au fournisseur échappait au serveur, et **aucun contrôle d'accès à
+    l'analyse n'était possible** — le prompt arrivait déjà rempli de ses
+    données. Il l'est désormais.
     """
     _check_ai_access(user)
     _check_rate_limit(str(user.id) if user else "anonymous")
+
+    if body.panel not in PANELS:
+        raise HTTPException(status_code=422, detail=f"unknown panel '{body.panel}'")
+
+    analysis = await db.get(Analysis, body.analysis_id)
+    if analysis is None:
+        raise HTTPException(status_code=404, detail="analysis not found")
+    # Lire l'analyse d'autrui via l'assistant serait une exfiltration déguisée.
+    if not _can("read", analysis, user):
+        raise HTTPException(status_code=403, detail="no access to this analysis")
+
+    D = await _reconstruct_data(db, analysis.id)
+    try:
+        user_prompt = build_prompt(body.panel, D, body.language, body.ss_id,
+                                   body.custom_instruction, body.extra_instruction,
+                                   body.row, body.include_existing_measures)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
     provider, model = await _runtime_provider_model(db)
-    raw = await call_llm(db, RISK_SYSTEM_PROMPT, body.user, provider, model)
-    return {"result": _parse_lax_or_refuse(raw)}
+    raw = await call_llm(db, RISK_SYSTEM_PROMPT, user_prompt, provider, model)
+    # Le serveur IMPOSE la forme attendue plutôt que de faire confiance au
+    # modèle : un texte hostile stocké en base peut le détourner, il ne peut
+    # pas faire passer le résultat. Les champs inconnus sont écartés ici,
+    # jamais transmis à l'interface.
+    try:
+        return {"result": validate_output(body.panel, _parse_lax_or_refuse(raw))}
+    except ValueError as e:
+        raise HTTPException(status_code=502, detail=f"unusable AI response: {e}")

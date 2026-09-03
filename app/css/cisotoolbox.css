@@ -959,10 +959,6 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-search__clear { position:absolute; right:8px; background:none; border:none; cursor:pointer; color:var(--ct-ink-2); }
 .ct-search__clear[hidden] { display:none; }
 /* ── ct_filter_pills (legacy) ── */
-.ct-pills-row { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
-.ct-pills-row__label { font-size:0.82em; color:var(--ct-ink-2); font-weight:600; }
-.ct-pill__count { opacity:0.7; margin-left:4px; }
-.ct-pill--clear { color:var(--ct-ink-2); border-style:dashed; }
 /* ── ct_userpicker (legacy) ── */
 .ct-userpicker { position: relative; }
 .ct-userpicker input { width: 100%; padding: 6px 10px; border: 1px solid var(--ct-line); border-radius: 6px; font-size: 0.9em; }
@@ -1445,9 +1441,6 @@ td .ct-ref-select, td .ct-ref-select * { box-shadow: none; }
 .ct-measure-form label { display:flex; flex-direction:column; gap:4px; font-size:0.82em; font-weight:600; color:var(--ct-ink-2); }
 .ct-measure-form input, .ct-measure-form select, .ct-measure-form textarea { padding:6px 10px; border:1px solid var(--ct-line); border-radius:6px; font-size:0.9em; font-family:inherit; }
 .ct-measure-form textarea { resize:vertical; min-height:60px; }
-.ct-pill { padding:3px 10px; border-radius:14px; border:1px solid var(--ct-line); background:var(--ct-surface); cursor:pointer; font-size:0.8em; transition:all 0.15s; }
-.ct-pill:hover { border-color:var(--ct-accent); }
-.ct-pill.active { background:var(--ct-accent); color: var(--ct-onaccent); border-color:var(--ct-accent); }
 
 /* ── Role-based UI gating ── */
 body:not(.ct-role-admin) .ct-admin-only { display: none !important; }
