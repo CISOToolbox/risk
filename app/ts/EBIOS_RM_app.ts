@@ -202,9 +202,27 @@ function _prioBadge(text: string) {
     m[t("ebios.socle.priorite_basse")] = "green";
     return _tBadge(text, m[text] || "gray");
 }
+// Measure status is STORED as a French literal (data model unchanged); only
+// the display is translated. _normStatut maps the stored value to a canonical
+// i18n suffix; the badge/label/color all key on that suffix, so a locale switch
+// re-renders in the active language while the stored value stays canonical.
+var _STATUT_KEYS: Record<string, string> = {
+    "Terminé": "termine", "En cours": "en_cours",
+    "À étudier": "a_etudier", "A étudier": "a_etudier",
+    "À lancer": "a_lancer", "A lancer": "a_lancer",
+    "Planifié": "planifie",
+};
+function _normStatut(raw: string | number): string | null {
+    return _STATUT_KEYS[String(raw || "").trim()] || null;
+}
+function _statutLabel(raw: string | number): string {
+    var k = _normStatut(raw);
+    return k ? t("ebios.m.statut_" + k) : String(raw || "");
+}
 function _statutBadge(text: string) {
-    var m: Record<string, string> = {"Terminé":"green", "En cours":"orange", "À étudier":"red", "Planifié":"blue"};
-    return _tBadge(text, m[text] || "gray");
+    var tones: Record<string, string> = {termine:"green", en_cours:"orange", a_etudier:"red", a_lancer:"gray", planifie:"blue"};
+    var k = _normStatut(text);
+    return _tBadge(_statutLabel(text), (k && tones[k]) || "gray");
 }
 var _effTones: Record<string, string> = {"Absent":"critical", "Partiel":"high", "Efficace":"low", "Partial":"high", "Effective":"low"};
 function _effBadge(count: number, text: string, type: string) {
@@ -279,10 +297,13 @@ function inp(section: string, idx: number, field: string, val: unknown, type = "
     const w = type === "number" ? 'class="w-70" min="0" max="999999999999"' : 'maxlength="2000"';
     return `<input type="${type}" value="${esc(val)}" ${w} class="${cls}" data-s="${section}" data-i="${idx}" data-f="${field}" data-t="${type}" data-change="_updateFieldFromEl" data-pass-el />`;
 }
-function sel(section: string, idx: number, field: string, val: unknown, options: (string | number)[]) {
+// labelFn (optional) translates the DISPLAYED option label while the stored
+// value stays the option itself — used by the status select so the dropdown
+// tracks the badge on a locale switch without changing the stored value.
+function sel(section: string, idx: number, field: string, val: unknown, options: (string | number)[], labelFn?: (o: string | number) => string) {
     let h = `<select data-s="${section}" data-i="${idx}" data-f="${field}" data-change="_updateFieldFromEl" data-pass-el>`;
     h += `<option value=""></option>`;
-    for (const o of options) h += `<option value="${o}" ${String(val) === String(o) ? 'selected' : ''}>${o}</option>`;
+    for (const o of options) h += `<option value="${o}" ${String(val) === String(o) ? 'selected' : ''}>${labelFn ? esc(String(labelFn(o))) : o}</option>`;
     h += `</select>`;
     return h;
 }
@@ -337,7 +358,12 @@ function dictToggle(section: string, idx: number, field: string, val: string) {
     // <div> rend les bascules focusables au clavier.
     let h = '<div class="ct-choice" data-size="xs">';
     for (const d of dims) {
-        h += `<button type="button" aria-pressed="${selected.includes(d)}" data-click="toggleDICT" data-args='${_da(section,idx,field,d)}' data-pass-el>${d}</button>`;
+        // Stored value stays the canonical French letter (D/I/C/T); only the
+        // shown letter is localized (A/I/C/T in English) with the full criterion
+        // name as tooltip.
+        var short = t("ebios.dict." + d.toLowerCase() + "_short");
+        var full = t("ebios.dict." + d.toLowerCase());
+        h += `<button type="button" aria-pressed="${selected.includes(d)}" title="${esc(full)}" data-click="toggleDICT" data-args='${_da(section,idx,field,d)}' data-pass-el>${esc(short)}</button>`;
     }
     h += '</div>';
     return h;
@@ -2023,7 +2049,7 @@ function renderMeasures() {
             <td${hd("resp")}>${_dirPicker(m.responsable||"", "updateField", _da("measures", i, "responsable"))}</td>
             <td${hd("ech")}>${inp("measures",i,"echeance",m.echeance,"date")}</td>
             <td${hd("cout")}>${inp("measures",i,"cout",m.cout)}</td>
-            <td${hd("statut")} class="ta-c"><span class="eff-badge" data-click="_effBadgeClick" data-pass-el>${m.statut ? _statutBadge(m.statut) : `<span class="text-muted fs-xs cursor-pointer">${t("ebios.col.sop_choose")}</span>`}</span><span class="hidden">${sel("measures",i,"statut",m.statut,["Terminé","En cours","À étudier"])}</span></td>
+            <td${hd("statut")} class="ta-c"><span class="eff-badge" data-click="_effBadgeClick" data-pass-el>${m.statut ? _statutBadge(m.statut) : `<span class="text-muted fs-xs cursor-pointer">${t("ebios.col.sop_choose")}</span>`}</span><span class="hidden">${sel("measures",i,"statut",m.statut,["Terminé","En cours","À étudier"],_statutLabel)}</span></td>
             <td>${delBtn("measures",i)}</td></tr>`;
     });
     h += '</tbody></table>';

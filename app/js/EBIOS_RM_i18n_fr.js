@@ -338,6 +338,8 @@ _registerTranslations("fr", {
     "ebios.m.statut_termine": "Terminé",
     "ebios.m.statut_en_cours": "En cours",
     "ebios.m.statut_a_etudier": "À étudier",
+    "ebios.m.statut_a_lancer": "À lancer",
+    "ebios.m.statut_planifie": "Planifié",
     // ── Column headers: Residuals ──
     "ebios.col.r_ss": "SS",
     "ebios.col.r_scenario": "Scénario",
@@ -357,6 +359,10 @@ _registerTranslations("fr", {
     "ebios.dict.i": "Intégrité",
     "ebios.dict.c": "Confidentialité",
     "ebios.dict.t": "Traçabilité",
+    "ebios.dict.d_short": "D",
+    "ebios.dict.i_short": "I",
+    "ebios.dict.c_short": "C",
+    "ebios.dict.t_short": "T",
     // ── Snapshots / History ──
     // ── Status messages ──
     "ebios.status.modified": "Modifié",
