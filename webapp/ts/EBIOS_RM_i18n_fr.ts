@@ -94,8 +94,6 @@ _registerTranslations("fr", {
     "catalog.rename_prompt": "Nouveau nom :",
     "catalog.delete_confirm": "Supprimer cette analyse ?",
     "catalog.duplicated": "Analyse dupliquée",
-    "catalog.imported": "Analyse importée",
-    "catalog.import_error": "Erreur lors de l'import",
     "catalog.export_all": "Exporter toutes les analyses",
     "catalog.exported_all": "Toutes les analyses exportées",
     "catalog.imported_multi": "analyses importées",

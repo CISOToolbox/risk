@@ -245,7 +245,7 @@ function newAnalysis() {
     var lbl = t(_ct().labelKey || "analysis");
     if (!confirm(t("confirm_new", { label: lbl })))
         return;
-    _fileHandle = null;
+    _resetFileBinding();
     var initVar = _ct().initDataVar || "CT_INIT_DATA";
     var fresh = JSON.parse(JSON.stringify(window[initVar] || {}));
     Object.keys(D).forEach(function (k) { delete D[k]; });
@@ -257,8 +257,18 @@ function newAnalysis() {
 }
 // Mot de passe du fichier courant (en mémoire uniquement)
 var _filePwd = null;
-// Charger un buffer (chiffré ou non) et retourner l'objet JSON
-async function _loadBuffer(buffer, filename) {
+// The file binding (handle + password) belongs to the analysis it came from.
+// Any switch of D to something else (multi-import, opening from a catalog)
+// MUST clear it, otherwise quickSaveJSON overwrites another analysis's file.
+function _resetFileBinding() {
+    _fileHandle = null;
+    _filePwd = null;
+}
+// Decode a buffer (decrypting if needed) into a JSON string. Returns null if
+// the user cancels or mistypes the password — the caller must stop. Deliberate
+// seam: the catalog hooks (multi-analysis) must inspect the JSON AFTER
+// decryption, without prompting for the password again.
+async function _decodeBuffer(buffer) {
     var bytes = new Uint8Array(buffer);
     var jsonStr;
     if (_isEncrypted(bytes)) {
@@ -280,6 +290,10 @@ async function _loadBuffer(buffer, filename) {
     }
     if (jsonStr.length > 10000000)
         throw new Error("File too large (>10MB)");
+    return jsonStr;
+}
+// Load one analysis's JSON string into D — second half of the seam.
+function _applyLoadedJson(jsonStr) {
     var parsed = JSON.parse(jsonStr);
     delete parsed.__proto__;
     delete parsed.constructor;
@@ -295,6 +309,13 @@ async function _loadBuffer(buffer, filename) {
     if (typeof ctSchemaMigrate === "function")
         ctSchemaMigrate(D);
     return true;
+}
+// Load a buffer (encrypted or not) and return the JSON object.
+async function _loadBuffer(buffer, filename) {
+    var jsonStr = await _decodeBuffer(buffer);
+    if (jsonStr === null)
+        return null;
+    return _applyLoadedJson(jsonStr);
 }
 function loadJSON(event) {
     var input = event.target;
