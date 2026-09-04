@@ -371,4 +371,43 @@ test.describe('EBIOS RM — local frontend journeys', () => {
         expect(corrupted, 'D must not receive the malformed export array').toBe(false);
     });
 
+    // ── i18n: status badge + DICT toggle must translate on language switch ─
+    // The status badge printed the raw stored French value (measures[].statut)
+    // and the DICT toggle printed the raw French acronym letters — neither went
+    // through t(), so switching to English left them French. The badge/toggle
+    // helpers are top-level globals; switching the locale then re-invoking them
+    // must return English text. Stored values stay canonical (French) — only
+    // the display translates. Severity/label badges are intentionally left as-is
+    // (editable free-text scale labels).
+    const setLang = (page, lang) =>
+        page.evaluate((l) => new Promise((res) => switchLang(l, res)), lang);
+
+    test('status badge and DICT toggle translate on language switch', async ({ page }) => {
+        await openApp(page);
+
+        // French first: the badge shows the French label, DICT shows "D".
+        await setLang(page, 'fr');
+        let fr = await page.evaluate(() => ({
+            badge: _statutBadge('Terminé'),
+            dict: dictToggle('er', 0, 'dict', 'D'),
+        }));
+        expect(fr.badge).toContain('Terminé');
+        // The first toggle button is the D dimension; in French its short label is "D".
+        expect(fr.dict).toMatch(/>D<\/button>/);
+        expect(fr.dict).toContain('Disponibilité'); // full name in the tooltip
+
+        // Switch to English: same stored value, English display.
+        await setLang(page, 'en');
+        let en = await page.evaluate(() => ({
+            badge: _statutBadge('Terminé'),
+            dict: dictToggle('er', 0, 'dict', 'D'),
+        }));
+        expect(en.badge).toContain('Completed');
+        expect(en.badge).not.toContain('Terminé');
+        // The D dimension is Availability in English → short label "A".
+        expect(en.dict).toMatch(/>A<\/button>/);
+        expect(en.dict).not.toMatch(/>D<\/button>/);
+        expect(en.dict).toContain('Availability'); // full name in the tooltip
+    });
+
 });
