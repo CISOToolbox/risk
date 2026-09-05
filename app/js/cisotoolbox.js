@@ -222,6 +222,13 @@ var _SVG_VAR_COLORS = {
     red: "var(--ct-critical)", redDark: "var(--ct-critical)", redMax: "var(--ct-critical)",
     orange: "var(--ct-high)", yellow: "var(--ct-medium)", green: "var(--ct-low)",
     blue: "var(--ct-accent)", gray: "var(--ct-neutral)", dark: "var(--ct-ink-1)",
+    // Identity hues resolve to the categorical tokens, so a multi-series
+    // chart never mixes theme-aware tones with raw vivid hexes (which read
+    // garish in the light theme — FEAT-43 validation feedback).
+    violet: "var(--ct-cat-violet)", indigo: "var(--ct-cat-indigo)",
+    cyan: "var(--ct-cat-cyan)", teal: "var(--ct-cat-teal)",
+    pink: "var(--ct-cat-pink)", purple: "var(--ct-cat-purple)",
+    amber: "var(--ct-cat-amber)",
 };
 function _svgSeriesColor(name) {
     if (name && _SVG_VAR_COLORS[name])

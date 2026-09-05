@@ -1,6 +1,6 @@
 {
   "$comment": "Files replicated from a private upstream repository. Do NOT edit them here: the next propagation overwrites them and CI rejects local edits. See CONTRIBUTING.md, section 'Shared code'.",
-  "generated": "2026-09-05T17:27:11Z",
+  "generated": "2026-09-05T20:14:29Z",
   "checker": "check-replicated-files.py (run it in CI)",
   "files": {
     "Dockerfile": "sha256:013fb7e624fb6cb1e5c6a557610a383cb176ab418c3a9e009c70a94195b3714f",
@@ -18,7 +18,7 @@
     "alembic/versions/006_owner_set_null.py": "sha256:52772fbf12ea770730051ff058150dd3546e6c9d78f36773726981505b14f5d6",
     "app/.dockerignore": "sha256:4cb45b8dd426234ac077fd0aa14dda7f043fc5d83f95b756008a1305ade77e86",
     "app/css/EBIOS_RM.css": "sha256:ffe57f36677e219c4c384a6f7443be0cfd921bd62f118f79f403e6d06fc35aeb",
-    "app/css/cisotoolbox.css": "sha256:a406cc2ef7c2a17c818bc8f0e13d891b1bf45a1dd607f5286146e87f6c3264ad",
+    "app/css/cisotoolbox.css": "sha256:3143b0ac334266cfbd1878b7d992ee132425a531ce1c52954dfaf6c35c5ded09",
     "app/css/login.css": "sha256:6f42bd1422b982ecdc267876c7bfc423c660603b0a63362a0ebc628be34cf607",
     "app/favicon.svg": "sha256:7f0818fe0941f05f3a0f9f43deee872311732d2c02b72b72b2feeb9a00228a4d",
     "app/fonts/IBMPlexMono-Medium.woff2": "sha256:309f31ec72260a823fc712000504015fe43f2aba3d80835516b63ae10a10a5db",
@@ -59,7 +59,7 @@
     "app/js/EBIOS_RM_template.js": "sha256:bb85bc913525e0837dd28acbe20335a1de21858a4d570f374941cfb95591c43d",
     "app/js/ai_backend.js": "sha256:00edcf30b642f5dd4eb5e0c23e96e102612a5eb3c66f0840575a9394930218c3",
     "app/js/ai_common.js": "sha256:d6f33442450fd218263e1e4c10168cf934062595aa88491794c337483deea4bf",
-    "app/js/cisotoolbox.js": "sha256:6b0dc6c0b56aecb45fe0f659aa73e8b8f73e6c32f959f8bbb9fb7cdc2f1a6397",
+    "app/js/cisotoolbox.js": "sha256:bb96d75aacfa4e20fb198eed8a46a0bb651c1ee5afedc985cd2f9f039a33a235",
     "app/js/cisotoolbox_backend.js": "sha256:b8126b062c434358711015598623236517d41271fb3a17215694f11035b94c92",
     "app/js/ct_modal.js": "sha256:762de20ff2c510e4cba7af665ebc0517e97c69c35d1780742e1232579b5873a4",
     "app/js/ct_modules.js": "sha256:54bcaaf4762d05055b11e403935c0847fb75174babfc61ae163433f8cb73d002",

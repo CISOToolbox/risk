@@ -1,9 +1,9 @@
 {
   "$comment": "Files replicated from a private upstream repository. Do NOT edit them here: the next propagation overwrites them and CI rejects local edits. See CONTRIBUTING.md, section 'Shared code'.",
-  "generated": "2026-09-05T17:27:11Z",
+  "generated": "2026-09-05T20:14:29Z",
   "checker": "check-replicated-files.py (run it in CI)",
   "files": {
-    "css/cisotoolbox.css": "sha256:a406cc2ef7c2a17c818bc8f0e13d891b1bf45a1dd607f5286146e87f6c3264ad",
+    "css/cisotoolbox.css": "sha256:3143b0ac334266cfbd1878b7d992ee132425a531ce1c52954dfaf6c35c5ded09",
     "fonts/IBMPlexMono-Medium.woff2": "sha256:309f31ec72260a823fc712000504015fe43f2aba3d80835516b63ae10a10a5db",
     "fonts/IBMPlexMono-Regular.woff2": "sha256:0988deb4552a1dddf06df11fcc32dee1a90e2b83e07d041a6884d10d28e66cb0",
     "fonts/IBMPlexSans-Medium.woff2": "sha256:3fa6082d8351cbe5b1917eae239378ed522448f1636aba10937888beceb53f15",
@@ -11,7 +11,7 @@
     "fonts/IBMPlexSans-SemiBold.woff2": "sha256:e850e822d42da60d6b71732aaee7e210b031305b5335f071e6fc0867bb5dd4ec",
     "fonts/LICENSE.txt": "sha256:ed00326e4573277ab21aaf0580b014c95ee234b3e3144e8516e7ba76156f6507",
     "js/ai_common.js": "sha256:d6f33442450fd218263e1e4c10168cf934062595aa88491794c337483deea4bf",
-    "js/cisotoolbox.js": "sha256:6b0dc6c0b56aecb45fe0f659aa73e8b8f73e6c32f959f8bbb9fb7cdc2f1a6397",
+    "js/cisotoolbox.js": "sha256:bb96d75aacfa4e20fb198eed8a46a0bb651c1ee5afedc985cd2f9f039a33a235",
     "js/cisotoolbox_local.js": "sha256:d1d0e485839fb30aaf2dbdca066a26f2f2857722d83ff9c290004639ed418302",
     "js/ct_refselect.js": "sha256:bef99582c43a933675c5778f12a6eb64b57f3239d7dabc314270c88aeb5d93bf",
     "js/ct_schema.js": "sha256:ce331e31c329bc5d318232130fc7e7cd35dbaf04d7a4bf42fb1e3b6b05024003",
