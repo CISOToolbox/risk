@@ -9,9 +9,9 @@
  * Pilot-managed AI mode: runtime probe, proxy calls, managed settings UI.
  * Load AFTER ai_common.js. Used by backend apps only (never in opensource).
  *
- * Source canonique du portage TS : demo-docker/risk/app/js/ai_backend.js
- * (identique ×9 modules ; le master shared/js était une refonte non
- * déployée — voir STATUS.md).
+ * Canonical source of the TS port: demo-docker/risk/app/js/ai_backend.js
+ * (identical across 9 modules; the shared/js master was an undeployed
+ * rewrite — see STATUS.md).
  */
 (function () {
     "use strict";

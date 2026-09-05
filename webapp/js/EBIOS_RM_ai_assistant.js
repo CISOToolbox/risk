@@ -12,16 +12,16 @@
  */
 (function () {
     "use strict";
-    // ── Alias locaux des fonctions partagées exposées via window par ai_common.js /
-    // ct_settings.js (les decls générées ne les déclarent que sur Window).
-    // ai_common.js est chargé avant ce fichier (ordre des <script> dans index.html).
+    // ── Local aliases of the shared functions exposed via window by ai_common.js /
+    // ct_settings.js (the generated decls only declare them on Window).
+    // ai_common.js is loaded before this file (<script> order in index.html).
     var _aiIsEnabled = window._aiIsEnabled;
     var _aiCallAPI = window._aiCallAPI;
     var _aiParseJSON = window._aiParseJSON;
     var _aiEnsurePanel = window._aiEnsurePanel;
     var _aiClosePanel = window._aiClosePanel;
     var _aiShowLoading = window._aiShowLoading;
-    // Décl gen ct-core/ai_common : _aiOpenPanel?: () => void — la vraie signature accepte un titre.
+    // Generated decl ct-core/ai_common: _aiOpenPanel?: () => void — the real signature accepts a title.
     var _aiOpenPanel = window._aiOpenPanel;
     var openSettings = window.openSettings;
     // ═══════════════════════════════════════════════════════════════════════
@@ -1204,8 +1204,8 @@
             return;
         var rows = table.querySelectorAll("tbody tr");
         rows.forEach(function (row, i) {
-            // Ancrer sur l'action et non sur une classe de style : .btn-add-sm a
-            // disparu avec la migration ct-*, ce qui faisait disparaitre ce bouton.
+            // Anchor on the action, not on a style class: .btn-add-sm went away
+            // with the ct-* migration, which made this button disappear.
             var addBtn = row.querySelector('[data-click="' + fnName.replace(/^suggest/, "add") + '"]');
             if (!addBtn)
                 return;

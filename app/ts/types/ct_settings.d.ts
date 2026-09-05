@@ -23,8 +23,8 @@
  */
 interface Window {
     openSettings?: () => void;
-    /** Allowlist de fournisseurs — posée par ai_backend.js (déploiements backend). */
+    /** Provider allowlist — set by ai_backend.js (backend deployments). */
     _AI_PROVIDER_ALLOWLIST?: string[];
-    /** Flush provider/model/creds côté serveur — posé par ai_backend.js. */
+    /** Flushes provider/model/creds server-side — set by ai_backend.js. */
     _aiPersistConfig?: () => void;
 }

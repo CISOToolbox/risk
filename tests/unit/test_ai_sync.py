@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 AI_PY = os.path.join(os.path.dirname(__file__), "..", "..", "src", "routes", "ai.py")
 # The provider plumbing moved to the shared ai_proxy_common.py; routes/ai.py now
-# holds only the métier endpoint. The contract-string checks below span both.
+# holds only the business endpoint. The contract-string checks below span both.
 AI_COMMON_PY = os.path.join(os.path.dirname(__file__), "..", "..", "src", "ai_proxy_common.py")
 
 

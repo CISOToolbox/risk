@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Restauration de la base risk (standalone) depuis un dump backup.sh.
+# Restore the risk database (standalone) from a backup.sh dump.
 #   ./restore.sh backups/risk_2026-08-13_0200.sql.gz
 #
-# ATTENTION : remplace TOUTE la base. L'application est arrêtée pendant
-# l'opération. Un dump de sécurité de l'état actuel est pris avant.
+# WARNING: replaces the WHOLE database. The application is stopped during
+# the operation. A safety dump of the current state is taken beforehand.
 set -euo pipefail
 
 MODULE="risk"
@@ -14,31 +14,31 @@ echo "Ce dump va REMPLACER la base '$MODULE'."
 read -r -p "Tapez le nom du module ($MODULE) pour confirmer : " CONFIRM
 [ "$CONFIRM" = "$MODULE" ] || { echo "Annulé."; exit 1; }
 
-# 1. Dump de sécurité de l'état ACTUEL (l'annulation de la restauration).
+# 1. Safety dump of the CURRENT state (the undo for this restore).
 SAFETY="backups/${MODULE}_pre-restore_$(date +%Y-%m-%d_%H%M).sql.gz"
 mkdir -p backups
 docker compose exec -T "${MODULE}-db" pg_dump -U "$MODULE" "$MODULE" | gzip > "$SAFETY"
 echo "Sauvegarde de sécurité : $SAFETY"
 
-# 2. Arrêt de l'app (la base reste up).
+# 2. Stop the app (the database stays up).
 docker compose stop "${MODULE}-app"
 
-# 3. Drop/create + rechargement.
-# Deux commandes séparées : DROP DATABASE refuse de tourner dans la
-# transaction implicite d'un -c multi-ordres.
+# 3. Drop/create + reload.
+# Two separate commands: DROP DATABASE refuses to run inside the implicit
+# transaction of a multi-statement -c.
 docker compose exec -T "${MODULE}-db" psql -U "$MODULE" -d postgres \
     -c "DROP DATABASE ${MODULE} WITH (FORCE);"
 docker compose exec -T "${MODULE}-db" psql -U "$MODULE" -d postgres \
     -c "CREATE DATABASE ${MODULE} OWNER ${MODULE};"
 gunzip -c "$DUMP" | docker compose exec -T "${MODULE}-db" psql -U "$MODULE" -d "$MODULE" -v ON_ERROR_STOP=1 -q
 
-# 4. Redémarrage — le docker-entrypoint rejoue `alembic upgrade head` si le
-#    dump provient d'un schéma antérieur (FEAT-29 : un dump issu d'une
-#    version PLUS RÉCENTE que le code doit être refusé — mettez d'abord
-#    l'application à jour).
+# 4. Restart — the docker-entrypoint replays `alembic upgrade head` if the
+#    dump comes from an earlier schema (FEAT-29: a dump produced by a NEWER
+#    version than the code must be refused — update the application
+#    first).
 docker compose start "${MODULE}-app"
 
-# 5. Vérification.
+# 5. Verification.
 sleep 5
 for i in $(seq 1 12); do
     if docker compose exec -T "${MODULE}-app" python3 -c \

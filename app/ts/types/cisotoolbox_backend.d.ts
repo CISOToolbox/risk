@@ -11,19 +11,19 @@
  * Snapshots disabled (use database backups instead).
  * Load AFTER cisotoolbox.js. Used by backend apps only.
  *
- * MASTER FACTORISÉ (migration TS) — remplace les variantes historiques
- * par un seul fichier paramétré par un flag runtime, lu au moment de
- * l'action (jamais au chargement) :
+ * FACTORED MASTER (TS migration) — replaces the historical variants with a
+ * single file parameterised by a runtime flag, read at action time (never
+ * at load time):
  *
  *   window._CT_IMPORT_NO_UNWRAP = true
- *       → désactive la détection/dépliage du format de backup Pilot
- *         {"module":...,"data":[{"id":...,"data":{...}}]} à l'import.
- *         À poser par le front du module PILOT (il ne doit pas déplier
- *         ses propres backups). Défaut : unwrap actif (8/9 modules).
+ *       → disables detection/unwrapping of the Pilot backup format
+ *         {"module":...,"data":[{"id":...,"data":{...}}]} on import.
+ *         To be set by the PILOT module's front end (it must not unwrap
+ *         its own backups). Default: unwrap enabled (8/9 modules).
  *
- * La délégation newAnalysis → window.catalogCreate reste gardée par un
- * typeof à l'exécution : les modules sans catalogue (pilot, appsec,
- * watch) ne définissent pas catalogCreate, comportement inchangé.
+ * The newAnalysis → window.catalogCreate delegation stays guarded by a
+ * runtime typeof: modules with no catalog (pilot, appsec, watch) do not
+ * define catalogCreate, behaviour unchanged.
  */
 declare function _loadAutoSave(): boolean;
 declare function _checkAutoSaveBanner(): void;

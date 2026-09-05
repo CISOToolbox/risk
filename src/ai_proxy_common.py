@@ -17,7 +17,7 @@ factory that builds the common `/api/ai` endpoints (`/complete`, `/runtime`,
 
     from src.ai_proxy_common import make_ai_router, call_llm, _check_ai_access, ...
     router = make_ai_router()          # common endpoints registered
-    @router.post("/<domain>/suggest")  # module keeps only its métier prompts
+    @router.post("/<domain>/suggest")  # module keeps only its business prompts
     async def ...: text = await call_llm(...)
 
 so the ~400 lines of provider plumbing live in ONE place instead of drifting
@@ -184,7 +184,7 @@ def _hit_output_cap(provider: str, data: dict) -> bool:
 async def call_llm(db: AsyncSession, system: str, user_msg: str,
                    provider: str, model: str, max_tokens: int = AI_MAX_TOKENS) -> str:
     """Call the configured AI provider with a system + user prompt and return
-    the raw text. Shared by POST /complete and the métier endpoints.
+    the raw text. Shared by POST /complete and the business endpoints.
 
     A custom provider needs no API key (the key is optional and carried by
     _get_custom_llm); every other provider must have one.
@@ -380,17 +380,17 @@ def _parse_lax_or_refuse(text: str):
 
 
 def make_ai_router(generic_complete: bool = True) -> APIRouter:
-    """Build the common `/api/ai` endpoints. The module appends its own métier
+    """Build the common `/api/ai` endpoints. The module appends its own business
     `*_suggest_*` endpoints to the returned router.
 
-    ``generic_complete=False`` — pour les modules dont TOUS les prompts sont
-    composés côté serveur (FEAT-41 : risk, compliance, vendor). Le proxy
-    générique y relayerait une chaîne arbitraire du client sous les clés de
-    l'organisation, en contournant toutes les garanties des endpoints métier
-    (contexte de mesures lu en base, validation de sortie, plafonds). Il
-    répond 410 avec le chemin de remplacement, plutôt qu'un 404 muet.
-    Les modules non migrés (asset, access, audit, appsec, watch) le gardent :
-    leur frontend compose encore — chaque migration doit couper ce chemin.
+    ``generic_complete=False`` — for modules whose prompts are ALL composed
+    server-side (FEAT-41: risk, compliance, vendor). There the generic proxy
+    would relay an arbitrary client string under the organization's keys,
+    bypassing every guarantee of the business endpoints (measure context read
+    from the DB, output validation, caps). It answers 410 with the
+    replacement path, rather than a silent 404.
+    Non-migrated modules (asset, access, audit, appsec, watch) keep it:
+    their frontend still composes — each migration must cut this path.
     """
     router = APIRouter(prefix="/api/ai", tags=["ai"])
 
@@ -398,7 +398,7 @@ def make_ai_router(generic_complete: bool = True) -> APIRouter:
         @router.post("/complete", response_model=AICompleteResponse)
         async def ai_complete(body: AICompleteRequest, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
             """Generic low-level proxy: relays a pre-built {system, user} prompt to
-            the provider. Métier endpoints are preferred — they own the prompt."""
+            the provider. Business endpoints are preferred — they own the prompt."""
             _check_ai_access(user)
             _check_rate_limit(str(user.id) if user else "anonymous")
             text = await call_llm(db, body.system, body.user, body.provider, body.model)

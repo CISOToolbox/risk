@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# Sauvegarde de la base risk (déploiement standalone) — dump logique
-# compressé + rotation. Conçu pour le cron / systemd-timer :
+# Back up the risk database (standalone deployment) — compressed logical
+# dump + rotation. Designed for cron / a systemd timer:
 #   0 2 * * *  cd /path/to/risk && ./backup.sh
-# Exemple d'unité systemd (timer) en bas de STANDALONE.md.
+# Example systemd unit (timer) at the bottom of STANDALONE.md.
 #
-# RPO = fréquence d'exécution. Besoin d'un retour à la seconde, de
-# restore-tests automatiques et d'une UI de restauration ? C'est la suite
-# CISO Toolbox (voir README).
+# RPO = how often it runs. Need second-level recovery, automatic restore
+# tests and a restore UI? That is the CISO Toolbox suite (see README).
 set -euo pipefail
 
 MODULE="risk"
@@ -24,17 +23,17 @@ mkdir -p "$DIR"
 STAMP="$(date +%Y-%m-%d_%H%M)"
 OUT="$DIR/${MODULE}_${STAMP}.sql.gz"
 
-# -T : pas de TTY (cron). Le dump passe par le conteneur db du compose.
+# -T: no TTY (cron). The dump goes through the compose db container.
 docker compose exec -T "${MODULE}-db" pg_dump -U "$MODULE" "$MODULE" | gzip > "$OUT"
 
-# Un dump vide signale un problème (mauvais service, base absente).
+# An empty dump signals a problem (wrong service, missing database).
 if [ ! -s "$OUT" ] || [ "$(stat -c%s "$OUT")" -lt 200 ]; then
     echo "ERREUR: dump vide ou suspect ($OUT)" >&2
     exit 1
 fi
 echo "OK: $OUT ($(du -h "$OUT" | cut -f1))"
 
-# Rotation : conserver les $KEEP plus récents.
+# Rotation: keep the $KEEP most recent ones.
 ls -1t "$DIR/${MODULE}_"*.sql.gz 2>/dev/null | tail -n +$((KEEP + 1)) | while read -r old; do
     rm -f "$old" && echo "rotation: $old supprimé"
 done

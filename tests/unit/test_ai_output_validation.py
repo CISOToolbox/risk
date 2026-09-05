@@ -1,21 +1,21 @@
-"""Le serveur impose la forme de la réponse du modèle.
+"""The server enforces the shape of the model's response.
 
-Aucune consigne de prompt ne garantit qu'un modèle ne sera pas détourné par un
-texte hostile stocké en base — et ce texte peut venir de l'extérieur de
-l'organisation (un plan d'action rempli par un fournisseur devient une mesure,
-donc du contexte). Ce qui est garantissable, c'est que le résultat d'un
-détournement ne franchisse pas le serveur.
+No prompt instruction guarantees that a model will not be hijacked by
+hostile text stored in the database — and that text can come from outside
+the organization (an action plan filled in by a vendor becomes a measure,
+hence context). What IS guarantee-able is that the result of a hijack does
+not get past the server.
 
-Trois propriétés, chacune correspondant à un détournement plausible :
+Three properties, each matching a plausible hijack:
 
-  - une réponse **hors sujet** est refusée, pas rendue comme des suggestions
-    vides — « rien à proposer » et « le modèle a parlé d'autre chose » ne
-    doivent pas se confondre ;
-  - les **champs inconnus** sont supprimés, jamais transmis à l'interface, qui
-    les afficherait ;
-  - les valeurs qui pilotent une ÉCRITURE (`action`, `id`) sont contraintes :
-    hors énumération ou hors forme, elles disparaissent, et la suggestion
-    retombe sur une création — le comportement le moins destructeur.
+  - an **off-topic** response is refused, not rendered as empty
+    suggestions — "nothing to suggest" and "the model talked about
+    something else" must not be conflated;
+  - **unknown fields** are removed, never forwarded to the UI, which
+    would display them;
+  - values that drive a WRITE (`action`, `id`) are constrained: outside
+    the enumeration or malformed, they disappear, and the suggestion
+    falls back to a creation — the least destructive behavior.
 """
 from __future__ import annotations
 
@@ -40,8 +40,8 @@ def test_a_legitimate_answer_passes_untouched():
 
 
 def test_an_off_topic_answer_is_refused():
-    """Le détournement le plus simple : faire répondre le modèle sur autre
-    chose. Rendre une liste vide passerait pour « rien à proposer »."""
+    """The simplest hijack: make the model answer about something else.
+    Returning an empty list would look like "nothing to suggest"."""
     with pytest.raises(ValueError):
         validate_output("measures", {"reponse": "La capitale de la France est Paris."})
     with pytest.raises(ValueError):
@@ -51,8 +51,8 @@ def test_an_off_topic_answer_is_refused():
 
 
 def test_unknown_fields_never_reach_the_client():
-    """L'interface affiche TOUS les champs d'une suggestion (`for k in s`) :
-    un champ injecté y serait rendu."""
+    """The UI displays ALL fields of a suggestion (`for k in s`):
+    an injected field would be rendered there."""
     out = validate_output("measures", [
         {"mesure": "X", "exfiltration": "secret", "<script>alert(1)</script>": "y",
          "responsable_reel": "attaquant"}])
@@ -60,15 +60,15 @@ def test_unknown_fields_never_reach_the_client():
 
 
 def test_an_invented_action_falls_back_to_creation():
-    """Une action hors énumération ne doit pas être transmise : le handler la
-    comparerait à ses cas connus et créerait — autant que ce soit explicite."""
+    """An action outside the enumeration must not be forwarded: the handler
+    would compare it to its known cases and create — better be explicit."""
     out = validate_output("measures", [{"action": "delete_all", "mesure": "X"}])
     assert "action" not in out[0]
 
 
 def test_a_malformed_id_is_dropped():
-    """`id` pilote une ÉCRITURE dans une mesure existante. Hors forme, il
-    disparaît, et `enrich` sans id retombe sur une création."""
+    """`id` drives a WRITE into an existing measure. Malformed, it
+    disappears, and `enrich` without an id falls back to a creation."""
     out = validate_output("measures", [
         {"action": "enrich", "id": "'; DROP TABLE mesures--", "mesure": "X"}])
     assert "id" not in out[0]
@@ -87,8 +87,8 @@ def test_a_huge_field_is_capped():
 
 
 def test_panels_with_a_nested_shape_are_bounded_not_filtered():
-    """srov / sop / residual_ss rendent un objet dont le schéma leur est propre.
-    On borne sans filtrer les clés — le frontend ne lit que ce qu'il connaît."""
+    """srov / sop / residual_ss return an object with a schema of their own.
+    We bound without filtering keys — the frontend only reads what it knows."""
     out = validate_output("sop", {"ss": "SS-01", "phases": [{"phase": "TA0001"}]})
     assert out["ss"] == "SS-01"
     with pytest.raises(ValueError):
@@ -96,10 +96,10 @@ def test_panels_with_a_nested_shape_are_bounded_not_filtered():
 
 
 def test_every_measure_panel_is_declared():
-    """Un panneau absent de la table de champs laisserait passer n'importe quoi.
+    """A panel missing from the fields table would let anything through.
 
-    Le test le dit : la protection dépend d'une déclaration, et l'oublier en
-    ajoutant un panneau la désactive silencieusement pour lui.
+    The test says it: the protection depends on a declaration, and
+    forgetting it when adding a panel silently disables it for that panel.
     """
     from src.ai_prompts import _CHAMPS
     for panel in ("measures", "socle", "eco", "socle_row", "eco_row", "sop_row"):
@@ -108,9 +108,9 @@ def test_every_measure_panel_is_declared():
 
 
 def test_an_invalid_action_takes_the_id_with_it():
-    """Un id valide orphelin retombe dans le chemin historique _updateIfExists
-    du frontend — écrasement aveugle de details/sop, sans aperçu. L'action
-    invalide doit donc retirer l'id avec elle."""
+    """An orphaned valid id falls back into the frontend's legacy
+    _updateIfExists path — blind overwrite of details/sop, with no preview.
+    The invalid action must therefore take the id with it."""
     out = validate_output("measures", [{"action": "overwrite", "id": "M-01",
                                         "mesure": "x"}])
     assert out == [{"mesure": "x"}]
@@ -123,28 +123,28 @@ def test_action_case_is_normalised_not_rejected():
 
 
 def test_a_malformed_id_takes_the_action_with_it():
-    """Un enrich sans cible valide dégrade en création, jamais en écriture."""
+    """An enrich without a valid target degrades to a creation, never a write."""
     out = validate_output("measures", [{"action": "enrich", "id": "../../x",
                                         "mesure": "x"}])
     assert out == [{"mesure": "x"}]
 
 
 def test_unchecked_residual_cards_write_nothing():
-    """C1 de la revue 2026-09-02 : _reuseMeasure (qui ÉCRIT dans une mesure
-    existante) s'exécutait AVANT le test de case cochée — décocher ne
-    bloquait que la création. L'ordre est verrouillé ici, dans le source du
-    frontend, faute d'infrastructure de test JS."""
+    """C1 of the 2026-09-02 review: _reuseMeasure (which WRITES into an
+    existing measure) ran BEFORE the checked-box test — unchecking only
+    blocked the creation. The order is locked here, in the frontend
+    source, for lack of a JS test infrastructure."""
     import os
     ts = os.path.join(os.path.dirname(__file__), "..", "..", "app", "ts",
                       "EBIOS_RM_ai_assistant.ts")
     with open(ts, encoding="utf-8") as f:
         src = f.read()
-    # Ancrer sur la collecte des cases cochées : le fichier contient un AUTRE
-    # `result.new_measures.forEach` (le rendu des cartes), sans écriture.
+    # Anchor on the checked-box collection: the file contains ANOTHER
+    # `result.new_measures.forEach` (the card rendering), with no write.
     bloc = src[src.find('.ai-resid-new-check:checked'):]
     bloc = bloc[bloc.find("result.new_measures.forEach"):]
     skip = bloc.find("checkedNewIdxs.indexOf(i)")
-    reuse = bloc.find("= _reuseMeasure(")   # l'APPEL — un commentaire peut citer le nom
+    reuse = bloc.find("= _reuseMeasure(")   # the CALL — a comment may cite the name
     assert 0 <= skip < reuse, (
         "le test de case cochée doit précéder _reuseMeasure — sinon un enrich "
         "décoché écrit quand même dans la mesure existante")

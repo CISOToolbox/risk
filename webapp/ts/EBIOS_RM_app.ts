@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════
-// CONFIG & DONNÉES
+// CONFIG & DATA
 // ═══════════════════════════════════════════════════════════════════════
 window.CT_CONFIG = {
     autosaveKey: "ebios_rm_autosave",
@@ -19,11 +19,11 @@ window.SCHEMA_REV = 1;
 
 let D: EbiosData = JSON.parse(JSON.stringify(window.EBIOS_INIT_DATA || {}));
 
-// ── Chargement lazy des fichiers assets compagnons ──────────────────────
-// Fichiers générés dans le même répertoire que le HTML :
-//   "js/EBIOS_RM"_descriptions.js   → onglet Socle (descriptions ANSSI/ISO)
-//   "js/EBIOS_RM"_ref_<id>.js       → un fichier par référentiel (chargé à l'activation)
-//   "js/EBIOS_RM"_template.js       → export Excel (template base64)
+// ── Lazy loading of the companion asset files ───────────────────────────
+// Files generated in the same directory as the HTML:
+//   "js/EBIOS_RM"_descriptions.js   → Socle tab (ANSSI/ISO descriptions)
+//   "js/EBIOS_RM"_ref_<id>.js       → one file per framework (loaded on activation)
+//   "js/EBIOS_RM"_template.js       → Excel export (base64 template)
 const _ASSET_BASE = "js/EBIOS_RM";
 
 // _descriptionsLoaded, _ensureDescriptions, _ensureFramework, _initDataAndRender
@@ -44,8 +44,8 @@ function _ensureTemplate(cb: () => void) {
 // ═══════════════════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════════════════
 
-// Sérialise les arguments en JSON pour data-args (safe dans attribut HTML single-quoted)
-// ── Fonctions wrapper pour handlers complexes ───────────────────────────
+// Serializes the arguments to JSON for data-args (safe in a single-quoted HTML attribute)
+// ── Wrapper functions for complex handlers ──────────────────────────────
 
 function _triggerExcelInput() {
     document.getElementById("excel-input")!.click();
@@ -108,10 +108,10 @@ function _newOVFor(idx: number) {
     if (id) updateSROVRef(idx, "ov_id", id);
 }
 
-// Delegation click/change/input : voir cisotoolbox.js
+// Delegation click/change/input: see cisotoolbox.js
 
 // ═══════════════════════════════════════════════════════════════════════
-// CALCULS
+// COMPUTATIONS
 // ═══════════════════════════════════════════════════════════════════════
 function computeMenace(d: EbNum | null | undefined, p: EbNum | null | undefined, m: EbNum | null | undefined, c: EbNum | null | undefined): number | null {
     if (!d || !p || !m || !c) return null;
@@ -125,9 +125,9 @@ function computeExposition(menace: number | null): string {
     return t("ebios.expo.faible");
 }
 // ── Color helpers using CT_COLORS from cisotoolbox.js ──
-// Le ton suffit : .ct-badge[data-tone] porte deja la paire -tint / -ink dans les
-// deux themes. Le style inline qui la redupliquait etait un contournement du
-// temps ou les badges vivaient sur .badge, la primitive v1 sans couleur.
+// The tone is enough: .ct-badge[data-tone] already carries the -tint / -ink
+// pair in both themes. The inline style that duplicated it was a workaround
+// from when badges lived on .badge, the colorless v1 primitive.
 var _CT_TONES: Record<string, string> = { red: "critical", redDark: "critical", redMax: "critical", orange: "high", yellow: "medium", green: "low", blue: "info", gray: "neutral" };
 function _tBadge(text: string, colorName: string): string {
     if (!text) return "";
@@ -144,9 +144,9 @@ function _riskColorName(level: string): string {
     return "gray";
 }
 function riskColor(level: string) { return ctColor(_riskColorName(level)).vivid; }
-// Matrices et éditeur G×V : tokens du DS (suivent le thème) au lieu des pastels
-// CT_COLORS — mêmes valeurs que les légendes, donc légende ≡ cellules ≡ badges.
-// Les exports SVG→PNG passent par _svgResolveTokens (hex light, fond rapport).
+// Matrices and G×V editor: DS tokens (theme-aware) instead of the CT_COLORS
+// pastels — same values as the legends, so legend ≡ cells ≡ badges.
+// SVG→PNG exports go through _svgResolveTokens (light hex, report background).
 function _riskTone(level: string): string { return _CT_TONES[_riskColorName(level)] || "neutral"; }
 function _riskBg(level: string) { return "var(--ct-" + _riskTone(level) + "-fill)"; }
 function _riskTxt(level: string) { return "var(--ct-" + _riskTone(level) + "-ink)"; }
@@ -162,9 +162,9 @@ function _expoColorName(expo: string): string {
 }
 function _expoBadge(text: string) { return _tBadge(text, _expoColorName(text)); }
 
-// Pastilles de l'échelle de gravité : tokens du DS (suivent le thème) au lieu
-// des pastels CT_COLORS ; le niveau max prend le ton "extrême" (--ebios-extreme,
-// même logique que la cellule max des matrices vendor). Écran uniquement.
+// Severity scale chips: DS tokens (theme-aware) instead of the CT_COLORS
+// pastels; the max level takes the "extreme" tone (--ebios-extreme, same
+// logic as the max cell of the vendor matrices). Screen only.
 var _GRAV_TONES = ["low", "medium", "high", "critical"];
 function gravColor(n: EbNum) {
     var i = Math.max(0, Math.min((n as number) - 1, 4));
@@ -174,9 +174,9 @@ function gravTextColor(n: EbNum) {
     var i = Math.max(0, Math.min((n as number) - 1, 4));
     return "var(--ct-" + (i === 4 ? "critical" : _GRAV_TONES[i]) + "-ink)";
 }
-// Badge de gravité : mêmes tokens -tint/-ink que les pastilles de l'échelle de
-// gravité et le reste du module (ctBadgeLevel émettrait un [data-fill] plein
-// base+blanc, désaligné) ; niveau max → ton "extrême", comme gravColor().
+// Severity badge: same -tint/-ink tokens as the severity scale chips and the
+// rest of the module (ctBadgeLevel would emit a solid base+white [data-fill],
+// misaligned); max level → "extreme" tone, like gravColor().
 function _gravBadge(text: string, n: EbNum) {
     if (!text) return "";
     var i = Math.max(0, Math.min((n as number) - 1, 4));
@@ -256,11 +256,11 @@ function soclePriorite(conf: EbNum | null): string {
     return t("ebios.socle.priorite_basse");
 }
 
-// Gravité SS = MAX des gravités des ER associés.
-// erList ressemble à "ER-001 - Évé… , ER-002 - Autre" — extraire l'ID via regex
-// (le zéro-padding peut varier selon la version qui a généré le JSON).
-// Normalise "ER-01" / "ER-001" / "ER-1" -> "ER-1" : match TOLÉRANT au
-// zéro-padding entre le lien SS->ER (s.er) et l'id réel de l'ER (cf. BUG-16).
+// SS severity = MAX of the severities of the associated ERs.
+// erList looks like "ER-001 - Évé… , ER-002 - Autre" — extract the ID via regex
+// (zero-padding may vary depending on the version that generated the JSON).
+// Normalizes "ER-01" / "ER-001" / "ER-1" -> "ER-1": match TOLERANT to the
+// zero-padding between the SS->ER link (s.er) and the ER's actual id (cf. BUG-16).
 function _erIdKey(id: string | null | undefined): string {
     const m = String(id || "").trim().match(/^ER-0*(\d+)/i);
     return m ? "ER-" + m[1] : String(id || "").trim();
@@ -316,9 +316,9 @@ function _attackResolveId(value: string): string {
     const v = String(value || "").replace(/^\d+\.\s*/, "").trim();
     if (!v) return "";
     if (MITRE_TACTICS.indexOf(v) >= 0) return v;
-    // Forme mixte — "TA0001 Initial Access", "TA0001 - Accès initial",
-    // "(TA0001)". C'est ce que renvoie volontiers un modèle à qui l'on
-    // demande un identifiant en lui montrant la liste avec ses libellés.
+    // Mixed form — "TA0001 Initial Access", "TA0001 - Accès initial",
+    // "(TA0001)". This is what a model readily returns when asked for an
+    // identifier while being shown the list with its labels.
     const embedded = v.match(/\bTA\d{4}\b/);
     if (embedded && MITRE_TACTICS.indexOf(embedded[0]) >= 0) return embedded[0];
     const lc = v.toLowerCase();
@@ -347,9 +347,9 @@ function _sopPhaseSelect(idx: number, value: string): string {
 function dictToggle(section: string, idx: number, field: string, val: string) {
     const dims = ["D","I","C","T"];
     const selected = (val || "").split(",").map(s => s.trim()).filter(Boolean);
-    // .ct-choice porte l'etat par aria-pressed : annonce par les lecteurs
-    // d'ecran, contrairement a l'ancienne classe .active. Et <button> plutot que
-    // <div> rend les bascules focusables au clavier.
+    // .ct-choice carries the state via aria-pressed: announced by screen
+    // readers, unlike the old .active class. And <button> rather than <div>
+    // makes the toggles keyboard-focusable.
     let h = '<div class="ct-choice" data-size="xs">';
     for (const d of dims) {
         // Stored value stays the canonical French letter (D/I/C/T); only the
@@ -367,20 +367,20 @@ function toggleDICT(section: string, idx: number, field: string, dim: string, el
     const pos = current.indexOf(dim);
     if (pos >= 0) current.splice(pos, 1);
     else current.push(dim);
-    // Trier dans l'ordre D, I, C, T
+    // Sort in D, I, C, T order
     const order = ["D","I","C","T"];
     current.sort((a, b) => order.indexOf(a) - order.indexOf(b));
     D[section][idx][field] = current.join(", ");
-    // L'etat visuel et l'annonce vocale passent tous deux par aria-pressed
-    // (voir dictToggle et .ct-choice > button[aria-pressed="true"]). Basculer
-    // .active ne changeait rien : cette classe n'a aucune regle pour ces
-    // boutons, et l'etat n'apparaissait qu'au re-rendu suivant.
+    // Both the visual state and the vocal announcement go through aria-pressed
+    // (see dictToggle and .ct-choice > button[aria-pressed="true"]). Toggling
+    // .active changed nothing: that class has no rule for these buttons, and
+    // the state only showed up on the next re-render.
     el.setAttribute("aria-pressed", String(current.includes(dim)));
     _persist(section);
     showStatus(t("ebios.status.modified"));
 }
 
-// ── Sélecteur multi-références ──
+// ── Multi-reference selector ──
 // options = [{id:"VM-01", label:"Gestion des Taux"}, ...]
 // val = "VM-01 - Gestion des Taux, VM-02 - Gestion des Actions" (string, comma-separated)
 let _refCounter = 0;
@@ -496,9 +496,9 @@ function _reRenderForField(section: string, field: string) {
 }
 
 
-// Raccourcis clavier : voir cisotoolbox.js (Ctrl+Z/Y/S)
+// Keyboard shortcuts: see cisotoolbox.js (Ctrl+Z/Y/S)
 
-// ── Fonctions pour obtenir les options de référence ──
+// ── Functions returning the reference options ──
 function vmOptions() { return D.vm.map(v => ({id: v.id, label: v.nom})); }
 function bsOptions() { return D.bs.map(b => ({id: b.id, label: b.nom})); }
 function ppOptions() { return D.pp.map(p => ({id: p.id, label: p.nom})); }
@@ -515,14 +515,14 @@ function sopOptions() { return D.sop_summary.map(s => ({id: s.sop, label: s.ss})
 function measuresOptions() { return D.measures.map(m => ({id: m.id, label: (_rt(m, "mesure")||"").substring(0,50)})); }
 
 // ═══════════════════════════════════════════════════════════════════════
-// HISTORIQUE — Undo/Redo + Snapshots
+// HISTORY — Undo/Redo + Snapshots
 // ═══════════════════════════════════════════════════════════════════════
 // _undoStack, _redoStack, undo/redo defined in cisotoolbox.js (limit: 50)
-// Auto-save, banner, newAnalysis : voir cisotoolbox.js
+// Auto-save, banner, newAnalysis: see cisotoolbox.js
 
-// _updateUndoButtons : voir cisotoolbox.ts (impl partagée, matche .btn-undo / #btn-undo)
+// _updateUndoButtons: see cisotoolbox.ts (shared impl, matches .btn-undo / #btn-undo)
 
-// ── Snapshots localStorage (chiffrement optionnel) ──
+// ── localStorage snapshots (optional encryption) ──
 
 
 async function renderHistory() {
@@ -547,11 +547,11 @@ async function renderHistory() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// MISE À JOUR
+// UPDATE
 // ═══════════════════════════════════════════════════════════════════════
-// Mettre à jour les références "ID - OldName" → "ID - NewName" dans toutes les sections
+// Update the "ID - OldName" → "ID - NewName" references in every section
 function propagateNameChange(id: string, newName: string) {
-    // Tous les champs qui contiennent des références textuelles "ID - Nom"
+    // All the fields that contain textual "ID - Name" references
     const refFields: [string, string][] = [
         ["bs", "vm"], ["pp", "bs"],
         ["er", "vm"], ["ss", "couple_id"], ["ss", "couple_desc"],
@@ -572,7 +572,7 @@ function propagateNameChange(id: string, newName: string) {
 
 function updateField(section: string, idx: number, field: string, val: any, type?: string) {
     _saveState();
-    // Convertir en nombre pour les champs numériques
+    // Convert to number for the numeric fields
     const numericFields = ["motivation","ressources","activite","d","i","c","t",
         "dependance","penetration","maturite","confiance","gravite","v_resid","conformite",
         "dep_resid","pen_resid","mat_resid","conf_resid"];
@@ -580,13 +580,13 @@ function updateField(section: string, idx: number, field: string, val: any, type
         val = val === "" ? "" : parseFloat(val);
         if (typeof val === "number" && (isNaN(val) || val < -1000 || val > 1e12)) val = "";
     }
-    // Limiter la longueur des chaînes
+    // Cap string length
     if (typeof val === "string" && val.length > 5000) val = val.substring(0, 5000);
     if (!D[section][idx]) D[section][idx] = {};
     const oldVal = D[section][idx][field];
     D[section][idx][field] = val;
 
-    // Si un nom change, propager dans toutes les références
+    // If a name changes, propagate into all the references
     const nameFields: Record<string, [string, string]> = {
         vm: ["nom", "id"], bs: ["nom", "id"], pp: ["nom", "id"],
         er: ["evenement", "id"], srov: ["sr", "couple"],
@@ -597,7 +597,7 @@ function updateField(section: string, idx: number, field: string, val: any, type
         const id = D[section][idx][nf[1]];
         if (id) {
             propagateNameChange(id, val);
-            // Re-render tout car les références ont changé partout
+            // Re-render everything because the references changed everywhere
             renderAll();
             showStatus(t("ebios.status.modified_refs"));
             return;
@@ -608,7 +608,7 @@ function updateField(section: string, idx: number, field: string, val: any, type
         _syncSopMeasuresToResiduals(idx, oldVal, val);
     }
 
-    // Re-render la section modifiée + les sections dépendantes (différé pour ne pas interférer avec l'événement)
+    // Re-render the modified section + the dependent ones (deferred so as not to interfere with the event)
     setTimeout(() => {
         const rerenders: Record<string, (() => void)[]> = {
             "vm": [renderVM],
@@ -631,14 +631,14 @@ function updateField(section: string, idx: number, field: string, val: any, type
     }, 0);
     _persist(section);
 }
-// Les SOP échappent à nextId() : leur identifiant vit dans deux tableaux
-// (sop_summary et sop_detail) et sous un champ nommé `sop`, pas `id`.
-// On balaie les deux — un SOP peut exister dans le résumé sans avoir encore
-// de phase, et l'inverse se produit sur des données importées.
+// SOPs escape nextId(): their identifier lives in two arrays
+// (sop_summary and sop_detail) and under a field named `sop`, not `id`.
+// We sweep both — a SOP can exist in the summary without having any
+// phase yet, and the reverse happens on imported data.
 //
-// Surtout, on prend le MAXIMUM et non la longueur : après une suppression,
-// une numérotation par longueur redonne un identifiant déjà pris, et les
-// nouvelles phases s'agrègent silencieusement à un SOP existant.
+// Above all, we take the MAXIMUM and not the length: after a deletion,
+// length-based numbering hands out an identifier already taken, and the
+// new phases silently aggregate onto an existing SOP.
 function nextSopId(): string {
     let max = 0;
     for (const row of ([] as any[]).concat(D.sop_summary || [], D.sop_detail || [])) {
@@ -728,7 +728,7 @@ function selectPanel(id: string) {
 
 
 // ═══════════════════════════════════════════════════════════════════════
-// RENDU
+// RENDERING
 // ═══════════════════════════════════════════════════════════════════════
 function renderIndicators() {
     const counts = [
@@ -785,7 +785,7 @@ function renderContext() {
     </div></div>`;
     document.getElementById("context-fields")!.innerHTML = h;
 
-    // ── Échelle de gravité ──
+    // ── Severity scale ──
     const n = D.gravity_scale.length;
     let gh = `<h3 class="section-heading">${t("ebios.gravity.heading")}</h3>`;
     gh += '<div class="mb-12 flex-row-center">';
@@ -818,7 +818,7 @@ function renderContext() {
     });
     gh += '</tbody></table></div>';
 
-    // ── Matrice de risque G×V ──
+    // ── G×V risk matrix ──
     gh += `<h3 class="section-heading">${t("ebios.matrix.heading")}</h3>`;
     gh += '<table class="maxw-500"><thead><tr><th class="w-100">G \\ V</th>';
     for (let v = 1; v <= 4; v++) gh += `<th>V${v}</th>`;
@@ -851,17 +851,17 @@ const _gravCache: Record<number, { scale: EbiosGravityLevel[]; matrix: EbiosRisk
 
 function setGravityLevels(n: number) {
     _saveState();
-    // Sauvegarder l'échelle courante dans le cache
+    // Save the current scale into the cache
     const curN = D.gravity_scale.length;
     if (curN > 0) {
         _gravCache[curN] = { scale: JSON.parse(JSON.stringify(D.gravity_scale)), matrix: JSON.parse(JSON.stringify(D.risk_matrix)) };
     }
-    // Restaurer depuis le cache si disponible
+    // Restore from the cache if available
     if (_gravCache[n]) {
         D.gravity_scale = _gravCache[n].scale;
         D.risk_matrix = _gravCache[n].matrix;
     } else {
-        // Sinon utiliser les défauts
+        // Otherwise use the defaults
         function g(niv: number, label: string, desc: string): EbiosGravityLevel {
             return {niveau:niv, label:label, description:desc,
                 impact_financier:"", impact_reputation:"", impact_reglementaire:"",
@@ -1093,7 +1093,7 @@ function importVendorPP(event: Event) {
 }
 
 function renderSocle() {
-    // Charger les descriptions si besoin, puis re-rendre (pop-in gracieux)
+    // Load the descriptions if needed, then re-render (graceful pop-in)
     if (!_descriptionsLoaded) {
         _ensureDescriptions(() => renderSocle());
     }
@@ -1136,13 +1136,13 @@ function addSocleMeasure(socleIdx: number) {
     const section = isAnssi ? "socle_anssi" : "socle_iso";
     const socle = isAnssi ? D.socle_anssi : D.socle_iso;
     const refNum = socle[socleIdx] ? (isAnssi ? "#" + socle[socleIdx].num : socle[socleIdx].ref || "") : "";
-    // Créer la mesure dans 5a
+    // Create the measure in 5a
     D.measures.push({
         id: id, mesure: desc, origine: "Socle", type: "Prévention",
         sop: "", phase: "", effet: t("ebios.m.renforcement_socle", {ref: refNum}),
         ref_socle: refNum, responsable: "", echeance: "", cout: "", statut: "À étudier",
     });
-    // Ajouter la référence dans le champ mesures_prevues du socle
+    // Add the reference into the socle's mesures_prevues field
     const current = socle[socleIdx].mesures_prevues || "";
     const newRef = id + " - " + desc;
     socle[socleIdx].mesures_prevues = current ? current + ", " + newRef : newRef;
@@ -1153,7 +1153,7 @@ function addSocleMeasure(socleIdx: number) {
     _persist("measures"); _persist("socle_anssi"); _persist("socle_iso");
 }
 
-// ── SR/OV : listes séparées SR, OV, couples ──
+// ── SR/OV: separate SR, OV and couple lists ──
 function srOptions() { return (D.sr_list||[]).map(s => ({id: s.id, label: s.nom})); }
 function ovOptions() { return (D.ov_list||[]).map(o => ({id: o.id, label: o.nom})); }
 
@@ -1277,7 +1277,7 @@ function renderER() {
     document.getElementById("table-er")!.innerHTML = h;
     _setupTable("er-table", tc.filter(c=>!c.on).map(c=>c.key));
 }
-// Gravité par catégorie de l'échelle (option page Événements redoutés)
+// Severity per scale category (option on the "Événements redoutés" page)
 function _selErCat(idx: number, catKey: string, val: EbNum | undefined) {
     const field = "impact_" + catKey;
     let h = `<select data-i="${idx}" data-cat="${catKey}" data-change="_updateErGraviteCat" data-pass-el><option value=""></option>`;
@@ -1324,27 +1324,27 @@ function renderSS() {
     _setupTable("ss-table", tc.filter(c=>!c.on).map(c=>c.key));
 }
 
-// Système de colonnes : masquer/afficher + redimensionner
+// Column system: hide/show + resize
 
-// Colonnes, popups, resize : voir cisotoolbox.js
+// Columns, popups, resize: see cisotoolbox.js
 function _ecoSyncColumns(idx: number, field: string, measureId: string, added: boolean) {
     if (!added || !measureId) return;
     const eco = D.eco[idx];
     const otherField = field === "mesures_existantes" ? "mesures_complementaires" : "mesures_existantes";
     const otherVal = eco[otherField] || "";
 
-    // Vérifier si la mesure ajoutée est dans l'autre colonne
+    // Check whether the added measure is in the other column
     const otherParts = otherVal.split(",").map(s => s.trim()).filter(Boolean);
     const found = otherParts.findIndex(p => p.startsWith(measureId));
     if (found >= 0) {
-        // Retirer de l'autre colonne
+        // Remove from the other column
         otherParts.splice(found, 1);
         eco[otherField] = otherParts.join(", ");
         _persist("eco");
 
         if (field === "mesures_complementaires") {
-            // Ajouté dans complémentaires → était dans existantes
-            // → passer le statut de la mesure à "À étudier" dans 5a
+            // Added to complementary → was in existing
+            // → switch the measure's status to "À étudier" in 5a
             const m = D.measures.find(x => x.id === measureId);
             if (m && m.statut === "Terminé") {
                 m.statut = "À étudier";
@@ -1352,7 +1352,7 @@ function _ecoSyncColumns(idx: number, field: string, measureId: string, added: b
                 showStatus(t("ebios.status.eco_moved_compl", {id: measureId}));
             }
         } else {
-            // Ajouté dans existantes → était dans complémentaires
+            // Added to existing → was in complementary
             showStatus(t("ebios.status.eco_moved_exist", {id: measureId}));
         }
     }
@@ -1377,8 +1377,8 @@ function _buildEcoSVG(ppList: EbEcoPoint[], title: string) {
         catMap[c].push(p);
     });
 
-    // 4 quadrants : haut-gauche=Clients, haut-droit=Partenaires, bas-gauche=Prestataires, bas-droit=Légende
-    // 0°=haut sens horaire : 270-360=haut-gauche, 0-90=haut-droit, 180-270=bas-gauche, 90-180=bas-droit(échelle)
+    // 4 quadrants: top-left=Clients, top-right=Partenaires, bottom-left=Prestataires, bottom-right=Legend
+    // 0°=top clockwise: 270-360=top-left, 0-90=top-right, 180-270=bottom-left, 90-180=bottom-right(scale)
     var _cl = t("ebios.eco.clients"), _pa = t("ebios.eco.partenaires"), _pr = t("ebios.eco.prestataires");
     const quads: Record<string, { a1: number; a2: number; color: string; rx: number; ry: number; rw: number; rh: number }> = {};
     quads[_cl] = { a1: 270, a2: 360, color: "#16a34a", rx: CX-R-M, ry: CY-R-M, rw: R+M-8, rh: R+M-8 };
@@ -1387,17 +1387,17 @@ function _buildEcoSVG(ppList: EbEcoPoint[], title: string) {
 
     let svg = `<svg viewBox="0 0 ${W} ${H}" style="max-width:${W}px;width:100%;height:auto;display:block;margin:0 auto">`;
 
-    // Cadres rectangulaires arrondis par quadrant
+    // Rounded rectangular frames per quadrant
     for (const [name, q] of Object.entries(quads)) {
         svg += `<rect x="${q.rx}" y="${q.ry}" width="${q.rw}" height="${q.rh}" rx="18" fill="${q.color}" fill-opacity="0.05" stroke="${q.color}" stroke-width="2" stroke-opacity="0.25" />`;
-        // Label du quadrant
+        // Quadrant label
         const lx = q.rx + q.rw / 2;
         const isTop = q.ry < CY;
         const ly = isTop ? q.ry + 16 : q.ry + q.rh - 8;
         svg += `<text x="${lx}" y="${ly}" font-size="13" fill="${q.color}" font-style="italic" font-weight="600" text-anchor="middle">${name}</text>`;
     }
 
-    // Zones concentriques
+    // Concentric zones
     svg += `<circle cx="${CX}" cy="${CY}" r="${R}" fill="#14b8a6" fill-opacity="0.06" stroke="#14b8a6" stroke-width="2" opacity="0.35" />`;
     svg += `<circle cx="${CX}" cy="${CY}" r="${menaceToR(0.9)}" fill="#eab308" fill-opacity="0.07" stroke="#eab308" stroke-width="2" opacity="0.45" />`;
     svg += `<circle cx="${CX}" cy="${CY}" r="${menaceToR(2.5)}" fill="#dc2626" fill-opacity="0.08" stroke="#dc2626" stroke-width="2" opacity="0.5" />`;
@@ -1406,19 +1406,19 @@ function _buildEcoSVG(ppList: EbEcoPoint[], title: string) {
     svg += `<line x1="${CX}" y1="${CY - R - 5}" x2="${CX}" y2="${CY + R + 5}" stroke="#cbd5e1" stroke-width="0.8" />`;
     svg += `<line x1="${CX - R - 5}" y1="${CY}" x2="${CX + R + 5}" y2="${CY}" stroke="#cbd5e1" stroke-width="0.8" />`;
 
-    // Graduations sur l'axe bas-droit (quadrant légende)
+    // Graduations on the bottom-right axis (legend quadrant)
     for (let i = 0; i <= maxMenace; i++) {
         const rr = menaceToR(i);
         svg += `<circle cx="${CX}" cy="${CY}" r="${rr}" fill="none" stroke="var(--ct-line)" stroke-width="0.5" stroke-dasharray="3,3" />`;
-        // Label sur la diagonale bas-droit
+        // Label on the bottom-right diagonal
         const [lx, ly] = degXY(135, rr + 4);
         svg += `<text x="${lx}" y="${ly - 2}" font-size="13" fill="#475569" font-weight="700">${i}</text>`;
     }
 
-    // Centre
+    // Center
     svg += `<circle cx="${CX}" cy="${CY}" r="7" fill="#1e293b" />`;
 
-    // Passe 1 : calculer toutes les positions des PP et labels
+    // Pass 1: compute all PP and label positions
     const allPP: { px: number; py: number; cr: number; fill: string; stroke: string; isLeft: boolean; lx: number; ly: number; labelText: string; quad: string }[] = [];
     for (const [catName, pps] of Object.entries(catMap)) {
         const q = quads[catName];
@@ -1435,13 +1435,13 @@ function _buildEcoSVG(ppList: EbEcoPoint[], title: string) {
             const stroke = fc < 4 ? "#b91c1c" : fc < 7 ? "#f59e0b" : fc < 10 ? "#eab308" : "#16a34a";
             const isLeft = px < CX;
             const labelText = esc(p.id + " - " + p.nom);
-            // Label aligné sur le bord du rectangle du quadrant
+            // Label aligned on the edge of the quadrant rectangle
             const lx = isLeft ? q.rx + 8 : q.rx + q.rw - 8;
             allPP.push({ px, py, cr, fill, stroke, isLeft, lx, ly: py, labelText, quad: catName });
         });
     }
 
-    // Passe 2 : résoudre les collisions de labels par quadrant, clamper dans le rectangle
+    // Pass 2: resolve label collisions per quadrant, clamp inside the rectangle
     const LH = 14;
     const quadGroups: Record<string, number[]> = {};
     allPP.forEach((p, i) => {
@@ -1452,9 +1452,9 @@ function _buildEcoSVG(ppList: EbEcoPoint[], title: string) {
         const q = quads[qName];
         const yMin = q.ry + 22;
         const yMax = q.ry + q.rh - 10;
-        // Clamper les positions initiales
+        // Clamp the initial positions
         for (const i of indices) allPP[i].ly = Math.max(yMin, Math.min(yMax, allPP[i].ly));
-        // Trier par Y et résoudre les collisions
+        // Sort by Y and resolve the collisions
         indices.sort((a, b) => allPP[a].ly - allPP[b].ly);
         for (let k = 1; k < indices.length; k++) {
             const prev = allPP[indices[k - 1]];
@@ -1463,12 +1463,12 @@ function _buildEcoSVG(ppList: EbEcoPoint[], title: string) {
                 curr.ly = prev.ly + LH;
             }
         }
-        // Si les derniers dépassent, comprimer vers le haut
+        // If the last ones overflow, compress upward
         const last = allPP[indices[indices.length - 1]];
         if (last.ly > yMax) {
             const overflow = last.ly - yMax;
             for (const i of indices) allPP[i].ly = Math.max(yMin, allPP[i].ly - overflow);
-            // Re-espacer si comprimé
+            // Re-space if compressed
             for (let k = 1; k < indices.length; k++) {
                 const prev = allPP[indices[k - 1]];
                 const curr = allPP[indices[k]];
@@ -1477,14 +1477,14 @@ function _buildEcoSVG(ppList: EbEcoPoint[], title: string) {
         }
     }
 
-    // Passe 3 : dessiner connecteurs, cercles, labels
+    // Pass 3: draw connectors, circles, labels
     for (const p of allPP) {
         const ex = p.isLeft ? p.px - p.cr - 2 : p.px + p.cr + 2;
         const lx2 = p.isLeft ? p.lx + 2 : p.lx - 2;
         svg += `<path d="M${ex},${p.py} C${(ex + lx2) / 2},${p.py} ${(ex + lx2) / 2},${p.ly} ${lx2},${p.ly}" fill="none" stroke="#cbd5e1" stroke-width="0.8" />`;
         svg += `<circle cx="${lx2}" cy="${p.ly}" r="1.5" fill="#cbd5e1" />`;
     }
-    // Cercles PP
+    // PP circles
     for (const p of allPP) {
         svg += `<circle cx="${p.px}" cy="${p.py}" r="${p.cr}" fill="${p.fill}" fill-opacity="0.75" stroke="${p.stroke}" stroke-width="2" />`;
     }
@@ -1494,7 +1494,7 @@ function _buildEcoSVG(ppList: EbEcoPoint[], title: string) {
         svg += `<text x="${p.lx}" y="${p.ly + 4}" font-size="9" fill="#475569" text-anchor="${anchor}" font-weight="600">${p.labelText}</text>`;
     }
 
-    // Légende en bas
+    // Legend at the bottom
     const ly = CY + R + M + 20;
     svg += `<circle cx="60" cy="${ly}" r="10" fill="none" stroke="#dc2626" stroke-width="4" opacity="0.5" />`;
     svg += `<text x="76" y="${ly+4}" font-size="10" fill="#475569">${t("ebios.eco.zone_danger")}</text>`;
@@ -1587,13 +1587,13 @@ function addEcoMeasure(ecoIdx: number) {
     const id = nextId("measures");
     const ppId = D.eco[ecoIdx] ? (D.eco[ecoIdx].pp_id || "").split(" - ")[0].trim() : "";
     const ppNom = D.eco[ecoIdx] ? (D.eco[ecoIdx].pp_id || "").split(" - ").slice(1).join(" - ").trim() : "";
-    // Créer la mesure dans 5a
+    // Create the measure in 5a
     D.measures.push({
         id: id, mesure: desc, origine: "Écosystème", type: "Prévention",
         sop: "", phase: "", effet: t("ebios.m.mesure_eco_pour", {pp: ppNom || ppId}),
         ref_socle: "", responsable: "", echeance: "", cout: "", statut: "À étudier",
     });
-    // Ajouter la référence dans le champ mesures complémentaires de l'éco
+    // Add the reference into the eco's complementary measures field
     const current = D.eco[ecoIdx].mesures_complementaires || "";
     const newRef = id + " - " + desc;
     D.eco[ecoIdx].mesures_complementaires = current ? current + ", " + newRef : newRef;
@@ -1608,8 +1608,8 @@ function renderSOP() {
     const tc = [{key:"ss",label:t("ebios.col.sop_ss"),on:true},{key:"action",label:t("ebios.col.sop_action"),on:true},{key:"bs",label:t("ebios.col.sop_bs"),on:true},{key:"ctrl",label:t("ebios.col.sop_controle"),on:true},{key:"ref",label:t("ebios.col.sop_ref"),on:false},{key:"mp",label:t("ebios.col.sop_mesure_proposee"),on:true}];
     document.getElementById("toggles-sop")!.innerHTML = colsButton("sop-table");
 
-    // Calculer les rowspans pour SOP et SS — grouper par SOP ID identique
-    // Une ligne sans SOP ID ou avec le même SOP ID que la précédente = même groupe
+    // Compute the rowspans for SOP and SS — group by identical SOP ID
+    // A row with no SOP ID, or the same SOP ID as the previous one = same group
     const spans: number[] = [];
     let si = 0;
     while (si < D.sop_detail.length) {
@@ -1617,7 +1617,7 @@ function renderSOP() {
         let count = 1;
         while (si + count < D.sop_detail.length) {
             const nextSop = D.sop_detail[si + count].sop || "";
-            // Même groupe si : pas de SOP ID, ou même SOP ID que le premier
+            // Same group if: no SOP ID, or same SOP ID as the first one
             if (!nextSop || nextSop === sopId) { count++; }
             else break;
         }
@@ -1626,7 +1626,7 @@ function renderSOP() {
     }
 
     let h = `<table id="sop-table" class="table-fixed"><thead><tr><th class="w-85">${t("ebios.col.sop_sop")}</th><th${hd("ss")} class="minw-140">${t("ebios.col.sop_ss")}</th><th>${t("ebios.col.sop_phase")}</th><th${hd("action")}>${t("ebios.col.sop_action")}</th><th${hd("bs")}>${t("ebios.col.sop_bs")}</th><th${hd("ctrl")}>${t("ebios.col.sop_controle")}</th><th${hd("ref")}>${t("ebios.col.sop_ref")}</th><th class="w-80">${t("ebios.col.sop_efficacite")}</th><th${hd("mp")}>${t("ebios.col.sop_mesure_proposee")}</th><th class="col-actions"></th></tr></thead><tbody>`;
-    // Calculer le numéro de phase dans chaque groupe
+    // Compute the phase number inside each group
     let phaseNums: number[] = [];
     let pn = 0;
     for (let i = 0; i < D.sop_detail.length; i++) {
@@ -1641,7 +1641,7 @@ function renderSOP() {
             h += `<td rowspan="${spans[i]}" class="ct-va-top ct-strong ct-bg-alt">${esc(s.sop)}<br><button class="ct-btn" data-size="xs" data-variant="primary" data-click="addSOPPhase" data-args='${_da(i)}'>${t("ebios.btn.add_phase")}</button></td>`;
             h += `<td${hd("ss")} rowspan="${spans[i]}" class="ct-va-top ct-bg-alt">${refSelect("sop_detail",i,"ss",s.ss,ssOptions())}</td>`;
         }
-        // Phase : numéro auto + tactique ATT&CK (liste) ou texte libre
+        // Phase: auto number + ATT&CK tactic (list) or free text
         h += `<td><span class="ct-muted ct-strong">${phaseNums[i]}.</span> ${_sopPhaseSelect(i, s.phase)}</td>
             <td${hd("action")}>${ta("sop_detail",i,"action",s.action)}</td>
             <td${hd("bs")}>${refSelect("sop_detail",i,"bs",s.bs,bsOptions())}</td>
@@ -1662,14 +1662,14 @@ function renderSOP() {
 
 function addSOP() {
     _saveState();
-    // Trouver le prochain numéro de SOP
+    // Find the next SOP number
     const sopId = nextSopId();
     D.sop_detail.push({
         sop: sopId, ss: "", phase: "", action: "",
         bs: "", controle: "", ref: "", efficacite: "", commentaire: "",
         mesure_proposee: "", type_mesure: "",
     });
-    // Ajouter aussi dans sop_summary
+    // Also add it into sop_summary
     D.sop_summary.push({ sop: sopId, ss: "" });
     renderSOP();
     renderIndicators();
@@ -1700,7 +1700,7 @@ function _syncSopMeasuresToResiduals(sopDetailIdx: number, oldVal: string, newVa
 
 function addSOPPhase(firstIdx: number) {
     _saveState();
-    // Ajouter une phase après la dernière phase du même SOP
+    // Add a phase after the last phase of the same SOP
     const sopId = D.sop_detail[firstIdx].sop;
     let lastIdx = firstIdx;
     for (let j = firstIdx + 1; j < D.sop_detail.length; j++) {
@@ -1735,7 +1735,7 @@ function _setSOPPhaseText(idx: number, value: string) {
 }
 
 function _findSOPGroup(idx: number): string {
-    // Trouver le SOP ID du groupe auquel appartient l'index
+    // Find the SOP ID of the group the index belongs to
     const s = D.sop_detail[idx];
     if (s.sop) return s.sop;
     for (let j = idx - 1; j >= 0; j--) {
@@ -1758,11 +1758,11 @@ function moveSOPPhase(idx: number, dir: number) {
     const mySop = _findSOPGroup(idx);
     const targetSop = _findSOPGroup(target);
     if (mySop !== targetSop) return;
-    // Ne pas déplacer la première ligne du groupe (elle porte le SOP ID + SS)
+    // Do not move the first row of the group (it carries the SOP ID + SS)
     const groupStart = _findSOPStart(mySop);
     if (idx === groupStart && dir === -1) return;
     if (target === groupStart && dir === -1) return;
-    if (idx === groupStart) return; // la première ligne ne bouge pas
+    if (idx === groupStart) return; // the first row does not move
     [D.sop_detail[idx], D.sop_detail[target]] = [D.sop_detail[target], D.sop_detail[idx]];
     renderSOP();
     showStatus(t("ebios.status.phase_moved"));
@@ -1774,7 +1774,7 @@ function delSOPPhase(idx: number) {
     const mySop = _findSOPGroup(idx);
     const groupStart = _findSOPStart(mySop);
     if (idx === groupStart) {
-        // Première ligne = supprimer tout le SOP
+        // First row = delete the whole SOP
         if (!confirm(t("ebios.confirm.delete_sop", {sop: mySop}))) return;
         let end = groupStart + 1;
         while (end < D.sop_detail.length) {
@@ -1800,7 +1800,7 @@ function addSOPMeasure(sopIdx: number) {
     const id = nextId("measures");
     const sopId = D.sop_detail[sopIdx] ? D.sop_detail[sopIdx].sop || "" : "";
     const phase = D.sop_detail[sopIdx] ? _attackLabel(D.sop_detail[sopIdx].phase) : "";
-    // Créer la mesure dans 5a
+    // Create the measure in 5a
     D.measures.push({
         id: id, mesure: desc, origine: "SOP", type: "Prévention",
         sop: sopId, phase: phase, effet: "",
@@ -1819,7 +1819,7 @@ function addSOPMeasure(sopIdx: number) {
 }
 
 function _computeSOPVop() {
-    // Compter les phases par SOP et calculer V opérationnelle
+    // Count the phases per SOP and compute the operational likelihood
     const sopPhases: Record<string, { absent: number; partiel: number; efficace: number; total: number }> = {};
     D.sop_detail.forEach(s => {
         const sopId = s.sop;
@@ -1842,21 +1842,21 @@ function _computeSOPVop() {
 }
 
 function _sopToSS() {
-    // Dériver le lien SOP→SS depuis sop_detail (source de vérité)
-    // Un SOP peut être associé à plusieurs SS (multi-sélection)
+    // Derive the SOP→SS link from sop_detail (source of truth)
+    // A SOP can be linked to several SS (multi-select)
     const map: Record<string, Set<string>> = {};
     D.sop_detail.forEach(s => {
         if (!s.sop || !s.ss) return;
         if (!map[s.sop]) map[s.sop] = new Set();
-        // Extraire les SS IDs. Format: "SS-001 - Nom, SS-002 - Nom" (padding
-        // variable selon la version). Regex plutôt que substring pour éviter
-        // de tronquer SS-001 en SS-00.
+        // Extract the SS IDs. Format: "SS-001 - Nom, SS-002 - Nom" (padding
+        // varies with the version). Regex rather than substring to avoid
+        // truncating SS-001 into SS-00.
         const ids = s.ss.split(",")
             .map(x => (x.trim().match(/^SS-\d+/) || [""])[0])
             .filter(Boolean);
         ids.forEach(id => map[s.sop].add(id));
     });
-    // Synchroniser sop_summary
+    // Synchronize sop_summary
     const existingSops = new Set(D.sop_summary.map(s => s.sop));
     for (const [sopId, ssSet] of Object.entries(map)) {
         const ssStr = [...ssSet].join(", ");
@@ -1870,7 +1870,7 @@ function _sopToSS() {
 function renderSOPSynth() {
     const { sopVop, sopTaux, sopPhases } = _computeSOPVop();
     const sopToSS = _sopToSS();
-    // V initiale par SS = MAX V opérationnelle des SOP associés
+    // Initial V per SS = MAX operational likelihood of the associated SOPs
     const ssData: Record<string, { vInit: number; sops: { sop: string; taux: number; vop: number; phases: { absent: number; partiel: number; efficace: number; total: number } }[] }> = {};
     for (const [sopId, ssSet] of Object.entries(sopToSS)) {
         for (const ssId of ssSet) {
@@ -1957,7 +1957,7 @@ function renderMeasures() {
     _setupTable("measures-table", tc.filter(c=>!c.on).map(c=>c.key));
 }
 
-// Compute initial likelihood per SS (MAX V opérationnelle of associated SOPs)
+// Compute initial likelihood per SS (MAX operational likelihood of associated SOPs)
 function _ssVInit() {
     const { sopVop } = _computeSOPVop();
     const sopToSS = _sopToSS();
@@ -2007,7 +2007,7 @@ function renderResiduals() {
 
 function renderSynthesis() {
     const _sd = _synthesisData();
-    // Distribution des risques (basée sur les SS avec SOP)
+    // Risk distribution (based on the SS that have a SOP)
     let eleve = _sd.dist.eleve, moyen = _sd.dist.moyen, faible = _sd.dist.faible, nonEval = _sd.dist.nonEval;
     let distH = '<div class="risk-dist">';
     distH += `<div class="risk-bar ct-bg-critical-tint ct-text-critical-ink"><div class="count">${eleve}</div><div class="label">${t("ebios.misc.eleve_label")}</div></div>`;
@@ -2027,7 +2027,7 @@ function renderSynthesis() {
         ssPositions.forEach(function(sp) {
             var v = getV(sp);
             if (!sp.gNum || !v || v < 1 || v > NX || sp.gNum < 1 || sp.gNum > NY) return;
-            // Key: x=vraisemblance, y=gravité (X-axis=V, Y-axis=G)
+            // Key: x=likelihood, y=severity (X-axis=V, Y-axis=G)
             var key = v + "-" + sp.gNum;
             if (!grid[key]) grid[key] = [];
             grid[key].push({
@@ -2068,7 +2068,7 @@ function renderSynthesis() {
     buildMatrix("synth-matrix-initial", function(sp) { return sp.vInit; });
     buildMatrix("synth-matrix-residual", function(sp) { return sp.vResid; });
 
-    // Évolution des risques
+    // Risk evolution
     let evH = `<table><thead><tr><th>${t("ebios.synth.col_ss")}</th><th>${t("ebios.synth.col_scenario")}</th><th>${t("ebios.synth.col_risque_initial")}</th><th>${t("ebios.synth.col_risque_residuel")}</th><th>${t("ebios.synth.col_evolution")}</th><th>${t("ebios.synth.col_decision")}</th></tr></thead><tbody>`;
     D.ss.forEach((s, i) => {
         const gNum = computeSSGravity(s.er);
@@ -2079,7 +2079,7 @@ function renderSynthesis() {
         const riskResid = riskLevel(gNum, vResid);
         const riColor = riskColor(riskInit);
         const rrColor = riskColor(riskResid);
-        // Évolution
+        // Evolution
         let evol = "";
         var riskOrder: Record<string, number> = {};
         riskOrder[t("ebios.risk.eleve")] = 3;
@@ -2101,7 +2101,7 @@ function renderSynthesis() {
     evH += '</tbody></table>';
     document.getElementById("synth-evolution")!.innerHTML = evH;
 
-    // Conformité du socle
+    // Baseline compliance
     const isAnssi = D.socle_type !== "iso";
     const socle = isAnssi ? D.socle_anssi : D.socle_iso;
     if (socle.length > 0) {
@@ -2128,7 +2128,7 @@ function renderSynthesis() {
         document.getElementById("synth-socle")!.innerHTML = `<p class="text-muted">${t("ebios.socle.non_evalue")}</p>`;
     }
 
-    // Synthèse des mesures
+    // Measures summary
     const showAllMeasures = !!(document.getElementById("synth-measures-all") && (document.getElementById("synth-measures-all") as HTMLInputElement).checked);
     const filteredMeasures = showAllMeasures ? D.measures.filter(m => m.statut !== "À étudier") : D.measures.filter(m => m.statut && m.statut !== "Terminé" && m.statut !== "À étudier");
     const origColor: Record<string, string> = {"Socle":"var(--ct-low-tint)","Écosystème":"var(--ct-medium-tint)","SOP":"var(--ct-high-tint)","Complémentaire":"var(--ct-info-tint)"};
@@ -2190,15 +2190,15 @@ function renderAll() {
 function _validateData(obj: any): string | null {
     if (typeof obj !== "object" || obj === null || Array.isArray(obj))
         return "Le fichier doit contenir un objet JSON.";
-    // Vérifier les clés attendues (au moins context)
+    // Check the expected keys (at least context)
     const requiredKeys = ["context"];
     for (const k of requiredKeys) {
         if (!(k in obj)) return "Cle manquante : " + k;
     }
-    // context doit être un objet
+    // context must be an object
     if (typeof obj.context !== "object" || Array.isArray(obj.context))
         return "context doit etre un objet.";
-    // Les tableaux doivent être des tableaux
+    // The arrays must actually be arrays
     const arrayKeys = ["gravity_scale","risk_matrix","vm","bs","pp","socle_anssi","socle_iso",
         "sr_list","ov_list","srov","er","ss","eco","sop_detail","sop_summary",
         "measures","residuals"];
@@ -2206,7 +2206,7 @@ function _validateData(obj: any): string | null {
         if (k in obj && !Array.isArray(obj[k]))
             return k + " doit etre un tableau.";
     }
-    // Limiter la taille des tableaux (protection DoS)
+    // Limit the array size (DoS protection)
     const maxSizes: Record<string, number> = {vm:200, bs:500, pp:200, er:500, ss:200, srov:200, sop_detail:1000,
         measures:500, residuals:200, eco:200, socle_anssi:100, socle_iso:200,
         gravity_scale:10, risk_matrix:10, sr_list:100, ov_list:100, sop_summary:100};
@@ -2214,23 +2214,23 @@ function _validateData(obj: any): string | null {
         if (k in obj && Array.isArray(obj[k]) && obj[k].length > max)
             return k + " depasse la taille maximale (" + max + ").";
     }
-    // Vérifier que les éléments des tableaux sont des objets (pas de prototype pollution)
+    // Check the array items are objects (no prototype pollution)
     for (const k of arrayKeys) {
         if (k in obj && Array.isArray(obj[k])) {
             for (let i = 0; i < obj[k].length; i++) {
                 const item = obj[k][i];
                 if (typeof item !== "object" || item === null || Array.isArray(item))
                     return k + "[" + i + "] doit etre un objet.";
-                // Bloquer __proto__ et prototype pollution
+                // Block __proto__ and prototype pollution
                 if (item.hasOwnProperty("__proto__") || item.hasOwnProperty("constructor") || item.hasOwnProperty("prototype"))
                     return k + "[" + i + "] contient une cle interdite.";
             }
         }
     }
-    // Vérifier socle_type
+    // Check socle_type
     if ("socle_type" in obj && !["anssi","iso"].includes(obj.socle_type))
         return "socle_type invalide (anssi ou iso).";
-    // Vérifier les valeurs numériques dans les champs critiques
+    // Check the numeric values in the critical fields
     const numFields = ["dependance","penetration","maturite","confiance","d","i","c","t",
         "motivation","ressources","activite","gravite","v_resid","conformite","niveau"];
     for (const k of arrayKeys) {
@@ -2247,7 +2247,7 @@ function _validateData(obj: any): string | null {
             }
         }
     }
-    // Vérifier les champs texte (longueur max)
+    // Check the text fields (max length)
     function checkStrLen(o: Record<string, unknown>, path: string, max: number): string | null {
         for (const [k2, v2] of Object.entries(o)) {
             if (typeof v2 === "string" && v2.length > max)
@@ -2262,12 +2262,12 @@ function _validateData(obj: any): string | null {
     return null;
 }
 
-// Traitement commun d'un buffer JSON (chiffré ou non)
-// File I/O + crypto : voir cisotoolbox.js
+// Common handling of a JSON buffer (encrypted or not)
+// File I/O + crypto: see cisotoolbox.js
 
 // ═══════════════════════════════════════════════════════════════════════
 // EXPORT / IMPORT EXCEL
-// Menu close : voir cisotoolbox.js
+// Menu close: see cisotoolbox.js
 
 function _loadExcelJS() {
     // ExcelJS 4.4.0, vendored under js/vendor/ — served from our own origin, so the
@@ -2280,7 +2280,7 @@ return _loadScript("js/vendor/exceljs.min.js", { onStart: () => showStatus(t("eb
 }
 
 async function exportExcel() {
-    // Charger le template à la demande si pas encore fait
+    // Load the template on demand if not done yet
     if (!_templateLoaded) {
         showStatus(t("ebios.status.loading_template"));
         await new Promise<void>(resolve => _ensureTemplate(resolve));
@@ -2294,15 +2294,15 @@ async function exportExcel() {
         await _loadExcelJS();
         showStatus(t("ebios.status.generating_excel"));
 
-        // Charger le template
+        // Load the template
         const templateBytes = Uint8Array.from(atob(TEMPLATE_B64), c => c.charCodeAt(0));
         const wb = new ExcelJS.Workbook();
         await wb.xlsx.load(templateBytes.buffer);
 
-        // Remplir les données dans les cellules de saisie
+        // Fill the data into the input cells
         _fillExcelData(wb);
 
-        // Télécharger
+        // Download
         const buf = await wb.xlsx.writeBuffer();
         const blob = new Blob([buf], {type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
         var societe = D.context.societe || _ct().filePrefix || "EBIOS_RM";
@@ -2317,7 +2317,7 @@ async function exportExcel() {
 }
 
 function _fillExcelData(wb: ExcelJS.Workbook) {
-    // Contexte (Synthèse)
+    // Context (Synthesis)
     const wsSynth = wb.getWorksheet("Synthèse");
     if (wsSynth) {
         const ctxKeys = ["societe","date","analyste","reglementation","socle","commentaires"];
@@ -2327,7 +2327,7 @@ function _fillExcelData(wb: ExcelJS.Workbook) {
         });
     }
 
-    // Échelle de gravité
+    // Gravity scale
     const wsGrav = wb.getWorksheet("0-Échelle Gravité");
     if (wsGrav) {
         D.gravity_scale.forEach((g, i) => {
@@ -2457,7 +2457,7 @@ function _fillExcelData(wb: ExcelJS.Workbook) {
         });
     }
 
-    // Écosystème
+    // Ecosystem
     const wsEco = wb.getWorksheet("3c-Mesures Écosystème");
     if (wsEco) {
         D.eco.forEach((e, i) => {
@@ -2473,7 +2473,7 @@ function _fillExcelData(wb: ExcelJS.Workbook) {
         });
     }
 
-    // SOP détail
+    // SOP detail
     const wsSOP = wb.getWorksheet("4a-Scénarios Opérationnels");
     if (wsSOP) {
         D.sop_detail.forEach((s, i) => {
@@ -2495,7 +2495,7 @@ function _fillExcelData(wb: ExcelJS.Workbook) {
         });
     }
 
-    // SOP synthèse
+    // SOP summary
     const wsSOPS = wb.getWorksheet("4b-Synthèse SOP");
     if (wsSOPS) {
         D.sop_summary.forEach((s, i) => {
@@ -2506,7 +2506,7 @@ function _fillExcelData(wb: ExcelJS.Workbook) {
         });
     }
 
-    // Mesures
+    // Measures
     const wsM = wb.getWorksheet("5a-Mesures");
     if (wsM) {
         D.measures.forEach((m, i) => {
@@ -2526,7 +2526,7 @@ function _fillExcelData(wb: ExcelJS.Workbook) {
         });
     }
 
-    // Résiduels
+    // Residuals
     const wsR = wb.getWorksheet("5b-Risques Résiduels");
     if (wsR) {
         D.residuals.forEach((r_, i) => {
@@ -2537,7 +2537,7 @@ function _fillExcelData(wb: ExcelJS.Workbook) {
         });
     }
 
-    // Masquer le socle non utilisé
+    // Hide the unused baseline
     const hideSheet = D.socle_type === "iso" ? "1d-Socle ANSSI" : "1d-Socle ISO 27001";
     const wsHide = wb.getWorksheet(hideSheet);
     if (wsHide) wsHide.state = "hidden";
@@ -2562,11 +2562,11 @@ async function importExcel(event: Event) {
 }
 
 function _cv(cell: any): any {
-    // Retourne la valeur d'une cellule ExcelJS (ignore formules)
+    // Return an ExcelJS cell value (ignores formulas)
     if (!cell || cell.value === null || cell.value === undefined) return "";
     const v = cell.value;
     if (typeof v === "object" && v !== null) {
-        if (v.result !== undefined) return v.result; // formule avec résultat caché
+        if (v.result !== undefined) return v.result; // formula with a cached result
         if (v.richText) return v.richText.map((r: any) => r.text).join("");
         return "";
     }
@@ -2574,7 +2574,7 @@ function _cv(cell: any): any {
 }
 
 function _readExcelData(wb: ExcelJS.Workbook) {
-    // Contexte
+    // Context
     const wsSynth = wb.getWorksheet("Synthèse");
     if (wsSynth) {
         const keys = ["societe","date","analyste","reglementation","socle","commentaires"];
@@ -2582,7 +2582,7 @@ function _readExcelData(wb: ExcelJS.Workbook) {
         keys.forEach((k, i) => { D.context[k] = _cv(wsSynth.getCell(4+i, 3)); });
     }
 
-    // Gravité
+    // Gravity
     const wsGrav = wb.getWorksheet("0-Échelle Gravité");
     D.gravity_scale = [];
     D.risk_matrix = [];
@@ -2606,7 +2606,7 @@ function _readExcelData(wb: ExcelJS.Workbook) {
         }
     }
 
-    // Lecture générique par mapping
+    // Generic read through a mapping
     function readSheet(name: string, headerRow: number, maxRows: number, colMap: Record<string, number>): any[] {
         const ws = wb.getWorksheet(name);
         if (!ws) return [];
@@ -2632,7 +2632,7 @@ function _readExcelData(wb: ExcelJS.Workbook) {
     D.socle_anssi = readSheet("1d-Socle ANSSI", 4, 42, {num:1,thematique:2,mesure:3,conformite:4,ecart:6,mesures_prevues:8});
     D.socle_iso = readSheet("1d-Socle ISO 27001", 4, 93, {ref:1,theme:2,mesure:3,applicable:4,conformite:5,ecart:7,mesures_prevues:9});
 
-    // Déterminer type socle
+    // Determine the baseline type
     const wsAnssi = wb.getWorksheet("1d-Socle ANSSI");
     D.socle_type = (wsAnssi && wsAnssi.state === "hidden") ? "iso" : "anssi";
 
@@ -2663,10 +2663,10 @@ function _readExcelData(wb: ExcelJS.Workbook) {
         D.ov_list = Object.entries(ovSeen).sort().map(([id,nom]) => ({id,nom}));
     }
 
-    // Écosystème
+    // Ecosystem
     D.eco = readSheet("3c-Mesures Écosystème", 4, 30, {pp_id:1,mesures_existantes:5,mesures_complementaires:6,categorie:7,dep_resid:8,pen_resid:9,mat_resid:10,conf_resid:11});
 
-    // SOP détail (ne stoppe pas sur ID vide)
+    // SOP detail (does not stop on an empty ID)
     D.sop_detail = [];
     const wsSOP = wb.getWorksheet("4a-Scénarios Opérationnels");
     if (wsSOP) {
@@ -2688,7 +2688,7 @@ function _readExcelData(wb: ExcelJS.Workbook) {
     D.sop_summary = readSheet("4b-Synthèse SOP", 4, 20, {sop:1,ss:2});
     D.measures = readSheet("5a-Mesures", 4, 50, {id:1,mesure:2,origine:3,type:4,sop:5,phase:6,effet:7,ref_socle:8,responsable:9,echeance:10,cout:11,statut:12});
 
-    // Résiduels
+    // Residuals
     D.residuals = [];
     const wsR = wb.getWorksheet("5b-Risques Résiduels");
     if (wsR) {
@@ -2707,9 +2707,9 @@ function _readExcelData(wb: ExcelJS.Workbook) {
 // ═══════════════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════════════
-// S'assurer que toutes les clés existent (protection chargement JSON)
+// Ensure every key exists (JSON loading protection)
 function ensureKeys() {
-    // ── 1. Clés racine manquantes ──
+    // ── 1. Missing root keys ──
     const defaults: Record<string, unknown> = {
         context: {societe:"",date:"",analyste:"",reglementation:"",socle:"",commentaires:""},
         gravity_scale: [], risk_matrix: [],
@@ -2724,13 +2724,13 @@ function ensureKeys() {
         if (!(k in D)) D[k] = v;
     }
 
-    // ── 2. Context : champs manquants ──
+    // ── 2. Context: missing fields ──
     const ctxDefaults: Record<string, string> = {societe:"",objet_etude:"",date:"",analyste:"",reglementation:"",socle:"",commentaires:"",date_precedente:"",evolutions:""};
     for (const [k, v] of Object.entries(ctxDefaults)) {
         if (!(k in D.context)) D.context[k] = v;
     }
 
-    // ── 3. Garantir les champs de chaque item dans les tableaux ──
+    // ── 3. Guarantee each item's fields inside the arrays ──
     const fieldDefs: Record<string, Record<string, unknown>> = {
         vm: {id:"",nom:"",nature:"",description:"",responsable:""},
         bs: {id:"",nom:"",type:"",vm:"",localisation:"",proprietaire:""},
@@ -2758,7 +2758,7 @@ function ensureKeys() {
         });
     }
 
-    // ── 4. Gravité : champs d'impact ──
+    // ── 4. Gravity: impact fields ──
     const impactKeys = ["impact_financier","impact_reputation","impact_reglementaire","impact_donnees_perso","impact_operationnel"];
     D.gravity_scale.forEach(g => {
         if (!("niveau" in g)) (g as any).niveau = "";
@@ -2767,11 +2767,11 @@ function ensureKeys() {
         for (const ik of impactKeys) if (!(ik in g)) g[ik] = "";
     });
 
-    // ── 4b. Socles ANSSI / ISO : re-seed depuis EBIOS_INIT_DATA si vide ──
-    // Un JSON sauvegardé sur une ancienne version peut avoir socle_anssi: []
-    // (ou absent) — recharger les 42 mesures ANSSI / 93 ISO pré-peuplées et
-    // fusionner les valeurs (conformite / ecart / mesures_prevues) des entrées
-    // déjà présentes par num/ref.
+    // ── 4b. ANSSI / ISO baselines: re-seed from EBIOS_INIT_DATA if empty ──
+    // A JSON saved by an older version may have socle_anssi: []
+    // (or missing) — reload the 42 pre-populated ANSSI / 93 ISO measures and
+    // merge the values (conformite / ecart / mesures_prevues) of the entries
+    // already present, matched by num/ref.
     const _seedSocle = (key: "socle_anssi" | "socle_iso", idCol: string) => {
         const init = (window.EBIOS_INIT_DATA && window.EBIOS_INIT_DATA[key]) || [];
         if (!init.length) return;
@@ -2791,14 +2791,14 @@ function ensureKeys() {
     _seedSocle("socle_anssi", "num");
     _seedSocle("socle_iso", "ref");
 
-    // ── 6. Migration : anciens formats ──
-    // 5a. SR/OV : si sr_list/ov_list sont vides mais srov existe, les reconstituer
+    // ── 6. Migration: legacy formats ──
+    // 5a. SR/OV: if sr_list/ov_list are empty but srov exists, rebuild them
     if (D.srov.length > 0 && D.sr_list.length === 0) {
         const srSeen: Record<string, boolean> = {}, ovSeen: Record<string, boolean> = {};
         D.srov.forEach(s => {
             if (s.sr_id && !(s.sr_id in srSeen)) {
                 srSeen[s.sr_id] = true;
-                // Chercher le nom : sr_nom, ou extraire depuis "SR-01 - Description"
+                // Look for the name: sr_nom, or extract it from "SR-01 - Description"
                 let nom = s.sr_nom || "";
                 if (!nom && s.sr) { const m = s.sr.match(/^SR-\d+\s*-\s*(.+)/); if (m) nom = m[1]; }
                 D.sr_list.push({id: s.sr_id, nom: nom});
@@ -2811,12 +2811,12 @@ function ensureKeys() {
             }
         });
     }
-    // Compléter sr_list/ov_list depuis sr_list entries ayant une description mais pas de nom
+    // Complete sr_list/ov_list from sr_list entries that have a description but no name
     (D.sr_list||[]).forEach(s => { if (!s.nom && s.description) s.nom = s.description; });
     (D.ov_list||[]).forEach(o => { if (!o.nom && o.description) o.nom = o.description; });
 
-    // 5b. SR/OV : migration des formats alternatifs du skill
-    // Format skill : srov[].sr = "SR-01 - Description" → srov[].sr_id = "SR-01"
+    // 5b. SR/OV: migration of the skill's alternative formats
+    // Skill format: srov[].sr = "SR-01 - Description" → srov[].sr_id = "SR-01"
     D.srov.forEach(s => {
         if (!s.sr_id && s.sr) {
             const m = s.sr.match(/^(SR-\d+)/);
@@ -2828,25 +2828,25 @@ function ensureKeys() {
         }
         if (!s.couple && s.sr_id && s.ov_id) s.couple = s.sr_id + "/" + s.ov_id;
     });
-    // Format skill : bs[].vm_associees → bs[].vm
+    // Skill format: bs[].vm_associees → bs[].vm
     D.bs.forEach(b => {
         if (!b.vm && b.vm_associees) b.vm = b.vm_associees;
     });
-    // Format skill : pp[].bs_concernes → pp[].bs
+    // Skill format: pp[].bs_concernes → pp[].bs
     D.pp.forEach(p => {
         if (!p.bs && p.bs_concernes) p.bs = p.bs_concernes;
     });
 
-    // 5c. Mesures : ancien format sans "origine"
+    // 5c. Measures: legacy format without "origine"
     D.measures.forEach(m => {
         if (!m.origine && m.type && !["Prévention","Détection","Réaction"].includes(m.type)) {
-            // Ancien format : type contenait l'origine
+            // Legacy format: type carried the origin
             m.origine = m.type;
             m.type = "";
         }
     });
 
-    // 5c. SOP summary : reconstituer depuis sop_detail si vide
+    // 5c. SOP summary: rebuild from sop_detail if empty
     if (D.sop_summary.length === 0 && D.sop_detail.length > 0) {
         const seen = new Set();
         D.sop_detail.forEach(s => {
@@ -2857,7 +2857,7 @@ function ensureKeys() {
         });
     }
 
-    // 5d. Matrice de risque par défaut si vide
+    // 5d. Default risk matrix if empty
     if (D.risk_matrix.length === 0) {
         var _F = t("ebios.risk.faible"), _M = t("ebios.risk.moyen"), _E = t("ebios.risk.eleve");
         var n = D.gravity_scale.length || 4;
@@ -2882,7 +2882,7 @@ function ensureKeys() {
         D.risk_matrix = _matrices[n] || _matrices[4];
     }
 
-    // 5e. PP : deviner la catégorie depuis le type si absente
+    // 5e. PP: guess the category from the type if missing
     D.pp.forEach(p => {
         if (!p.categorie && p.type) {
             const t = p.type.toLowerCase();
@@ -2892,13 +2892,13 @@ function ensureKeys() {
         }
     });
 
-    // 5f. Eco : initialiser D/P/M/C résiduels depuis les PP si absents
+    // 5f. Eco: initialize the residual D/P/M/C from the PP if missing
     D.eco.forEach(e => {
         const ppId = (e.pp_id || "").split(" - ")[0].trim();
         const pp = D.pp.find(p => p.id === ppId);
-        // Migration ancien format : menace_resid → supprimer
+        // Legacy format migration: menace_resid → remove
         if ("menace_resid" in e) delete e.menace_resid;
-        // Initialiser les valeurs résiduelles depuis les PP si vides
+        // Initialize the residual values from the PP if empty
         if (pp) {
             if (!e.dep_resid && e.dep_resid !== 0) e.dep_resid = pp.dependance || "";
             if (!e.pen_resid && e.pen_resid !== 0) e.pen_resid = pp.penetration || "";
@@ -2907,13 +2907,13 @@ function ensureKeys() {
         }
     });
 
-    // 5g. Mesures : normaliser les statuts
+    // 5g. Measures: normalize the statuses
     const statutMap: Record<string, string> = {"Planifié":"En cours", "À lancer":"À étudier", "A lancer":"À étudier", "A étudier":"À étudier"};
     D.measures.forEach(m => {
         if (m.statut && statutMap[m.statut]) m.statut = statutMap[m.statut];
     });
 
-    // 5f. Eco : ancien champ "mesure" → "mesures_existantes"
+    // 5f. Eco: legacy field "mesure" → "mesures_existantes"
     D.eco.forEach(e => {
         if (e.mesure && !e.mesures_existantes) {
             e.mesures_existantes = e.mesure;
@@ -2937,12 +2937,12 @@ try {
         setTimeout(function() { selectPanel(_hashPanel); }, 200);
     }
     _applyStaticTranslations();
-    // Masquer "Enregistrer" si le File System Access API n'est pas disponible
+    // Hide "Enregistrer" if the File System Access API is unavailable
     if (!window.showSaveFilePicker && !window.showOpenFilePicker) {
         const el = document.getElementById("menu-item-save");
         if (el) el.style.display = "none";
     }
-    // Proposer la restauration de session si des données existent dans localStorage
+    // Offer session restore if data exists in localStorage
     _checkAutoSaveBanner();
 } catch (e: any) {
     console.error("Erreur au rendu initial:", e);
@@ -2950,8 +2950,8 @@ try {
 ${esc(e.stack||"")}</pre></section>`;
 }
 
-// ===== Synthèse managériale (PPTX) + Rapport de sortie EBIOS RM (Word) =====
-// Porté depuis backend-clients/demo-docker/risk (source de vérité).
+// ===== Managerial synthesis (PPTX) + EBIOS RM output report (Word) =====
+// Ported from backend-clients/demo-docker/risk (source of truth).
 
 function _synthesisData() {
     const sopVop = _computeSOPVop().sopVop;
@@ -3098,14 +3098,14 @@ async function exportSynthesisPPTX() {
         const socleRef = (D.socle_type === "iso") ? t("ebios.synth.socle_iso") : t("ebios.synth.socle_anssi");
         const socleMeasures = (D.measures || []).filter(function(m) { return (m.origine || "") === "Socle"; }).length;
 
-        // 1. Titre
+        // 1. Title
         let s = pptx.addSlide();
         s.background = { color: ACCENT };
         s.addText(t("ebios.synth.export_title") || "Synthèse managériale des risques", { x: 0.5, y: 2.6, w: W - 1, h: 1, fontSize: 34, bold: true, color: "FFFFFF", align: "center" });
         s.addText(societe, { x: 0.5, y: 3.7, w: W - 1, h: 0.6, fontSize: 22, color: "DCE6F2", align: "center" });
         s.addText((t("ebios.synth.export_subtitle") || "Analyse EBIOS RM") + " · " + dateStr, { x: 0.5, y: 4.4, w: W - 1, h: 0.5, fontSize: 14, color: "9FB3C8", align: "center" });
 
-        // 2. Périmètre et socle de sécurité
+        // 2. Scope and security baseline
         s = pptx.addSlide(); header(s, t("ebios.synth.scope_title") || "Périmètre et socle de sécurité");
         s.addText([
             { text: t("ebios.synth.scope_perimeter") + "  ", options: { bold: true, color: "1E3A5F" } }, { text: objet + "\n\n", options: { color: "374151" } },
@@ -3121,7 +3121,7 @@ async function exportSynthesisPPTX() {
         s.addText(t("ebios.synth.scope_measures", { n: socleMeasures }), { x: 0.6, y: 5.2, w: W - 1.2, h: 0.8, fontSize: 15, color: "374151", align: "center" });
         s.addNotes(t("ebios.synth.scope_measures", { n: socleMeasures }));
 
-        // 3. Synthèse : risques initiaux vs résiduels + socle / mesures
+        // 3. Synthesis: initial vs residual risks + baseline / measures
         s = pptx.addSlide(); header(s, t("ebios.synth.exec_summary") || "Synthèse managériale");
         s.addText(t("ebios.synth.intro_synthese"), { x: 0.5, y: 0.78, w: W - 1, h: 0.55, fontSize: 13, color: "374151" });
         const distRow = function(d: { eleve: number; moyen: number; faible: number }, y: number, label: string) {
@@ -3138,13 +3138,13 @@ async function exportSynthesisPPTX() {
         s.addText((t("ebios.synth.socle_avg") || "Conformité du socle") + " : " + sd.socle.avg + "%   ·   " + t("ebios.misc.measures_todo_count", { todo: sd.measures.toDoCount, total: sd.measures.total }), { x: 1, y: 5.5, w: W - 2, h: 0.5, fontSize: 15, align: "center", color: "374151" });
         s.addNotes(t("ebios.synth.intro_synthese"));
 
-        // 3. Cartographie initiale (avant traitement)
+        // 3. Initial cartography (before treatment)
         matrixSlide(t("ebios.synth.map_initial") || "Cartographie initiale", function(sp: EbSynthPos) { return sp.vInit; }, t("ebios.synth.intro_carto_init"), t("ebios.synth.reading_matrix")).addNotes(t("ebios.synth.intro_carto_init"));
 
-        // 4. Cartographie résiduelle (après traitement)
+        // 4. Residual cartography (after treatment)
         matrixSlide(t("ebios.synth.map_residual") || "Cartographie résiduelle", function(sp: EbSynthPos) { return sp.vResid; }, t("ebios.synth.intro_carto_resid"), t("ebios.synth.reading_matrix")).addNotes(t("ebios.synth.intro_carto_resid"));
 
-        // 5. Top risques à traiter (résiduels non faibles, triés par sévérité)
+        // 5. Top risks to treat (non-low residuals, sorted by severity)
         let topRows = sd.rows.slice().sort(function(a: EbSynthRow, b: EbSynthRow) { return (sev(b.riskResid) - sev(a.riskResid)) || (sev(b.riskInit) - sev(a.riskInit)); });
         const prioritaires = topRows.filter(function(r: EbSynthRow) { return sev(r.riskResid) >= 2; });
         if (prioritaires.length) topRows = prioritaires;
@@ -3153,12 +3153,12 @@ async function exportSynthesisPPTX() {
             topRows.map(function(r: EbSynthRow) { return [r.id, r.scenario, riskCell(r.riskInit), riskCell(r.riskResid)]; }),
             t("ebios.synth.intro_top_risks"), 15).addNotes(t("ebios.synth.intro_top_risks"));
 
-        // 6. Plan de traitement (mesures à mettre en œuvre)
+        // 6. Treatment plan (measures to implement)
         tableSlide(t("ebios.synth.measures_title") || "Plan de traitement", [t("ebios.synth.col_id"), t("ebios.synth.col_mesure"), t("ebios.synth.col_origine"), t("ebios.synth.col_responsable"), t("ebios.synth.col_echeance"), t("ebios.synth.col_statut")],
             sd.measures.todo.map(function(m: EbiosMeasure) { return [m.id, m.mesure, m.origine || "", m.responsable || "", m.echeance || "", m.statut || ""]; }),
             t("ebios.synth.intro_pacs"), 12).addNotes(t("ebios.synth.intro_pacs"));
 
-        // 7. Acceptation des risques résiduels
+        // 7. Residual risk acceptance
         s = pptx.addSlide(); header(s, t("ebios.synth.acceptance_title") || "Acceptation des risques résiduels");
         s.addText(t("ebios.synth.acceptance_text", { eleve: dResid.eleve, moyen: dResid.moyen, faible: dResid.faible }), { x: 0.6, y: 1.0, w: W - 1.2, h: 1.1, fontSize: 16, color: "374151" });
         s.addText(t("ebios.synth.acceptance_note"), { x: 0.6, y: 2.2, w: W - 1.2, h: 1.1, fontSize: 14, color: "374151" });
@@ -3176,7 +3176,7 @@ async function exportSynthesisPPTX() {
     }
 }
 
-// ── Rapport de sortie EBIOS RM (Word / docxtemplater) ───────────
+// ── EBIOS RM output report (Word / docxtemplater) ───────────────
 function _loadDocxLibs() {
     return _loadScript("js/vendor/pizzip.min.js", { onStart: () => showStatus(t("ebios.status.loading_docx")) })
         .then(() => _loadScript("js/vendor/docxtemplater.js"))
@@ -3251,7 +3251,7 @@ function _riskMatrixSVG(getV: (sp: EbSynthPos) => number): string | null {
 }
 
 // Build the risk *acceptability* matrix (Annexe B): the empty colored grid
-// (gravité × vraisemblance → niveau), no scenarios placed. Same renderer as the
+// (gravity × likelihood → level), no scenarios placed. Same renderer as the
 // cartographies, just an empty grid so each cell shows only its risk level color.
 function _riskMatrixRefSVG() {
     if (typeof ctRenderMatrix !== "function") return null;
@@ -3285,7 +3285,7 @@ function _riskMatrixRefSVG() {
     return m[0].replace("</svg>", overlay + "</svg>");
 }
 
-// Capture the report images (écosystème cartographies + risk matrices) as PNG
+// Capture the report images (ecosystem cartographies + risk matrices) as PNG
 // buffers, reusing the app's own SVG renderers. Each capture is isolated so one
 // failure doesn't drop the others; missing ones fall back to a blank image.
 async function _reportImages() {
@@ -3319,7 +3319,7 @@ async function _reportImages() {
     return imgs;
 }
 
-// Resolve the report's "Rédacteur": logged-in user (backend suite) → analyste →
+// Resolve the report's "Rédacteur": logged-in user (backend suite) → analyst →
 // remembered name → prompt (standalone frontend fallback, cached in localStorage).
 function _resolveRedacteur() {
     const u = window._currentUser;
@@ -3357,7 +3357,7 @@ function _reportData() {
         }
         if (x.sop) (stepsBySop[x.sop] = stepsBySop[x.sop] || []).push({ phase: S(_attackLabel(x.phase)), action: S(x.action), controle: S(x.controle), efficacite: S(x.efficacite) });
     });
-    // Resolve SS-linked couples (SR/OV) and événements redoutés to readable labels.
+    // Resolve SS-linked couples (SR/OV) and feared events to readable labels.
     const coupleTxt: Record<string, string> = {}; (D.srov || []).forEach(x => { coupleTxt[x.couple] = S(srName[x.sr_id] || x.sr_id) + " / " + S(ovName[x.ov_id] || x.ov_id); });
     const erEvt: Record<string, string> = {}; (D.er || []).forEach(x => { erEvt[x.id] = S(x.evenement); });
     const _idsFrom = (str: unknown) => String(str || "").split(",").map(tok => { tok = tok.trim(); if (!tok) return ""; const k = tok.indexOf(" - "); return (k >= 0 ? tok.slice(0, k) : tok).trim(); }).filter(Boolean);

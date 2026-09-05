@@ -290,7 +290,7 @@ def recalculate_all(data: dict) -> dict:
     _recalc_socle(data.get("socle_anssi") or [])
     _recalc_socle(data.get("socle_iso") or [])
 
-    # ── 5. Eco map: menace résiduelle ────────────────────────────
+    # ── 5. Eco map: residual threat ──────────────────────────────
     eco = data.get("eco") or []
     for e in eco:
         menace = compute_menace(

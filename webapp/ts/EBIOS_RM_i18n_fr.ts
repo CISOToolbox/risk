@@ -1,6 +1,6 @@
 // EBIOS RM — French translations
 // ═══════════════════════════════════════════════════════════════════════
-// EBIOS RM — Traductions FR / EN
+// EBIOS RM — FR / EN translations
 // ═══════════════════════════════════════════════════════════════════════
 
 _registerTranslations("fr", {
@@ -265,7 +265,7 @@ _registerTranslations("fr", {
     "ebios.col.socle_priorite": "Priorité",
     "ebios.col.socle_mesures_prevues": "Mesures prévues",
 
-    // ── Column headers: Référentiels complémentaires ──
+    // ── Column headers: Complementary frameworks ──
 
     // ── Column headers: SR/OV ──
     "ebios.col.srov_couple": "Couple",
@@ -327,7 +327,7 @@ _registerTranslations("fr", {
     "ebios.col.sop_mesure_proposee": "Mesure(s) proposée(s)",
     "ebios.col.sop_choose": "— choisir",
 
-    // ── Efficacite labels ──
+    // ── Effectiveness labels ──
     "ebios.eff.absent": "Absent",
     "ebios.eff.partiel": "Partiel",
     "ebios.eff.efficace": "Efficace",
@@ -369,7 +369,7 @@ _registerTranslations("fr", {
     "ebios.m.type_detection": "Détection",
     "ebios.m.type_reaction": "Réaction",
 
-    // ── Measure statuts ──
+    // ── Measure statuses ──
     "ebios.m.statut_termine": "Terminé",
     "ebios.m.statut_en_cours": "En cours",
     "ebios.m.statut_a_etudier": "À étudier",
@@ -470,7 +470,7 @@ _registerTranslations("fr", {
     "ebios.misc.partiel_label": "Partiel",
     "ebios.misc.applique_label": "Appliqué",
 
-    // ── Synthesis évolution ──
+    // ── Synthesis evolution ──
     "ebios.synth.col_ss": "SS",
     "ebios.synth.col_scenario": "Scenario",
     "ebios.synth.col_risque_initial": "Risque initial",
@@ -544,7 +544,7 @@ _registerTranslations("fr", {
     "ebios.m.renforcement_socle": "Renforcement mesure socle {ref}",
     "ebios.m.mesure_eco_pour": "Mesure écosystème pour {pp}",
 
-    // ── Référentiels catalog descriptions (FR) ──
+    // ── Frameworks catalog descriptions (FR) ──
     "ebios.ref.lpm.desc": "Loi de Programmation Militaire (France) — règles de sécurité des arrêtés sectoriels ANSSI pour OIV",
     "ebios.ref.loi0520.desc": "Loi marocaine sur la cybersécurité — obligations des organismes soumis",
     "ebios.ref.dora.desc": "Digital Operational Resilience Act (UE 2022/2554) — résilience numérique du secteur financier",

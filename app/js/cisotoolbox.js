@@ -4,30 +4,30 @@
 // Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
 // -----------------------------------------------------------------------------
 /**
- * CISO Toolbox — Bibliothèque JS commune
+ * CISO Toolbox — shared JS library
  *
- * Chaque application doit définir avant de charger ce fichier :
+ * Every application must define, before loading this file:
  *   window.CT_CONFIG = {
- *     autosaveKey: "compliance_autosave",  // clé localStorage
- *     initDataVar: "COMPLIANCE_INIT_DATA", // variable globale des données initiales
- *     refNamespace: "COMPLIANCE_REF",      // namespace des référentiels lazy
- *     descNamespace: "COMPLIANCE_DESCRIPTIONS", // namespace des descriptions
- *     label: "évaluation",                 // label pour les messages ("Nouvelle évaluation")
- *     filePrefix: "Conformite",            // préfixe par défaut du nom de fichier
+ *     autosaveKey: "compliance_autosave",  // localStorage key
+ *     initDataVar: "COMPLIANCE_INIT_DATA", // global holding the initial data
+ *     refNamespace: "COMPLIANCE_REF",      // namespace of the lazy frameworks
+ *     descNamespace: "COMPLIANCE_DESCRIPTIONS", // namespace of the descriptions
+ *     label: "évaluation",                 // label used in messages ("Nouvelle évaluation")
+ *     filePrefix: "Conformite",            // default file-name prefix
  *     getSociete: function() { return D.meta?.societe || ""; },
  *     getDate: function() { return D.meta?.date_evaluation || ""; }
  *   };
  *
- * Et les globales :
- *   D                  — objet de données
- *   REFERENTIELS_META  — catalogue des référentiels
- *   _ASSET_BASE        — préfixe des fichiers assets
- *   ensureKeys()       — migration/init des données (app-specific)
- *   renderAll()        — rendu complet (app-specific)
+ * And the globals:
+ *   D                  — data object
+ *   REFERENTIELS_META  — framework catalog
+ *   _ASSET_BASE        — asset file prefix
+ *   ensureKeys()       — data migration/init (app-specific)
+ *   renderAll()        — full render (app-specific)
  */
 var _CT = {};
 function _ctInit() { _CT = window.CT_CONFIG || {}; }
-// Appelé automatiquement au premier besoin
+// Called automatically on first use
 function _ct() { if (!_CT.autosaveKey)
     _ctInit(); return _CT; }
 // ═══════════════════════════════════════════════════════════════════════
@@ -646,11 +646,11 @@ function _toggleSidebarMobile() {
     var nav = document.querySelector(".ct-rail, .sidebar");
     if (!nav)
         return;
-    // Le même bouton sert les deux mises en page : sous 768px le rail est un
-    // tiroir qui se déplie (.open), au-dessus il se replie en largeur
-    // (.collapsed). Sans cette distinction le bouton bascule une classe que le
-    // média courant ignore — c'est ce qui rendait le menu impossible à masquer
-    // sur bureau, où le bouton était de toute façon caché par le CSS.
+    // The same button serves both layouts: below 768px the rail is a drawer
+    // that slides open (.open), above it collapses in width (.collapsed).
+    // Without that distinction the button toggles a class the current media
+    // query ignores — which is what made the menu impossible to hide on
+    // desktop, where the button was hidden by CSS anyway.
     if (window.matchMedia("(max-width: 768px)").matches)
         nav.classList.toggle("open");
     else
@@ -791,13 +791,12 @@ function _setupTable(tableId, defaultHidden) {
             }
         }
     }
-    // Au 1er rendu, on initialise l'ensemble masqué avec les colonnes masquées
-    // par défaut ; ensuite _userHiddenCols[tableId] est l'UNIQUE source de vérité
-    // (hideCol ajoute, showCol retire). Ainsi les masquages par défaut ET manuels
-    // persistent au re-render — et une colonne par défaut volontairement
-    // ré-affichée le reste aussi. (Avant : `|| defaultHidden` faisait que le 1er
-    // masquage manuel court-circuitait les colonnes masquées par défaut, qui
-    // réapparaissaient — BUG-15.)
+    // On the first render the hidden set is seeded with the default-hidden
+    // columns; from then on _userHiddenCols[tableId] is the ONLY source of
+    // truth (hideCol adds, showCol removes). Default AND manual hiding both
+    // survive a re-render — and a default column deliberately shown again
+    // stays shown. (Before: `|| defaultHidden` meant the first manual hide
+    // short-circuited the default-hidden columns, which reappeared — BUG-15.)
     if (_userHiddenCols[tableId] === undefined) {
         _userHiddenCols[tableId] = (defaultHidden || []).slice();
     }
@@ -835,10 +834,10 @@ function showCol(tableId, col) {
         return;
     table.querySelectorAll('[data-col="' + col + '"]').forEach(function (el) { el.style.display = ""; });
     if (_userHiddenCols[tableId]) {
-        // On NE supprime PAS la clé même vide : une liste vide signifie
-        // « initialisé, rien de masqué » (l'utilisateur a tout ré-affiché).
-        // La supprimer ferait re-masquer les colonnes par défaut au prochain
-        // _setupTable (cf. BUG-15).
+        // Do NOT drop the key even when empty: an empty list means
+        // "initialised, nothing hidden" (the user showed every column again).
+        // Dropping it would re-hide the default columns on the next
+        // _setupTable (see BUG-15).
         _userHiddenCols[tableId] = _userHiddenCols[tableId].filter(function (c) { return c !== col; });
     }
     _updateColsPopup(tableId);
@@ -943,11 +942,11 @@ function _stopResize() {
 function _loadAsset(filename, cb) {
     var existing = document.querySelector('script[data-asset="' + filename + '"]');
     if (existing) {
-        // "1" = chargé, "err" = échec définitif (404…) : dans les deux cas le
-        // script a FINI — on rappelle cb() tout de suite. Réattacher load/error
-        // à un script déjà terminé ne redéclenche jamais rien : le callback
-        // serait perdu et tout flux qui l'attend (import → _ensureFramework →
-        // _initDataAndRender) resterait bloqué sans erreur.
+        // "1" = loaded, "err" = permanent failure (404…): either way the
+        // script has FINISHED — call cb() right away. Re-attaching load/error
+        // to an already finished script never fires again: the callback would
+        // be lost and any flow waiting on it (import → _ensureFramework →
+        // _initDataAndRender) would hang with no error.
         if (existing.dataset.loaded)
             cb();
         else {
@@ -1116,8 +1115,8 @@ function _getIsoDesc(ref) {
 // ═══════════════════════════════════════════════════════════════════════
 function _sliderInput(el) {
     var v = parseInt(el.value);
-    // Même échelle que le rendu statique du socle : low / medium (= badge
-    // "Partiel") / critical — grade solid, adapté aux jauges.
+    // Same scale as the core static rendering: low / medium (= "Partiel"
+    // badge) / critical — solid grade, suited to gauges.
     var c = v >= 80 ? "var(--ct-low)" : v > 0 ? "var(--ct-medium)" : "var(--ct-critical)";
     var lbl = el.getAttribute("data-lbl");
     var l = lbl ? document.getElementById(lbl) : null;
@@ -1130,8 +1129,8 @@ function _sliderInput(el) {
 // ═══════════════════════════════════════════════════════════════════════
 // TOOLBAR & SIDEBAR
 // ═══════════════════════════════════════════════════════════════════════
-// isError est ignoré ici mais consommé par les overrides backend
-// (vendor_api & co redéfinissent showStatus avec un style d'erreur).
+// isError is ignored here but consumed by the backend overrides
+// (vendor_api & co redefine showStatus with an error style).
 function showStatus(msg, isError) {
     var el = document.getElementById("status-msg");
     if (el) {
@@ -1311,7 +1310,7 @@ function _isEncrypted(buffer) {
     var h9 = new TextDecoder().decode(buffer.slice(0, 9));
     return h6 === "CT_ENC" || h9 === "EBIOS_ENC";
 }
-// Prompt password (utilise le dialog #pwd-overlay s'il existe, sinon prompt natif)
+// Prompt for a password (uses the #pwd-overlay dialog if present, else the native prompt)
 function _promptPassword(title, confirmMode) {
     var overlay = document.getElementById("pwd-overlay");
     if (!overlay) {
@@ -1564,9 +1563,9 @@ function _ctSyncThemeIcon() {
     });
 }
 // ── Language toggle (FR ⇄ EN) — reuses i18n switchLang ──
-// Ouvre (ou referme) un menu déroulant listant les langues disponibles.
-// Le bouton déclencheur porte data-click="ct_toggleLang" ; il est masqué au
-// démarrage s'il n'y a qu'une seule langue déployée (cf. i18n.ts).
+// Opens (or closes) a dropdown menu listing the available languages.
+// The trigger button carries data-click="ct_toggleLang"; it is hidden at
+// startup when a single language is deployed (see i18n.ts).
 function ct_toggleLang() {
     var langs = (typeof _availableLangs === "function") ? _availableLangs() : ["en"];
     if (langs.length <= 1)

@@ -12,8 +12,8 @@
  *
  * Load AFTER cisotoolbox.js and the module's *_api.js.
  *
- * Source canonique du portage TS : demo-docker/risk/app/js/directory_picker.js
- * (identique ×5 : risk, vendor, compliance, asset, access).
+ * Canonical source of the TS port: demo-docker/risk/app/js/directory_picker.js
+ * (identical ×5: risk, vendor, compliance, asset, access).
  */
 (function () {
     "use strict";
@@ -62,7 +62,7 @@
         }
         var uid = "dp" + (_dpCounter++);
         var args = JSON.parse((argsJson || "[]").replace(/&#39;/g, "'"));
-        // FEAT-15 option B: identity creation is centralised in Access. "+ Créer"
+        // FEAT-15 option B: identity creation is centralised in Access. "+ Create"
         // stays only for a writable LOCAL directory (standalone), not the Pilot hub.
         var canCreate = _dirLocalWritable;
         var display = window._dirResolve ? window._dirResolve(currentValue) : (currentValue || "");

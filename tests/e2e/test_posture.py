@@ -100,10 +100,10 @@ def test_replicated_frontend_assets_keep_their_generated_header(client):
         pytest.skip("this module serves no shared frontend asset")
     for path in shared:
         head = client.get(path).text[:400]
-        # Deux generateurs ecrivent ces fichiers, avec deux formulations :
-        # ts-build.sh ("GENERATED from shared/") et propagate.py ("REPLICATED
-        # from the private shared repository"). N'en attendre qu'une revenait a
-        # ne rien verifier — 176 fichiers portent la seconde, 3 la premiere.
+        # Two generators write these files, with two wordings: ts-build.sh
+        # ("GENERATED from shared/") and propagate.py ("REPLICATED from the
+        # private shared repository"). Expecting only one of them amounted to
+        # checking nothing — 176 files carry the second, 3 the first.
         assert any(b in head for b in BANNERS), (
             "%s carries no replication banner - it was probably hand-edited" % path
         )
@@ -117,9 +117,9 @@ def test_auth_providers_reports_the_expected_posture(client):
     assert r.status == 200, r.text[:300]
     providers = r.json()
     assert "auth_enabled" in providers
-    # Chaque posture annonce son propre drapeau : "standalone" pour un module
-    # deploye seul, "central" derriere Pilot dans la suite. Tester un booleen
-    # sur une cle unique ne marchait que d'un cote.
+    # Each posture reports its own flag: "standalone" for a module deployed
+    # alone, "central" behind Pilot in the suite. Testing a boolean on a single
+    # key only worked on one side.
     assert providers.get(POSTURE_FLAG) is True, (
         "deployment is not in the %s posture (providers=%r) - check AUTH_MODE"
         % (POSTURE_FLAG, providers)
@@ -145,10 +145,10 @@ def test_login_rejects_a_wrong_token(anon):
         pytest.skip("instance runs with AUTH_MODE=none")
     r = anon.post("/auth/login/token",
                   {"token": "definitely-not-the-token", "email": "e2e@example.com"})
-    # 429 compte comme un refus : la limitation de debit rejette la tentative.
-    # L'ancienne liste ne la contenait pas, si bien qu'une salve de tests
-    # rapprochee faisait echouer le test sur un comportement correct — et pire,
-    # aurait masque le vrai probleme derriere un faux positif recurrent.
+    # 429 counts as a refusal: rate limiting rejects the attempt. The old list
+    # did not contain it, so a closely spaced burst of tests made the test fail
+    # on correct behaviour — and worse, would have hidden the real problem
+    # behind a recurring false positive.
     assert r.status in (401, 429, 503), "a wrong token was accepted with %s" % r.status
     assert not anon.cookie(MODULE + "_token"), "a session cookie was set for a bad token"
 

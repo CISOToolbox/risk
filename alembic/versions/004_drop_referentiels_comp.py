@@ -1,19 +1,19 @@
 """drop analysis_settings.referentiels_actifs / socle_complementaires
 
-Les référentiels complémentaires ont été ajoutés à Risk avant l'existence du
-module Compliance, qui porte désormais cette fonction. Le dispositif est retiré
-de Risk : chips de sélection, tableau d'exigences, persistance et calcul.
+The complementary frameworks were added to Risk before the Compliance module
+existed; Compliance now carries that function. The mechanism is removed from
+Risk: selection chips, requirements table, persistence and computation.
 
-Deux colonnes disparaissent donc :
+Two columns therefore disappear:
 
-  * `referentiels_actifs`   — la liste des référentiels activés,
-  * `socle_complementaires` — les réponses saisies par exigence.
+  * `referentiels_actifs`   — the list of activated frameworks,
+  * `socle_complementaires` — the answers entered per requirement.
 
-Le downgrade recrée les colonnes vides. Les réponses elles-mêmes ne sont pas
-récupérables : rien d'autre dans le schéma ne les enregistre, la migration est
-donc à sens unique pour les données. Elle a été appliquée alors qu'aucun
-déploiement ne portait une seule réponse renseignée (75 entrées présentes en
-local, toutes vides — de l'échafaudage créé à l'activation d'un référentiel).
+The downgrade recreates the columns empty. The answers themselves are not
+recoverable: nothing else in the schema records them, so the migration is
+one-way for the data. It was applied while no deployment carried a single
+filled-in answer (75 entries present locally, all empty — scaffolding
+created when a framework was activated).
 """
 from __future__ import annotations
 

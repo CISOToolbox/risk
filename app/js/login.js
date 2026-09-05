@@ -5,16 +5,16 @@
 // -----------------------------------------------------------------------------
 /**
  * Login page script — variante MODULES (risk, vendor, compliance, asset,
- * access). Suite mode → redirection vers la page de login Pilot ;
- * standalone → formulaire token.
+ * access). Suite mode → redirect to the Pilot login page;
+ * standalone → token form.
  *
- * NOTE factorisation (migration TS) : login.html ne charge QUE js/login.js
- * (aucun autre <script>), donc aucune factorisation runtime n'est possible
- * entre les 3 variantes sans modifier les HTML (interdit — invariant n°1).
- * Les 3 variantes restent des fichiers autonomes :
- *   login.ts        → modules à formulaire token (×5)
+ * FACTORISATION NOTE (TS migration): login.html loads ONLY js/login.js
+ * (no other <script>), so no runtime factorisation is possible between the
+ * 3 variants without editing the HTML (forbidden — invariant #1).
+ * The 3 variants stay standalone files:
+ *   login.ts        → modules with a token form (×5)
  *   login_oauth.ts  → surface / appsec / watch (OAuth + token)
- *   login_pilot.ts  → pilot (page centrale, gestion ?redirect=)
+ *   login_pilot.ts  → pilot (central page, handles ?redirect=)
  */
 (function () {
     "use strict";

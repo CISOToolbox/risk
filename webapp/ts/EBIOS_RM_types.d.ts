@@ -1,10 +1,10 @@
 /**
- * EBIOS RM — types du modèle de données D + globals d'app.
- * Fichier de types pur (pas d'emit). Formes déduites des usages réels de
+ * EBIOS RM — types of the D data model + app globals.
+ * Pure type file (no emit). Shapes inferred from the actual usages in
  * EBIOS_RM_app.js / EBIOS_RM_ai_assistant.js / EBIOS_RM_catalog.js.
  */
 
-/** Valeur numérique ou champ vide (convention des champs de saisie). */
+/** Numeric value or empty field (input-field convention). */
 type EbNum = number | "";
 
 interface EbiosContext {
@@ -18,7 +18,7 @@ interface EbiosContext {
     date_precedente?: string;
     evolutions?: string;
     contributeurs?: string;
-    /** Option page ER : gravité saisie par catégorie d'impact. */
+    /** ER page option: severity entered per impact category. */
     gravite_par_categorie?: boolean;
     [k: string]: unknown;
 }
@@ -37,7 +37,7 @@ interface EbiosGravityLevel {
 
 interface EbiosRiskMatrixRow {
     g: EbNum;
-    /** Niveaux de risque par vraisemblance V1..V4 (clés canoniques FR). */
+    /** Risk levels per likelihood V1..V4 (canonical FR keys). */
     levels: string[];
 }
 
@@ -56,7 +56,7 @@ interface EbiosBS {
     vm: string;
     localisation: string;
     proprietaire: string;
-    /** Ancien format (skill) — migré vers vm par ensureKeys. */
+    /** Legacy format (skill) — migrated to vm by ensureKeys. */
     vm_associees?: string;
 }
 
@@ -70,7 +70,7 @@ interface EbiosPP {
     maturite: EbNum;
     confiance: EbNum;
     bs: string;
-    /** Ancien format (skill) — migré vers bs par ensureKeys. */
+    /** Legacy format (skill) — migrated to bs by ensureKeys. */
     bs_concernes?: string;
 }
 
@@ -81,7 +81,7 @@ interface EbiosER {
     dict: string;
     impacts: string;
     gravite: EbNum;
-    /** Gravité par catégorie d'impact (option). */
+    /** Severity per impact category (option). */
     gravite_cat?: Record<string, EbNum>;
 }
 
@@ -103,7 +103,7 @@ interface EbiosSROV {
     ressources: EbNum;
     activite: EbNum;
     justification: string;
-    /** Anciens formats (skill) — migrés par ensureKeys. */
+    /** Legacy formats (skill) — migrated by ensureKeys. */
     sr?: string;
     ov?: string;
     sr_nom?: string;
@@ -119,7 +119,7 @@ interface EbiosEco {
     pen_resid: EbNum;
     mat_resid: EbNum;
     conf_resid: EbNum;
-    /** Anciens formats — migrés/supprimés par ensureKeys. */
+    /** Legacy formats — migrated/removed by ensureKeys. */
     mesure?: string;
     menace_resid?: unknown;
 }
@@ -146,7 +146,7 @@ interface EbiosSOPSummary {
 interface EbiosMeasure {
     id: string;
     mesure: string;
-    /** Absent des mesures créées par addSocleMeasure/addEcoMeasure/addSOPMeasure (backfillé par ensureKeys). */
+    /** Absent from measures created by addSocleMeasure/addEcoMeasure/addSOPMeasure (backfilled by ensureKeys). */
     details?: string;
     origine: string;
     type: string;
@@ -167,13 +167,13 @@ interface EbiosResidual {
 }
 
 /**
- * Ligne de socle ANSSI (num/thematique) ou ISO 27001 (ref/theme/applicable).
- * Interface unique pour éviter les unions de tableaux dans renderSocle &co.
+ * ANSSI baseline row (num/thematique) or ISO 27001 row (ref/theme/applicable).
+ * Single interface to avoid array unions in renderSocle & co.
  */
 interface EbiosSocleRow {
-    /** ANSSI : numéro de mesure (1..42). */
+    /** ANSSI: measure number (1..42). */
     num?: EbNum | string;
-    /** ISO : référence Annexe A (A.x.y). */
+    /** ISO: Annex A reference (A.x.y). */
     ref?: string;
     thematique?: string;
     thematique_en?: string;
@@ -191,7 +191,7 @@ interface EbiosSocleRow {
 interface EbiosSrOv {
     id: string;
     nom: string;
-    /** Ancien format — recopié dans nom par ensureKeys. */
+    /** Legacy format — copied into nom by ensureKeys. */
     description?: string;
 }
 
@@ -202,7 +202,7 @@ interface EbiosFair {
     [k: string]: unknown;
 }
 
-/** Modèle de données complet d'une analyse EBIOS RM. */
+/** Complete data model of an EBIOS RM analysis. */
 interface EbiosData {
     context: EbiosContext;
     gravity_scale: EbiosGravityLevel[];
@@ -224,24 +224,24 @@ interface EbiosData {
     residuals: EbiosResidual[];
     fair: EbiosFair[];
     socle_type: "anssi" | "iso";
-    /** Accès indexé générique (updateField / toggleDICT / delRow…). */
+    /** Generic indexed access (updateField / toggleDICT / delRow…). */
     [k: string]: any;
 }
 
-/* ── Globals fournis par les fichiers de données lazy / compagnons ── */
+/* ── Globals provided by the lazy data / companion files ─────────── */
 
 interface Window {
     EBIOS_INIT_DATA?: EbiosData;
     EBIOS_DESCRIPTIONS?: { anssi: Record<string, string>; iso: Record<string, string>;
                            anssi_en?: Record<string, string>; iso_en?: Record<string, string>; };
     EBIOS_TEMPLATE?: { templateB64: string };
-    /** Hook d'init posé par EBIOS_RM_catalog.js (mode catalogue IndexedDB). */
+    /** Init hook set by EBIOS_RM_catalog.js (IndexedDB catalog mode). */
     _appInitCallback?: () => void;
-    /** Utilisateur connecté (variante backend uniquement). */
+    /** Logged-in user (backend variant only). */
     _currentUser?: { name?: string; email?: string };
-    /** Persistance backend (variante demo-docker) — absente en opensource. */
+    /** Backend persistence (demo-docker variant) — absent in opensource. */
     _persistSettings?: () => void;
-    /* Globals d'app exposés sur window (catalog + ai_assistant) */
+    /* App globals exposed on window (catalog + ai_assistant) */
     renderSocle?: EbAiWrappedRender;
     renderEco?: EbAiWrappedRender;
     renderSOP?: EbAiWrappedRender;
@@ -275,14 +275,14 @@ interface Window {
     _aiAcceptResidual?: () => void;
     _aiResidualResult?: any;
     _aiResidualSSIdx?: number;
-    /** Index dynamique : wrappers IA (window[fn]) et renderers par nom. */
+    /** Dynamic index: AI wrappers (window[fn]) and renderers by name. */
     [k: string]: any;
 }
 
-/** Render function éventuellement enveloppée par l'assistant IA. */
+/** Render function possibly wrapped by the AI assistant. */
 type EbAiWrappedRender = { (): void; _aiWrapped?: boolean; _aiInlineWrapped?: boolean };
 
-/** Point PP pour la cartographie écosystème (_buildEcoSVG). */
+/** PP point for the ecosystem map (_buildEcoSVG). */
 interface EbEcoPoint {
     id: string;
     nom: string;
@@ -292,9 +292,9 @@ interface EbEcoPoint {
     expo: number;
 }
 
-/* ── Types utilitaires synthèse / rapport ───────────────────────── */
+/* ── Utility types: synthesis / report ──────────────────────────── */
 
-/** Position d'un SS dans les matrices de synthèse. */
+/** Position of an SS in the synthesis matrices. */
 interface EbSynthPos {
     id: string;
     gNum: EbNum;
@@ -302,7 +302,7 @@ interface EbSynthPos {
     vResid: number;
 }
 
-/** Ligne de synthèse (un SS) produite par _synthesisData(). */
+/** Synthesis row (one SS) produced by _synthesisData(). */
 interface EbSynthRow {
     id: string;
     scenario: string;
@@ -314,23 +314,23 @@ interface EbSynthRow {
     decision: string;
 }
 
-/** Retour de _synthesisData(). */
+/** Return value of _synthesisData(). */
 type EbSynthData = ReturnType<typeof _synthesisData>;
 
-/** Image PNG capturée pour le rapport Word. */
+/** PNG image captured for the Word report. */
 interface EbReportImg {
     buf: ArrayBuffer;
     w: number;
     h: number;
 }
 
-/* ── Surcharge locale : la décl gen de cisotoolbox_local impose 3 args à
-   _persist, mais l'app opensource l'appelle avec la section seule (no-op
-   localStorage ; la variante backend lit ce 1er argument). À remonter au
-   coordinateur (entityId/fields devraient être optionnels). ── */
+/* ── Local override: the generated decl of cisotoolbox_local requires 3
+   args for _persist, but the opensource app calls it with the section only
+   (localStorage no-op; the backend variant reads this 1st argument). To be
+   raised with the coordinator (entityId/fields should be optional). ── */
 declare function _persist(entityType: string): void;
 
-/** Enregistrement d'analyse dans le catalogue IndexedDB (EBIOS_RM_catalog). */
+/** Analysis record in the IndexedDB catalog (EBIOS_RM_catalog). */
 interface EbCatalogRecord {
     id: string;
     name: string;

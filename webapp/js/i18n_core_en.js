@@ -5,7 +5,7 @@
 // -----------------------------------------------------------------------------
 /**
  * CISO Toolbox — Traductions socle partagees (EN).
- * _registerTranslations() est defini dans i18n.js ; charger APRES i18n.js.
+ * _registerTranslations() is defined in i18n.js; load AFTER i18n.js.
  * Genere depuis i18n.ts (decoupage i18n multilingue).
  */
 _registerTranslations("en", {

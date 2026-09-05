@@ -23,46 +23,46 @@
 
 /* ═══════════════════ 1. DESIGN TOKENS (SPEC §1) ═══════════════════ */
 :root {
-  /* Neutres */
+  /* Neutrals */
   --ct-canvas:       #f6f7f9;
   --ct-surface:      #ffffff;
   --ct-surface-2:    #fafbfc;
   --ct-line-soft:    #eef0f4;
   --ct-line:         #e3e6ec;
-  --ct-line-strong:  #cbd1dc;   /* separateurs decoratifs — pas un contour de cible */
-  /* Contour des cibles de SAISIE. --ct-line-strong tient 1,53:1, largement sous le
-     seuil non textuel de 3:1 (WCAG 1.4.11) : un champ vide n'avait aucun contour
-     perceptible. Token distinct plutot que relevement de line-strong — l'exigence
-     porte sur les controles, et relever le token global redessinerait les dix
-     modules d'un coup. */
+  --ct-line-strong:  #cbd1dc;   /* decorative separators — not a target outline */
+  /* Outline of INPUT targets. --ct-line-strong sits at 1.53:1, far below the
+     3:1 non-text threshold (WCAG 1.4.11): an empty field had no perceptible
+     outline. A distinct token rather than raising line-strong — the requirement
+     applies to controls, and raising the global token would redraw all ten
+     modules at once. */
   --ct-line-field:   #8b909b;
   --ct-ink:          #12151c;
   --ct-ink-1:        #3c4453;
   --ct-ink-2:        #6b7488;
-  /* NON TEXTUEL. A 3,09:1 il ne peut pas porter de texte, et toute valeur qui
-     atteindrait 4,5:1 se confondrait avec --ct-ink-2 (4,69:1) : trois gris de
-     texte ne tiennent pas dans l'echelle. On en garde deux, et ink-3 devient le
-     gris des elements decoratifs — seuil 3:1, WCAG 1.4.11. Le seul usage restant
-     est l'icone d'etat vide ; tout texte qui l'utilisait est passe a ink-2. */
+  /* NON-TEXT. At 3.09:1 it cannot carry text, and any value that
+     reached 4.5:1 would blur into --ct-ink-2 (4.69:1): three text grays
+     don't fit in the scale. We keep two, and ink-3 becomes the gray of
+     decorative elements — 3:1 threshold, WCAG 1.4.11. The only remaining
+     use is the empty-state icon; all text that used it moved to ink-2. */
   --ct-ink-3:        #8a93a4;
-  --ct-ink-disabled: #798294;   /* etait #9aa2b1 : 2,32:1 sur -neutral-tint, illisible,
-                                   alors que le sombre heritait 5,52:1. Le desactive
-                                   echappe formellement a AA, mais pas au bon sens :
-                                   un meme etat doit se lire pareil dans les deux themes. */
+  --ct-ink-disabled: #798294;   /* was #9aa2b1: 2.32:1 on -neutral-tint, unreadable,
+                                   while dark inherited 5.52:1. Disabled formally
+                                   escapes AA, but not common sense: the same
+                                   state must read the same in both themes. */
 
-  /* Accent — action et sélection UNIQUEMENT */
-  /* Encre posee sur un aplat ACCENT. Blanche dans les deux themes, contrairement
-     a --ct-onsolid qui s'inverse : l'accent sombre a ete assombri (passe 2, option B)
-     precisement pour continuer a porter du blanc, la ou les aplats de severite,
-     eux, s'eclaircissent vraiment en sombre. Deux encres parce que deux
-     comportements, pas par gout de la nuance. */
+  /* Accent — action and selection ONLY */
+  /* Ink laid on an ACCENT solid. White in both themes, unlike
+     --ct-onsolid which inverts: the dark accent was darkened (pass 2, option B)
+     precisely to keep carrying white, where the severity solids, for their
+     part, genuinely lighten in dark. Two inks because two behaviors,
+     not out of a taste for nuance. */
   --ct-onaccent:     #fff;
-  /* Voile des surcouches (modale, aide, historique). Noir translucide dans les
-     deux themes : c'est l'assombrissement du fond qui fait la surcouche, il ne
-     s'inverse pas. Token parce que la valeur est repetee a quatre endroits. */
+  /* Overlay veil (modal, help, history). Translucent black in both
+     themes: it is the darkening of the background that makes the overlay, it
+     does not invert. A token because the value is repeated in four places. */
   --ct-scrim:        rgba(0,0,0,0.45);
-  /* Fond des blocs de code / d'exemple. Sombre dans les DEUX themes, comme
-     une console : c'est une convention de lecture, pas une surface d'interface. */
+  /* Background of code / example blocks. Dark in BOTH themes, like
+     a console: it is a reading convention, not an interface surface. */
   --ct-code-bg:      #0f172a;
 
   --ct-accent:       #5a4bd8;
@@ -70,10 +70,10 @@
   --ct-accent-tint:  #eeecfd;
   --ct-accent-ink:   #3f32a8;
 
-  /* Sévérité — données UNIQUEMENT.
-     Trois grades par ton, mêmes hues, même encre (-ink) :
-     -tint pour un badge · -fill pour un aplat (cellule de matrice, chip de
-     score) · base (solid) pour un liseré, une jauge ou un survol destructif. */
+  /* Severity — data ONLY.
+     Three grades per tone, same hues, same ink (-ink):
+     -tint for a badge · -fill for a solid area (matrix cell, score
+     chip) · base (solid) for an edge strip, a gauge or a destructive hover. */
   --ct-critical:      #b3261e;  --ct-critical-tint: #fbe9e7;  --ct-critical-fill: #e7bcb9;  --ct-critical-ink: #8c1d18;
   --ct-high:          #c2410c;  --ct-high-tint:     #fdeee3;  --ct-high-fill:     #eecabb;  --ct-high-ink:     #8f3009;
   --ct-medium:        #a16207;  --ct-medium-tint:   #fdf4dc;  --ct-medium-fill:   #e8d8c1;  --ct-medium-ink:   #7c4a05;
@@ -81,10 +81,10 @@
   --ct-info:          #3f6d8c;  --ct-info-tint:     #e9f0f5;  --ct-info-fill:     #c3d2db;  --ct-info-ink:     #2f536b;
   --ct-neutral:       #6b7488;  --ct-neutral-tint:  #f2f3f7;  --ct-neutral-fill:  #d7d9df;  --ct-neutral-ink:  #4c5566;
 
-  /* Encre posée sur un aplat de couleur base (solid) — s'inverse en dark. */
+  /* Ink laid on a base-color (solid) area — inverts in dark. */
   --ct-onsolid: #fff;
 
-  /* Typo */
+  /* Typography */
   --ct-font:      'IBM Plex Sans', system-ui, -apple-system, sans-serif;
   --ct-font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 
@@ -96,23 +96,23 @@
   --ct-text-meta:    12px;
   --ct-text-label:   11px;
 
-  /* Rayons */
+  /* Radii */
   --ct-r-sm: 4px;  --ct-r-md: 6px;  --ct-r-lg: 8px;  --ct-r-xl: 12px;  --ct-r-pill: 999px;
 
-  /* Espacement */
+  /* Spacing */
   --ct-s1: 4px; --ct-s2: 8px; --ct-s3: 12px; --ct-s4: 16px;
   --ct-s5: 20px; --ct-s6: 24px; --ct-s8: 32px; --ct-s12: 48px;
 
-  /* Hauteurs de contrôle */
-  /* xs sert les contextes denses : fleches de reordonnancement dans un tableau,
-     actions d'une carte de rail. C'est un troisieme cran sur l'axe md -> sm,
-     pas un concept nouveau. */
+  /* Control heights */
+  /* xs serves dense contexts: reordering arrows in a table,
+     actions on a rail card. It is a third notch on the md -> sm axis,
+     not a new concept. */
   --ct-h-xs: 22px;  --ct-h-sm: 28px;  --ct-h-md: 34px;
-  /* Hauteur par défaut d'un bouton : plus courte qu'un champ (34), un cran
-     au-dessus d'un bouton de modale (~27). --ct-h-md reste réservé aux champs. */
+  /* Default button height: shorter than a field (34), one notch
+     above a modal button (~27). --ct-h-md stays reserved for fields. */
   --ct-h-btn: 30px;
 
-  /* Élévation */
+  /* Elevation */
   --ct-shadow-card:    0 1px 2px rgba(18,21,28,0.05);
   --ct-shadow-overlay: 0 20px 48px -12px rgba(18,21,28,0.28);
 
@@ -122,13 +122,13 @@
 
   --ct-focus: 0 0 0 3px rgba(90,75,216,0.28);
 
-  /* Compléments (§1) */
+  /* Complements (§1) */
   --ct-line-hover:  #aab2c0;
   --ct-focus-soft:  0 0 0 3px rgba(90,75,216,0.18);
   --ct-danger-tint: #fdeeec;
   --ct-danger-line: #e9cdc9;
 
-  /* Identité des modules (§5) — teinte de fond / encre, jamais un ton de sévérité */
+  /* Module identity (§5) — background tint / ink, never a severity tone */
   --ct-mod-risk-tint:#e9edf1; --ct-mod-risk-ink:#2c3e50;
   --ct-mod-compliance-tint:#eeecfd; --ct-mod-compliance-ink:#4b3fbd;
   --ct-mod-audit-tint:#e4f2e8; --ct-mod-audit-ink:#186334;
@@ -151,19 +151,19 @@
   --ct-surface-2:   #21252f;
   --ct-line-soft:   #262b36;
   --ct-line:        #2b313d;
-  --ct-line-strong: #3a4150;   /* separateurs decoratifs */
-  --ct-line-field:  #6a7182;   /* contour des cibles de saisie — voir bloc clair */
+  --ct-line-strong: #3a4150;   /* decorative separators */
+  --ct-line-field:  #6a7182;   /* outline of input targets — see light block */
   --ct-ink:         #f2f4f8;
   --ct-ink-1:       #c3c9d4;
   --ct-ink-2:       #99a1b0;
-  --ct-ink-3:       #79818f;   /* non textuel — voir le bloc clair */
+  --ct-ink-3:       #79818f;   /* non-text — see light block */
 
-  /* Passe 2, option B : l'accent sombre etait eclairci pour se detacher de la
-     surface, au point de ne plus porter de blanc (4,01:1, et 3,12:1 au survol).
-     On l'assombrit plutot que d'inverser l'encre : un bouton primaire se reconnait
-     autant a sa structure — encre claire sur fond sature — qu'a sa couleur, et
-     l'inverser d'un theme a l'autre la retourne. --ct-onsolid reste ainsi cantonne
-     aux aplats de severite, qui eux s'eclaircissent reellement en sombre. */
+  /* Pass 2, option B: the dark accent had been lightened to stand out from the
+     surface, to the point of no longer carrying white (4.01:1, and 3.12:1 on hover).
+     We darken it rather than inverting the ink: a primary button is recognized
+     as much by its structure — light ink on saturated fill — as by its color, and
+     inverting it from one theme to the other flips that structure. --ct-onsolid thus
+     stays confined to the severity solids, which genuinely lighten in dark. */
   --ct-accent:       #6656e2;
   --ct-accent-hover: #6f60e5;
   --ct-accent-tint:  #2e2757;
@@ -176,9 +176,9 @@
   --ct-info:     #6aa3c4;  --ct-info-tint:     #14262f;  --ct-info-fill:     #324959;  --ct-info-ink:     #9cc8de;
   --ct-neutral:  #79818f;  --ct-neutral-tint:  #262b36;  --ct-neutral-fill:  #464c56;  --ct-neutral-ink:  #c3c9d4;
 
-  /* Les aplats de sévérité s'éclaircissent en dark : l'encre posée dessus s'inverse. */
+  /* Severity solids lighten in dark: the ink laid on them inverts. */
   --ct-onsolid: #11121a;
-  /* Halo de focus : reste indigo (état d'interaction), recalé sur l'accent dark. */
+  /* Focus halo: stays indigo (interaction state), realigned on the dark accent. */
   --ct-focus: 0 0 0 3px rgba(122,108,240,0.35);
 
   --ct-shadow-card:    none;
@@ -202,9 +202,9 @@
 }
 
 /* ═══════════ 2. LEGACY RAIL LITERAL ══════════════════════════════════
-   Le bloc d'alias de transition (--blue, --border, --text-muted…) est
-   supprime : plus aucun consommateur dans l'arbre. Seul --sidebar-bg
-   subsiste, c'est un literal et non un alias. */
+   The transition-alias block (--blue, --border, --text-muted…) is
+   removed: no consumer left in the tree. Only --sidebar-bg
+   remains; it is a literal, not an alias. */
 :root {
   --sidebar-bg:   #0f172a;   /* legacy dark rail — stays literal until removed */
 }
@@ -258,9 +258,9 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-btn[data-icon] { width: var(--ct-h-btn); padding: 0; }
 .ct-btn[data-icon][data-size="sm"] { width: var(--ct-h-sm); }
 .ct-btn[data-icon][data-size="xs"] { width: var(--ct-h-xs); }
-/* La spec nomme quatre variantes ; "neutral" est le dessin par defaut du
-   .ct-btn nu. On le declare quand meme : un appelant ne doit pas avoir a
-   savoir que l'absence d'attribut signifie quelque chose. */
+/* The spec names four variants; "neutral" is the default drawing of the
+   bare .ct-btn. We declare it anyway: a caller must not have to
+   know that the absence of the attribute means something. */
 .ct-btn[data-variant="neutral"] { /* = .ct-btn */ }
 .ct-btn[data-variant="primary"] { background: var(--ct-accent); border-color: var(--ct-accent); color: var(--ct-onaccent); }
 .ct-btn[data-variant="primary"]:hover { background: var(--ct-accent-hover); border-color: var(--ct-accent-hover); }
@@ -268,11 +268,11 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-btn[data-variant="ghost"]:hover { background: var(--ct-line-soft); border-color: transparent; color: var(--ct-ink); }
 .ct-btn[data-variant="danger"] { background: var(--ct-danger-tint); border-color: var(--ct-danger-line); color: var(--ct-critical-ink); }
 .ct-btn[data-variant="danger"]:hover { background: var(--ct-critical); border-color: var(--ct-critical); color: var(--ct-onsolid); }
-/* Bouton d'action IA (étoile) : modificateur de .ct-btn. L'accent du système
-   est déjà l'indigo « IA » ; on l'applique en version teintée pour distinguer
-   ces actions des boutons ordinaires sans rivaliser avec le primary. Toujours
-   combiné à .ct-btn, jamais à une variante. Thémé clair/sombre par les jetons.
-   Placé après les variantes pour l'emporter à spécificité (0, 2, 0) égale. */
+/* AI action button (star): a .ct-btn modifier. The system accent is
+   already the "AI" indigo; we apply it in a tinted version to distinguish
+   these actions from ordinary buttons without competing with the primary. Always
+   combined with .ct-btn, never with a variant. Light/dark themed via the tokens.
+   Placed after the variants to win at equal (0, 2, 0) specificity. */
 .ct-btn.btn-ai { background: var(--ct-accent); border-color: var(--ct-accent); color: var(--ct-onaccent); }
 .ct-btn.btn-ai:hover { background: var(--ct-accent-tint); border-color: var(--ct-accent-tint); color: var(--ct-accent-ink); }
 .ct-btn:disabled, .ct-btn[aria-disabled="true"] {
@@ -282,11 +282,11 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-btngroup { display: flex; gap: var(--ct-s2); align-items: center; flex-wrap: wrap; }
 
 /* 9.3 .ct-ref  (.ct-badge deferred — see header) */
-/* Variante dense, alignée sur .ct-badge[data-size="sm"] : mêmes 10, 5px, même
-   resserrement. Elle existe pour les contextes où la référence accompagne un
-   contenu court — une carte de kanban, une cellule — et où la taille de base
-   pèse plus que ce qu'elle désigne. Une variante nommée dans le socle, pas un
-   font-size posé sur place : c'est la seule forme qui reste vraie partout. */
+/* Dense variant, aligned on .ct-badge[data-size="sm"]: same 10.5px, same
+   tightening. It exists for contexts where the reference accompanies a
+   short content — a kanban card, a cell — and where the base size
+   weighs more than what it designates. A named variant in the foundation, not a
+   font-size dropped in place: that is the only form that stays true everywhere. */
 .ct-ref[data-size="sm"] { height: 18px; padding: 0 7px; font-size: 10.5px; }
 
 .ct-ref {
@@ -309,18 +309,18 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 /* 9.3b .ct-badge — semantic tone system (tinted by default, [data-fill] solid) */
 .ct-badge { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: var(--ct-r-pill);
   font-size: 11px; font-weight: 600; line-height: 1.5; white-space: nowrap;
-  /* Cas par defaut, sans data-tone : lisible plutot qu'invisible. Un appel sans
-     ton reste un bug d'appelant, mais il ne doit pas produire un badge fantome. */
+  /* Default case, without data-tone: readable rather than invisible. A call with
+     no tone remains a caller bug, but it must not produce a ghost badge. */
   background: var(--ct-neutral-tint); color: var(--ct-ink); }
 .ct-badge[data-size="sm"] { padding: 1px 6px; font-size: 10.5px; }
-/* « En cours » : un état, pas une couleur. Il vivait dans Surface sous la forme
-   d'une animation attachée à .job-running, donc invisible aux autres modules
-   qui ont pourtant des traitements en cours. Attribut nu, comme data-fill. */
+/* "Running": a state, not a color. It lived in Surface as an
+   animation attached to .job-running, hence invisible to the other modules
+   which nevertheless have jobs in progress. Bare attribute, like data-fill. */
 .ct-badge[data-live] { animation: ct-pulse 1.5s ease-in-out infinite; }
 @keyframes ct-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
 @media (prefers-reduced-motion: reduce) {
-    /* Le clignotement est un confort de lecture, pas une information : le ton
-       porte déjà l'état. On le coupe pour qui l'a demandé. */
+    /* The pulsing is a reading comfort, not information: the tone
+       already carries the state. We turn it off for whoever asked for that. */
     .ct-badge[data-live] { animation: none; }
 }
 .ct-badge[data-tone="critical"] { background: var(--ct-critical-tint); color: var(--ct-critical-ink); }
@@ -341,15 +341,15 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 
 /* 9.4 .ct-field · .ct-input */
 .ct-field { display: flex; flex-direction: column; gap: 6px; }
-/* L'espacement ENTRE champs manquait au socle : .ct-field ne réglait que
-   l'écart interne libellé / saisie. Surface et AppSec le compensaient chacun
-   par un margin-bottom local — supprimé comme collision, ce qui a collé les
-   champs de leurs modales. La règle appartient au socle, pas aux modules.
-   Sur le sélecteur adjacent, donc sans marge orpheline après le dernier champ. */
+/* The spacing BETWEEN fields was missing from the foundation: .ct-field only set
+   the internal label / input gap. Surface and AppSec each compensated for it
+   with a local margin-bottom — removed as a collision, which glued together the
+   fields of their modals. The rule belongs to the foundation, not the modules.
+   On the adjacent selector, hence no orphan margin after the last field. */
 .ct-field + .ct-field { margin-top: 14px; }
-/* Conteneur de formulaire (spec §2). Quand le balisage l'adopte, c'est le gap
-   qui porte l'espacement et la règle adjacente s'efface — une seule valeur
-   visible, jamais deux qui s'additionnent. */
+/* Form container (spec §2). When the markup adopts it, the gap
+   carries the spacing and the adjacent rule steps aside — a single visible
+   value, never two adding up. */
 .ct-form { display: flex; flex-direction: column; gap: 14px; }
 .ct-form .ct-field + .ct-field { margin-top: 0; }
 .ct-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
@@ -367,10 +367,10 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-input:focus, .ct-select:focus, .ct-textarea:focus { outline: none; border-color: var(--ct-accent); box-shadow: var(--ct-focus-soft); }
 .ct-input::placeholder, .ct-textarea::placeholder { color: var(--ct-ink-disabled); }
 
-/* .ct-filter — select de barre d'outils, au-dessus d'une liste ou d'un
-   tableau. Ce n'est pas un champ de formulaire : il se dimensionne a son
-   contenu au lieu de prendre toute la largeur, et adopte la hauteur sm pour
-   s'aligner sur les boutons de la meme barre. */
+/* .ct-filter — toolbar select, sitting above a list or a
+   table. It is not a form field: it sizes to its
+   content instead of taking the full width, and adopts the sm height to
+   align with the buttons of the same bar. */
 .ct-filter {
   font-family: inherit; font-size: var(--ct-text-meta);
   height: var(--ct-h-sm); width: auto; min-width: 110px; max-width: 240px;
@@ -381,7 +381,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-filter:focus { outline: none; border-color: var(--ct-accent); box-shadow: var(--ct-focus-soft); }
 .ct-input:disabled, .ct-select:disabled { background: var(--ct-neutral-tint); color: var(--ct-ink-disabled); cursor: not-allowed; }
 .ct-input[data-size="sm"], .ct-select[data-size="sm"] { height: 30px; font-size: var(--ct-text-data); }
-/* xs : pour les champs en cellule de tableau, alignés sur input de cellule (~24) et bouton xs (22). */
+/* xs: for fields in table cells, aligned on the cell input (~24) and the xs button (22). */
 .ct-input[data-size="xs"], .ct-select[data-size="xs"] { height: 24px; padding: 0 8px; font-size: var(--ct-text-meta); }
 .ct-hint { font-size: var(--ct-text-meta); color: var(--ct-ink-2); line-height: 1.5; }
 .ct-error { font-size: var(--ct-text-meta); color: var(--ct-critical-ink); line-height: 1.5; }
@@ -409,17 +409,17 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
   font-size: 12.5px; font-weight: 500; cursor: pointer;
 }
 .ct-choice > button[aria-pressed="true"] { background: var(--ct-accent); border-color: var(--ct-accent); color: var(--ct-onaccent); }
-/* Un choix peut porter un jugement et pas seulement une selection : la decision
-   de revue est verte ou rouge. On reutilise le vocabulaire de tons plutot que
-   d'inventer des noms d'etat. Le ton ne s'applique qu'a l'option retenue. */
+/* A choice can carry a judgment and not just a selection: the review
+   decision is green or red. We reuse the tone vocabulary rather than
+   inventing state names. The tone only applies to the selected option. */
 .ct-choice > button[aria-pressed="true"][data-tone="low"] { background: var(--ct-low);      border-color: var(--ct-low);      color: var(--ct-onsolid); }
 .ct-choice > button[aria-pressed="true"][data-tone="critical"] { background: var(--ct-critical); border-color: var(--ct-critical); color: var(--ct-onsolid); }
 .ct-choice > button[aria-pressed="true"][data-tone="high"] { background: var(--ct-high);     border-color: var(--ct-high);     color: var(--ct-onsolid); }
 .ct-choice[data-size="xs"] > button { height: var(--ct-h-xs); min-width: var(--ct-h-xs); padding: 0 6px; font-size: 11px; }
 .ct-choice[data-mono] > button { font-family: var(--ct-font-mono); }
 
-/* Infobulle au survol, alimentee par data-tip. Le motif etait duplique dans
-   Pilot et Risk sous .catalog-btn-sm:hover::after. */
+/* Hover tooltip, fed by data-tip. The pattern was duplicated in
+   Pilot and Risk under .catalog-btn-sm:hover::after. */
 .ct-tip { position: relative; }
 .ct-tip[data-tip]:hover::after {
   content: attr(data-tip); position: absolute; bottom: 100%; left: 50%;
@@ -446,7 +446,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-kpi[data-tone="medium"]   .ct-kpi-tone { background: var(--ct-medium); }
 .ct-kpi[data-tone="low"]      .ct-kpi-tone { background: var(--ct-low); }
 .ct-kpi[data-tone="info"]     .ct-kpi-tone { background: var(--ct-info); }
-/* Emphase "value" : la valeur prend l'encre du ton (criticité). Jetons -ink, AA 6, 5-9:1. Défaut = valeur neutre + liseré seul. (audit v2 §04) */
+/* "value" emphasis: the value takes the tone ink (criticality). -ink tokens, AA 6, 5-9:1. Default = neutral value + border only. (audit v2 §04) */
 .ct-kpi[data-emphasis="value"][data-tone="critical"] .ct-kpi-value { color: var(--ct-critical-ink); }
 .ct-kpi[data-emphasis="value"][data-tone="high"]     .ct-kpi-value { color: var(--ct-high-ink); }
 .ct-kpi[data-emphasis="value"][data-tone="medium"]   .ct-kpi-value { color: var(--ct-medium-ink); }
@@ -460,11 +460,11 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-kpi[data-density="dense"] .ct-kpi-body { padding: 13px 16px 15px; gap: 7px; }
 .ct-kpi[data-density="dense"] .ct-kpi-value { font-size: 26px; }
 
-/* .ct-kpi-adv — tuile KPI avancée : superset de .ct-kpi. Ajoute titre, badge
-   source (Auto/Ext), pill d'état, statut, seuils sur une ligne, un slot
-   graphique optionnel (.ct-kpi-adv-viz, ex. .ct-meter) et une note de pied
-   (.ct-kpi-adv-foot). Réutilise le liseré de ton et l'encre de valeur du
-   système .ct-kpi — un dashboard mélange les deux formats sans rupture.
+/* .ct-kpi-adv — advanced KPI tile: a superset of .ct-kpi. Adds a title, a
+   source badge (Auto/Ext), a state pill, a status, thresholds on one line, an
+   optional chart slot (.ct-kpi-adv-viz, e.g. .ct-meter) and a footer note
+   (.ct-kpi-adv-foot). Reuses the tone border and value ink of the .ct-kpi
+   system — a dashboard can mix both formats seamlessly.
    Couvre le kpi-card de pilot et les indicateurs de compliance. (audit v2 §P3) */
 .ct-kpi-adv { background: var(--ct-surface); border: 1px solid var(--ct-line); border-radius: var(--ct-r-lg); box-shadow: var(--ct-shadow-card); overflow: hidden; display: flex; flex-direction: column; }
 .ct-kpi-adv.ct-clickable:hover { border-color: var(--ct-line-strong); }
@@ -535,12 +535,12 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-modal-head { display: flex; align-items: center; gap: var(--ct-s3); padding: 18px 22px; border-bottom: 1px solid var(--ct-line); }
 .ct-modal-title { font-size: var(--ct-text-section); font-weight: 600; color: var(--ct-ink); flex: 1; }
 .ct-modal-foot { display: flex; gap: 10px; justify-content: flex-end; padding: 16px 22px; border-top: 1px solid var(--ct-line); background: var(--ct-surface-2); }
-/* Le corps de modale n'existait pas dans la famille v2 — seuls -head et -foot
-   étaient definis — et la version legacy plus bas se limitait a un
-   margin-bottom. Surface et AppSec compensaient chacun par une regle locale, supprimee comme collision : leurs modales ont perdu d'un coup le
-   rembourrage ET le defilement. Le composant partage emet ces trois noms, le
-   socle doit donc les servir en entier.
-   flex:1 + overflow-y:auto : c'est le corps qui defile, jamais la modale —
+/* The modal body did not exist in the v2 family — only -head and -foot were
+   defined — and the legacy version further down was limited to a
+   margin-bottom. Surface and AppSec each compensated with a local rule, removed as a collision: their modals lost both the
+   padding AND the scrolling at once. The shared component emits these three
+   names, so the core must serve all of them.
+   flex:1 + overflow-y:auto: it is the body that scrolls, never the modal —
    sinon l'en-tete et les actions sortent de l'ecran avec le contenu. */
 .ct-modal-body { padding: 18px 22px; overflow-y: auto; flex: 1; min-height: 0; }
 .ct-modal-header { display: flex; align-items: center; gap: var(--ct-s3); padding: 18px 22px;
@@ -669,9 +669,9 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-text-section { font-size: var(--ct-text-section); }
 .ct-text-page { font-size: var(--ct-text-page); }
 
-/* ── Atomes ct-* : les combinaisons les plus repetees des styles inline ──────
-   Mesurees sur les neuf modules. Elles se composent avec .ct-text-* et
-   .ct-mt-/.ct-mb-* : `font-size:…;color:…` devient `ct-text-label ct-muted`. */
+/* ── ct-* atoms: the most repeated combinations of the inline styles ────────
+   Measured across the nine modules. They compose with .ct-text-* and
+   .ct-mt-/.ct-mb-*: `font-size:…;color:…` becomes `ct-text-label ct-muted`. */
 .ct-muted { color: var(--ct-ink-2); }
 .ct-text-critical { color: var(--ct-critical); }
 .ct-strong { font-weight: 600; }
@@ -684,9 +684,10 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-row-wrap { flex-wrap: wrap; }
 .ct-row-between { justify-content: space-between; }
 
-/* Atomes de presentation (lot 2) : debloquent la decomposition des styles
-   inline residuels qui n'ont pas de sens metier. Mesures sur les neuf modules :
-   display:flex 140x, la bordure de bloc 108x, align-items 96x, gap 80x. */
+/* Presentation atoms (batch 2): they unblock the decomposition of the
+   residual inline styles that carry no business meaning. Measured across the
+   nine modules: display:flex 140x, the block border 108x, align-items 96x,
+   gap 80x. */
 .ct-flex { display: flex; }
 .ct-block { display: block; }
 .ct-items-center { align-items: center; }
@@ -704,8 +705,8 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-bg-alt { background: var(--ct-surface-2); }
 .ct-mono { font-family: var(--ct-font-mono); }
 
-/* Rembourrage et espacement nommes (lot 3) : les valeurs etant deja
-   exprimees en jetons, ces classes ne font que leur donner un nom. */
+/* Named padding and spacing (batch 3): the values are already expressed as
+   tokens, so these classes merely give them a name. */
 .ct-p-1 { padding: var(--ct-s1); }
 .ct-p-2 { padding: var(--ct-s2); }
 .ct-p-3 { padding: var(--ct-s3); }
@@ -722,9 +723,9 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-px-4 { padding-left: var(--ct-s4); padding-right: var(--ct-s4); }
 .ct-py-4 { padding-top: var(--ct-s4); padding-bottom: var(--ct-s4); }
 
-/* Atomes (lot 4) : mesures des declarations qui bloquaient encore la
-   decomposition — display:grid 28x, font-weight:700 23x, les bordures
-   directionnelles 27x, background:none 16x. */
+/* Atoms (batch 4): measurements of the declarations that were still blocking
+   the decomposition — display:grid 28x, font-weight:700 23x, the directional
+   borders 27x, background:none 16x. */
 .ct-grid { display: grid; }
 .ct-inline-flex { display: inline-flex; }
 .ct-bold { font-weight: 700; }
@@ -743,17 +744,17 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-overflow-hidden { overflow: hidden; }
 .ct-ink { color: var(--ct-ink); }
 .ct-font-inherit { font-family: inherit; }
-/* Grille de formulaire à deux colonnes égales : motif inline répété (champs
-   côte à côte dans les modales). Le gap et la taille de donnée y sont fixes. */
+/* Two equal-column form grid: repeated inline pattern (side-by-side fields
+   in the modals). The gap and data size are fixed here. */
 .ct-form-2col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--ct-s2) var(--ct-s3); font-size: var(--ct-text-data); }
-/* Surtitre de section : petite capitale espacée. Remplace le style inline
-   font-size/weight/uppercase/letter-spacing répété au-dessus des groupes. */
+/* Section overline: small spaced capitals. Replaces the inline
+   font-size/weight/uppercase/letter-spacing repeated above the groups. */
 .ct-overline { font-size: var(--ct-text-label); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ct-ink-1); }
 .ct-px-0 { padding-left: 0; padding-right: 0; }
 .ct-py-0 { padding-top: 0; padding-bottom: 0; }
 
-/* Atomes (lot 5). .ct-truncate est le seul a porter un sens : la triade
-   overflow + ellipsis + nowrap est un motif, pas trois reglages. */
+/* Atoms (batch 5). .ct-truncate is the only one that carries a meaning: the
+   overflow + ellipsis + nowrap triad is a pattern, not three settings. */
 .ct-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ct-col { flex-direction: column; }
 .ct-items-start { align-items: flex-start; }
@@ -770,10 +771,10 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-ml-2 { margin-left: var(--ct-s2); }
 .ct-box { box-sizing: border-box; }
 
-/* Atomes (lot 6) : generes a partir des declarations restantes qui se
-   repetent au moins deux fois. Nommes selon la convention en place —
-   ct-text-<ton> et ct-bg-<ton> comme ct-text-critical. */
-/* couleur */
+/* Atoms (batch 6): generated from the remaining declarations that repeat at
+   least twice. Named after the convention already in place —
+   ct-text-<tone> and ct-bg-<tone>, like ct-text-critical. */
+/* color */
 .ct-bg-critical-fill { background: var(--ct-critical-fill); }
 .ct-bg-critical-tint { background: var(--ct-critical-tint); }
 .ct-bg-high-tint { background: var(--ct-high-tint); }
@@ -885,7 +886,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
    du non conforme : les deplacer changerait l'ordre de cascade, et quatre
    d'entre elles definissent les memes proprietes des deux cotes.        */
 
-/* Sélecteur de langue (menu déroulant N-langues, positionné en fixed via JS). */
+/* Language selector (N-language dropdown, positioned fixed from JS). */
 .ct-lang-menu {
     position: fixed; z-index: 600; background: var(--ct-surface);
     border: 1px solid var(--ct-line); border-radius: var(--ct-r-md);
@@ -910,16 +911,16 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-modal-btn:hover { background:var(--ct-canvas); border-color:var(--ct-line-hover); }
 .ct-modal-btn--primary { background:var(--ct-accent); color: var(--ct-onaccent); border-color:var(--ct-accent); }
 .ct-modal-btn--primary:hover { background:var(--ct-accent-hover); border-color:var(--ct-accent-hover); }
-/* Destructif : teinté au repos, rouge plein au survol (spec bouton Supprimer). */
+/* Destructive: tinted at rest, solid red on hover (Delete button spec). */
 .ct-modal-btn--danger { background:var(--ct-danger-tint); color:var(--ct-critical-ink); border-color:var(--ct-danger-line); }
 .ct-modal-btn--danger:hover { background:var(--ct-critical); color:var(--ct-onsolid); border-color:var(--ct-critical); }
-/* ── Matrices de risque (SVG généré par ctRenderMatrix) ──────────
-   Le générateur émettait ses couleurs en dur — stroke="white", fill="#3c4453", fill="#6b7488" — et huit modules les rattrapaient en sombre
-   par des sélecteurs qui reconnaissaient la VALEUR : svg text[fill="#3c4453"].
-   Ces règles cassaient sans erreur et sans test rouge au premier ajustement de
-   teinte. Le générateur pose désormais des classes, et le thème fait le reste.
-   Le trait de séparation vaut --ct-surface, ce qui donne bien du blanc en clair
-   et la surface sombre en sombre : le rattrapage n'avait rien inventé. */
+/* ── Risk matrices (SVG generated by ctRenderMatrix) ─────────────
+   The generator used to emit hard-coded colours — stroke="white", fill="#3c4453", fill="#6b7488" — and eight modules patched them in dark
+   mode with selectors matching the VALUE: svg text[fill="#3c4453"].
+   Those rules broke silently, with no red test, at the first hue tweak. The
+   generator now emits classes, and the theme does the rest.
+   The separating stroke is --ct-surface, which gives white in light mode and
+   the dark surface in dark mode: the patch had not invented anything. */
 .ct-matrix-cell { stroke: var(--ct-surface); }
 .ct-matrix-dot { fill: var(--ct-accent); stroke: var(--ct-surface); }
 .ct-matrix-axis { fill: var(--ct-ink-1); }
@@ -1066,14 +1067,15 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-lang-item.active { color: var(--ct-accent-ink); font-weight: 600; }
 
 .btn-hamburger { display: inline-block; background: none !important; border: none; color: var(--ct-ink-1); font-size: 1.8em !important; cursor: pointer; padding: 4px 10px 4px 0 !important; }
-/* ── Breakpoints responsive (convention partagée) ─────────────────
-   Approche desktop-first (max-width). Un seul jeu, à respecter dans TOUS les
-   modules — un @media hors de ce jeu casse la cohérence (check-breakpoints.py) :
-     480px  — petit mobile
-     768px  — mobile / tablette portrait   (breakpoint principal)
-     1024px — tablette paysage / petit desktop
-   Les valeurs ne peuvent pas passer par une variable (les custom properties ne
-   sont pas résolues dans une media query) : elles restent littérales. */
+/* ── Responsive breakpoints (shared convention) ──────────────────
+   Desktop-first approach (max-width). One single set, to be respected in ALL
+   modules — an @media outside this set breaks consistency
+   (check-breakpoints.py):
+     480px  — small mobile
+     768px  — mobile / portrait tablet   (main breakpoint)
+     1024px — landscape tablet / small desktop
+   The values cannot go through a variable (custom properties are not resolved
+   inside a media query): they stay literal. */
 @media (max-width: 768px) { }
 
 /* ── Buttons — legacy .btn family ── */
@@ -1139,17 +1141,17 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), textarea, select {
     background: var(--ct-surface); color: var(--ct-ink);
     border: 1px solid var(--ct-line); border-radius: var(--ct-r-sm);
-    /* Les controles de formulaire n'heritent pas de la typographie : sans ces
-       deux lignes, le navigateur leur applique sa police systeme (Arial 13.33px)
-       au lieu de celle de l'application. Seul `td select` le corrigeait, donc
-       uniquement dans les tableaux. Selecteur d'element : les primitives
-       .ct-input / .ct-select gardent leur propre taille. */
+    /* Form controls do not inherit typography: without these two lines the
+       browser applies its system font to them (Arial 13.33px) instead of the
+       application's. Only `td select` corrected it, hence in tables only.
+       Element selector: the .ct-input / .ct-select primitives keep their own
+       size. */
     font-family: inherit;
-    /* `inherit` et non une valeur fixe : cette regle a quatre :not(), donc une
-       specificite (0,4,1) superieure a celle de `td input` (0,3,2). Une taille
-       fixe ecraserait le contexte des cellules et gonflerait les champs des
-       tableaux. Heritee, elle vaut --ct-text-body hors tableau et la taille de
-       la cellule dedans. */
+    /* `inherit` rather than a fixed value: this rule has four :not(), hence a
+       specificity (0,4,1) higher than that of `td input` (0,3,2). A fixed size
+       would override the cell context and inflate the table fields. Inherited,
+       it resolves to --ct-text-body outside a table and to the cell size
+       inside one. */
     font-size: inherit;
 }
 
@@ -1164,11 +1166,12 @@ th .col-hide:hover { color: var(--ct-ink); }
 td > input:not([type="checkbox"]):not([type="radio"]), td > select, td input:not([type="checkbox"]):not([type="radio"]):not(.ct-ref-search), td select, /* textarea : uniquement pour la typographie. Il est ecarte de la hauteur
    imposee plus bas par sa propre regle, il doit grandir avec son contenu. */
 td textarea {
-    /* Hauteur imposee : chaque controle natif calcule la sienne (input 26px,
-       date 28px, select 25px), ce qui desaligne les lignes. Relative et non
-       absolue : Risk reduit la police de ses tableaux a 0.8em puis 0.75em selon
-       la largeur, et une hauteur figee s'y decalerait. A 11.9px, calc vaut 26px
-       — identique au rendu actuel. textarea est exclu, il doit s'etendre. */
+    /* Enforced height: every native control computes its own (input 26px,
+       date 28px, select 25px), which misaligns the rows. Relative and not
+       absolute: Risk reduces its table font to 0.8em then 0.75em depending on
+       the width, and a frozen height would drift there. At 11.9px, calc yields
+       26px — identical to the current rendering. textarea is excluded, it must
+       be able to grow. */
     height: calc(1.5em + 8px);
     border: 1px solid var(--ct-line);
     border-radius: 4px;
@@ -1199,9 +1202,9 @@ td .ct-ref-select, td .ct-ref-select * { box-shadow: none; }
 /* Small icon/text button used in table rows + cards (shared, theme-aware).
    Modules may add tone modifiers (.btn-mini.btn-fix / .btn-fp). */
 
-/* Sans fond declare : une encre blanche s'ecrivait sur la surface, donc
-   invisible des qu'aucun data-tone ne rattrapait la regle. Le cas par defaut
-   doit etre lisible ; un appel sans ton reste un bug d'appelant. */
+/* With no background declared, a white ink was written onto the surface, hence
+   invisible as soon as no data-tone caught up with the rule. The default case
+   must be readable; a call with no tone remains a caller bug. */
 .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.8em; font-weight: 600;
          background: var(--ct-neutral-tint); color: var(--ct-ink); }
 
@@ -1253,8 +1256,8 @@ td .ct-ref-select, td .ct-ref-select * { box-shadow: none; }
 .ct-pwd-ok:hover { opacity: 0.85; }
 
 /* ── Shared component styles (legacy) ── */
-/* Discret dans les deux thèmes (l'ancien blanc translucide du rail sombre
-   legacy disparaissait sur le rail clair). */
+/* Subtle in both themes (the legacy translucent white of the dark rail
+   vanished on the light rail). */
 .sidebar-brand { display: block; text-align: center; padding: 10px 14px; font-size: 0.75em; color: var(--ct-ink-2); text-decoration: none; letter-spacing: 0.5px; }
 .sidebar-brand:hover { color: var(--ct-ink-1); }
 .ct-empty-state { text-align: center; padding: 40px; color: var(--ct-ink-2); font-size: 0.9em; }
@@ -1262,15 +1265,15 @@ td .ct-ref-select, td .ct-ref-select * { box-shadow: none; }
 .btn-group-sm { display: inline-flex; gap: 2px; }
 .btn-group-sm button { font-size: 0.72em; padding: 2px 6px; }
 .meta { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; }
-/* Carte de méta-donnée (label + valeur). Définition canonique remontée depuis
-   les modules qui la déclaraient à l'identique ; l'ancien flex-column du socle
-   n'était utilisé nulle part. */
+/* Metadata card (label + value). Canonical definition hoisted from the
+   modules that declared it identically; the core's old flex-column was not
+   used anywhere. */
 .ct-meta-item { background: var(--ct-surface); border: 1px solid var(--ct-line); border-radius: var(--ct-r-lg); padding: 10px 16px; flex: 1; min-width: 200px; }
 .ct-meta-item label { font-size: 0.72em; font-weight: 600; color: var(--ct-ink-2); text-transform: uppercase; letter-spacing: 0.5px; }
-/* Formulaires & cartes partagés — remontés depuis 4 modules (audit v2 §3).
-   Base identique dans access/asset/pilot/vendor ; les modules ne gardent que
-   leurs raffinements (responsive, refinements de grille, règles spécifiques).
-   Pilot neutralise bordure/padding en inline sur son usage — rendu inchangé. */
+/* Shared forms & cards — hoisted from 4 modules (audit v2 §3).
+   Identical base in access/asset/pilot/vendor; the modules keep only their
+   own refinements (responsive, grid refinements, specific rules).
+   Pilot neutralises border/padding inline on its usage — rendering unchanged. */
 .ct-tprm-form { background: var(--ct-surface); padding: 16px; border: 1px solid var(--ct-line); border-radius: 8px; }
 .ct-tprm-form label { display: block; font-size: 0.75em; font-weight: 600; color: var(--ct-ink-2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
 .ct-tprm-form input, .ct-tprm-form select, .ct-tprm-form textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--ct-line); border-radius: 6px; font-size: 0.9em; font-family: inherit; box-sizing: border-box; }
@@ -1382,18 +1385,18 @@ td .ct-ref-select, td .ct-ref-select * { box-shadow: none; }
     .container { padding: 8px; }
 }
 
-/* ── Chrome v2 — repli du rail + responsive ──
-   Le shell v2 (.ct-app / .ct-body / .ct-rail) a remplacé .app-layout /
-   .sidebar, mais seul le bloc responsive hérité ci-dessus avait été écrit.
-   Le JS basculait donc .open (hamburger) et .collapsed (toggleSidebar) sur un
-   rail qu'aucune règle ne rendait repliable : les classes changeaient, rien ne
-   bougeait à l'écran. Et faute de media query sur .ct-body / .ct-rail, le rail
+/* ── Chrome v2 — rail collapse + responsive ──
+   The v2 shell (.ct-app / .ct-body / .ct-rail) replaced .app-layout /
+   .sidebar, but only the inherited responsive block above had been written.
+   The JS therefore toggled .open (hamburger) and .collapsed (toggleSidebar) on
+   a rail that no rule made collapsible: the classes changed, nothing moved on
+   screen. And for lack of a media query on .ct-body / .ct-rail, the rail
    gardait ses 232px fixes quelle que soit la largeur de l'écran. */
 .ct-rail.collapsed { width: 0; border-right-width: 0; }
 
-/* Un seul contrôle pour les deux mises en page — voir _toggleSidebarMobile().
-   La visibilité est portée par la déclaration de base, pas par un second
-   bloc du même sélecteur. */
+/* A single control for both layouts — see _toggleSidebarMobile().
+   Visibility is carried by the base declaration, not by a second block of the
+   same selector. */
 
 @media (max-width: 768px) {
     .ct-appbar { height: auto; min-height: 44px; gap: 8px; padding: 4px 8px; flex-wrap: wrap; }
@@ -1402,39 +1405,41 @@ td .ct-ref-select, td .ct-ref-select * { box-shadow: none; }
     .ct-modulemenu { width: calc(100vw - 24px); left: 12px; }
     .ct-modulemenu-list { grid-template-columns: 1fr; }
 
-    /* Sous 768px le rail cesse d'être une colonne : il devient un tiroir qui
-       se déplie sous la barre, comme le faisait .sidebar avant la v2. */
+    /* Below 768px the rail stops being a column: it becomes a drawer that
+       slides open under the bar, as .sidebar did before v2. */
     .ct-body { flex-direction: column; }
-    /* .ct-content ne porte que min-width:0, ce qui suffit tant que .ct-body est
-       en ligne. En colonne c'est min-height qui gouverne : sans lui le flex
-       item garde min-height:auto, refuse de descendre sous la hauteur de son
-       contenu et ne devient donc jamais la zone scrollable. Il déborde alors
-       les 100vh de .ct-app, que l'overflow:hidden du shell rogne — le haut de
-       page s'affiche, tout ce qui suit devient invisible ET inatteignable. */
+    /* .ct-content only carries min-width:0, which is enough while .ct-body is
+       a row. In a column min-height governs: without it the flex item keeps
+       min-height:auto, refuses to shrink below its content height and so never
+       becomes the scrollable area. It then overflows .ct-app's 100vh, which
+       the shell's overflow:hidden clips — the top of the page shows, and
+       everything below becomes invisible AND unreachable. */
     .ct-content { min-height: 0; padding: 12px 12px 20px; }
     .ct-rail { width: 100%; max-height: 0;
                border-right: 0; border-bottom: 1px solid var(--ct-line); }
     .ct-rail.open { max-height: 70vh; overflow-y: auto; }
-    /* .collapsed est l'état bureau ; laissé tel quel il réduirait à néant un
-       tiroir que l'utilisateur vient d'ouvrir après avoir réduit la fenêtre. */
+    /* .collapsed is the desktop state; left as-is it would shrink to nothing
+       a drawer the user just opened after narrowing the window. */
     .ct-rail.collapsed { width: 100%; }
 }
 
 /* ── ct_modal (legacy — collision, migrates with ct_modal.ts) ── */
 .ct-modal-overlay { position:fixed; inset:0; z-index:1000; background:var(--ct-scrim); display:flex; align-items:center; justify-content:center; padding:24px; }
 .ct-modal-overlay[hidden] { display:none !important; }
-/* Pas de rembourrage sur la boite : .ct-modal-header, -body et -footer
-   portent chacun le leur. Les cumuler doublait l'espacement. */
+/* No padding on the box: .ct-modal-header, -body and -footer each carry their
+   own. Stacking them doubled the spacing. */
 .ct-modal-box { background:var(--ct-surface); border-radius:12px; max-width:500px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 8px 32px rgba(0,0,0,0.2); }
 
 /* ── ct_status (legacy — .ct-badge collision, migrates with badge()) ── */
-/* Le .ct-badge legacy qui vivait ici redefinissait la primitive v2 mot pour
-   mot — meme selecteur, plus bas dans le fichier, donc gagnant. La primitive
-   etait morte : sa police, son rayon et son display n'ont jamais servi.
-   Le cas par defaut (badge sans data-tone) est remonte dans la primitive. */
+/* The legacy .ct-badge that lived here redefined the v2 primitive word for
+   word — same selector, further down the file, hence winning. The primitive
+   was dead: its font, its radius and its display were never used.
+   The default case (badge with no data-tone) has moved up into the
+   primitive. */
 
-/* .ct-empty-state (legacy) retiré : 3e version de l'état vide, sans appelant, et son icône en opacity:0.4 violait §9.12. .ct-empty est la seule référence.
-   (audit v2 §05) */
+/* .ct-empty-state (legacy) removed: a 3rd empty-state version, with no
+   caller, and its opacity:0.4 icon violated §9.12. .ct-empty is the only
+   reference. (audit v2 §05) */
 
 /* ── ct_measure editor (legacy) ── */
 .ct-measure-form { display:flex; flex-direction:column; gap:10px; }

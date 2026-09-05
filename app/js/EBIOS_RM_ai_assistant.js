@@ -12,16 +12,16 @@
  */
 (function () {
     "use strict";
-    // ── Alias locaux des fonctions partagées exposées via window par ai_common.js /
-    // ct_settings.js (les decls générées ne les déclarent que sur Window).
-    // ai_common.js est chargé avant ce fichier (ordre des <script> dans index.html).
+    // ── Local aliases of the shared functions exposed on window by ai_common.js /
+    // ct_settings.js (the generated decls only declare them on Window).
+    // ai_common.js is loaded before this file (<script> order in index.html).
     var _aiIsEnabled = window._aiIsEnabled;
     var _aiCallAPI = window._aiCallAPI;
     var _aiParseJSON = window._aiParseJSON;
     var _aiEnsurePanel = window._aiEnsurePanel;
     var _aiClosePanel = window._aiClosePanel;
     var _aiShowLoading = window._aiShowLoading;
-    // Décl gen ct-core/ai_common : _aiOpenPanel?: () => void — la vraie signature accepte un titre.
+    // ct-core/ai_common generated decl: _aiOpenPanel?: () => void — the real signature takes a title.
     var _aiOpenPanel = window._aiOpenPanel;
     var openSettings = window.openSettings;
     // ═══════════════════════════════════════════════════════════════════════
@@ -151,17 +151,17 @@
     // user prompt to POST api/ai/risk/suggest, which owns the methodology.
     // The opensource (browser-local) build keeps the prompt here instead.
     // ═══════════════════════════════════════════════════════════════════════
-    // FEAT-41 — les prompts ne sont plus construits ici.
+    // FEAT-41 — the prompts are no longer built here.
     //
-    // Le serveur relit l'analyse en base et compose le prompt (src/ai_prompts.py).
-    // Le frontend ne déclare plus QUE ce qu'il veut : le panneau, la langue, et
-    // l'éventuelle instruction libre. Voir CLAUDE.md §5.1.
+    // The server re-reads the analysis from the DB and composes the prompt (src/ai_prompts.py).
+    // The frontend now declares ONLY what it wants: the panel, the language and
+    // the optional free-form instruction. See CLAUDE.md §5.1.
     //
-    // La variante navigateur (webapp/) garde ses constructeurs : sans backend,
-    // elle appelle le fournisseur directement. Divergence déclarée.
+    // The browser variant (webapp/) keeps its builders: with no backend, it
+    // calls the provider directly. Declared divergence.
     // ═══════════════════════════════════════════════════════════════════════
-    // Panneaux acceptés par POST api/ai/risk/suggest (doit rester aligné sur
-    // PANELS dans src/ai_prompts.py — un panneau inconnu répond 422).
+    // Panels accepted by POST api/ai/risk/suggest (must stay aligned with
+    // PANELS in src/ai_prompts.py — an unknown panel answers 422).
     var AI_PANELS = ["vm", "bs", "er", "srov", "pp", "ss", "sop", "eco",
         "measures", "residuals", "socle"];
     async function _callAI(ask) {
@@ -172,9 +172,9 @@
         var analysisId = localStorage.getItem("ebios_catalog_active") || "";
         if (!analysisId)
             throw new Error(t("ai.no_analysis"));
-        // Le serveur relit l'analyse EN BASE (FEAT-41) : les écritures encore
-        // débouncées doivent partir d'abord, sinon le modèle travaillerait sur
-        // l'état d'avant la dernière édition sans que rien ne le signale.
+        // The server re-reads the analysis FROM THE DB (FEAT-41): the writes still
+        // debounced must go out first, otherwise the model would work on the state
+        // from before the last edit with nothing signalling it.
         if (typeof window._riskFlushPending === "function") {
             await window._riskFlushPending();
         }
@@ -239,14 +239,14 @@
     var _SUMMARY_FIELDS = { "details": 1, "description": 1, "impacts": 1, "effet": 1 };
     // Fields to skip in SROV (shown in custom rendering)
     var _SROV_SKIP = { "sr_id": 1, "ov_id": 1, "sr_nom": 1, "ov_nom": 1, "motivation": 1, "ressources": 1, "activite": 1 };
-    /** FEAT-40 — ce que l'acceptation va réellement écrire dans la mesure visée.
+    /** FEAT-40 — what accepting will actually write into the targeted measure.
      *
-     *  Sans cet aperçu, la carte montre le fragment proposé par le modèle et
-     *  l'utilisateur ne peut pas savoir s'il complète ou s'il écrase — ni ce que
-     *  devient le titre. On rend donc l'avant et l'après, calculés avec les MÊMES
-     *  fonctions que l'acceptation, sinon l'aperçu mentirait.
+     *  Without this preview, the card shows the fragment proposed by the model
+     *  and the user cannot tell whether it completes or overwrites — nor what
+     *  becomes of the title. So we render the before and the after, computed with
+     *  the SAME functions as the acceptance, otherwise the preview would lie.
      */
-    /** Ce que _mergeDetails ajoutera réellement : "" si rien ne change. */
+    /** What _mergeDetails will actually add: "" if nothing changes. */
     function _detailsAddition(ancien, ajout) {
         var a = (ancien || "").trim();
         var b = (ajout || "").trim();
@@ -278,8 +278,8 @@
             if (cible.details) {
                 h += '<div class="ct-text-label ct-muted">' + esc(cible.details) + '</div>';
             }
-            // Ce qui s'ajoute réellement, avec la MÊME règle que _mergeDetails —
-            // pas une soustraction de chaînes, qui dérape sur les espaces de fin.
+            // What is actually added, with the SAME rule as _mergeDetails — not a
+            // string subtraction, which slips on trailing whitespace.
             var ajout = _detailsAddition(cible.details || "", s.details);
             h += ajout
                 ? '<div class="ct-text-label ct-text-ok ct-strong">+ ' + esc(ajout) + '</div>'
@@ -337,9 +337,9 @@
                 }
                 h += '<div class="ai-card-field"><strong>' + esc(k) + ':</strong> ' + esc(val) + '</div>';
             }
-            // FEAT-40 — aperçu avant/après. Accepter un enrichissement écrit dans
-            // une mesure existante : l'utilisateur doit voir CE QUI CHANGE avant,
-            // pas seulement le fragment proposé.
+            // FEAT-40 — before/after preview. Accepting an enrichment writes into
+            // an existing measure: the user must see WHAT CHANGES beforehand,
+            // not just the proposed fragment.
             h += _enrichPreviewHTML(s);
             // Detect if this is an update (existing ID) or a new element
             var isUpdate = s.id && _aiIdExists(type, s.id);
@@ -370,9 +370,9 @@
             return false;
         return arr.some(function (e) { return e.id === id; });
     }
-    /** FEAT-40 — fusionne une description existante et son enrichissement.
-     *  Concaténer plutôt que remplacer : le travail de rédaction déjà fait ne
-     *  doit pas disparaître parce que le modèle a proposé un complément. */
+    /** FEAT-40 — merges an existing description with its enrichment.
+     *  Concatenate rather than replace: the writing work already done must not
+     *  disappear because the model proposed an addition. */
     function _mergeDetails(ancien, ajout) {
         var a = (ancien || "").trim();
         var b = (ajout || "").trim();
@@ -475,30 +475,30 @@
         },
         sop: function (s) {
             // s has {ss, phases:[...]}
-            // Pas la longueur du tableau : apres une suppression elle redonne un
-            // identifiant deja pris, et les phases proposees s'ajoutent alors a un
-            // SOP existant au lieu d'en creer un nouveau.
+            // Not the array length: after a deletion it hands back an identifier
+            // already taken, and the proposed phases then get added to an existing
+            // SOP instead of creating a new one.
             var sopId = nextSopId();
             D.sop_summary.push({ sop: sopId, ss: s.ss });
             (s.phases || []).forEach(function (p) {
                 var mesureRef = "";
-                // FEAT-40 — réutiliser AVANT de créer. Ce handler créait une mesure
-                // pour CHAQUE phase faible : générer un SOP pour un second scénario
-                // aux phases voisines dupliquait le plan à chaque fois, avec en
-                // prime une description vide.
+                // FEAT-40 — reuse BEFORE creating. This handler created a measure
+                // for EVERY weak phase: generating a SOP for a second scenario
+                // with neighbouring phases duplicated the plan every time, plus an
+                // empty description on top.
                 if (p.mesure_existante_id) {
                     var deja = D.measures.find(function (m) { return m.id === p.mesure_existante_id; });
                     if (deja) {
-                        // « Ajustée » : la mesure couvre la phase PARTIELLEMENT et
-                        // reçoit un complément. Concaténé, jamais substitué — même
-                        // règle que l'enrichissement des autres panneaux.
+                        // "Adjusted": the measure covers the phase PARTIALLY and
+                        // receives an addition. Concatenated, never substituted —
+                        // same rule as the enrichment in the other panels.
                         if (p.mesure_ajustement) {
                             deja.details = _mergeDetails(deja.details || "", p.mesure_ajustement);
                         }
-                        // Titre corrigé si l'élargissement rend l'existant inexact.
-                        // Les références figées ailleurs ("M-01 - libellé") doivent
-                        // alors être rafraîchies, sinon l'ancien libellé survit
-                        // dans les exports.
+                        // Title fixed if the widening makes the existing one wrong.
+                        // The references frozen elsewhere ("M-01 - label") must
+                        // then be refreshed, otherwise the old label survives in
+                        // the exports.
                         var nt = (p.mesure_titre || "").trim();
                         if (nt && nt !== deja.mesure) {
                             deja.mesure = nt;
@@ -509,7 +509,7 @@
                         mesureRef = deja.id + " - " + deja.mesure;
                     }
                 }
-                // Sinon seulement, on crée.
+                // Only then do we create.
                 if (!mesureRef && (p.efficacite === "Absent" || p.efficacite === "Partiel") && p.mesure_proposee) {
                     var mId = nextId("measures");
                     D.measures.push({ id: mId, mesure: p.mesure_proposee, details: "", origine: "SOP", type: "Prévention",
@@ -522,30 +522,30 @@
             return sopId;
         },
         measures: function (s) {
-            // FEAT-40 — enrichir NE DOIT PAS écraser. _updateIfExists remplace
-            // champ par champ : appliqué tel quel à un enrichissement il détruit
-            // ce qu'il est censé étendre — la description déjà rédigée, et le
-            // champ `sop`, qui est une chaîne SIMPLE : enrichir une mesure pour
-            // couvrir un SOP de plus effacerait le SOP d'origine, soit exactement
-            // le geste que la feature sert.
+            // FEAT-40 — enriching MUST NOT overwrite. _updateIfExists replaces
+            // field by field: applied as-is to an enrichment it destroys what it
+            // is meant to extend — the description already written, and the `sop`
+            // field, which is a SINGLE string: enriching a measure to cover one
+            // more SOP would erase the original SOP, which is exactly the gesture
+            // the feature exists for.
             if (s.action === "enrich" && s.id) {
                 var cible = D.measures.find(function (m) { return m.id === s.id; });
                 if (cible) {
                     if (s.details)
                         cible.details = _mergeDetails(cible.details || "", s.details);
-                    // Le titre n'est ajusté que si le modèle en propose un AUTRE :
-                    // c'est sous ce libellé que la mesure est connue dans le plan
-                    // d'action et les rapports. Et il faut alors rafraîchir les
-                    // références stockées ("M-01 - libellé" figé par _csvAppendRef),
-                    // sinon l'ancien libellé survit dans les exports.
+                    // The title is adjusted only if the model proposes a DIFFERENT
+                    // one: the measure is known under that label in the action
+                    // plan and the reports. The stored references must then be
+                    // refreshed ("M-01 - label" frozen by _csvAppendRef),
+                    // otherwise the old label survives in the exports.
                     if (s.mesure && s.mesure.trim() && s.mesure.trim() !== cible.mesure) {
                         cible.mesure = s.mesure.trim();
                         if (typeof propagateNameChange === "function") {
                             propagateNameChange(cible.id, cible.mesure);
                         }
                     }
-                    // `origine`, `sop`, `phase` ne sont PAS touchés : un
-                    // enrichissement ajoute, il ne déplace pas.
+                    // `origine`, `sop`, `phase` are NOT touched: an enrichment
+                    // adds, it does not move.
                     ["type", "effet", "ref_socle", "responsable"].forEach(function (f) {
                         if (!cible[f] && s[f])
                             cible[f] = s[f];
@@ -553,16 +553,16 @@
                     _persist("measures");
                     return s.id + " ✓";
                 }
-                // id inventé par le modèle : on retombe sur une création plutôt
-                // que de perdre la suggestion.
+                // id invented by the model: we fall back on a creation rather than
+                // losing the suggestion.
             }
             if (s.action !== "enrich" && s.action !== "complement"
                 && _updateIfExists(D.measures, s, ["mesure", "details", "origine", "type", "sop", "phase", "effet", "ref_socle", "responsable"]))
                 return s.id + " ✓";
             var id = nextId("measures");
             var details = s.details || "";
-            // « complément » : la mesure complétée est NOMMÉE dans la description,
-            // sinon le lien se perd dès que la carte disparaît.
+            // "complement": the completed measure is NAMED in the description,
+            // otherwise the link is lost as soon as the card disappears.
             if (s.action === "complement" && s.complete_id) {
                 var base = D.measures.find(function (m) { return m.id === s.complete_id; });
                 if (base)
@@ -656,12 +656,12 @@
         (window._aiSuggestions || []).forEach(function (s, i) {
             if (!document.getElementById("ai-card-" + i))
                 return;
-            // « Tout accepter » ne CRÉE que. Une suggestion qui ÉCRIT dans une
-            // mesure existante (enrich, complement) exige d'avoir vu son
-            // avant/après — c'est le seul contrôle qui protège d'une injection
-            // de prompt : un texte hostile stocké dans une mesure (un plan
-            // d'action saisi par un fournisseur, par exemple) peut pousser le
-            // modèle à renvoyer un `enrich` sur une mesure sans rapport.
+            // "Accept all" only CREATES. A suggestion that WRITES into an existing
+            // measure (enrich, complement) requires having seen its before/after —
+            // it is the only control protecting against a prompt injection:
+            // hostile text stored in a measure (an action plan entered by a
+            // vendor, for instance) can push the model into returning an `enrich`
+            // on an unrelated measure.
             if (s && (s.action === "enrich" || s.action === "complement")) {
                 differes++;
                 return;
@@ -700,8 +700,8 @@
             }
             var p = _aiEnsurePanel();
             _aiOpenPanel("✨ " + labels.sop);
-            // Ce panneau ne passe pas par l'écran d'options : la case est posée
-            // ici, avant le choix du scénario, donc lisible au clic.
+            // This panel does not go through the options screen: the checkbox is
+            // placed here, before the scenario choice, readable on click.
             var h = _measureCtxToggleHTML("sop");
             h += '<div class="ct-py-2 ct-px-0 ct-text-data ct-strong ct-mb-2">' + t("ai.select_ss") + '</div>';
             D.ss.forEach(function (s) {
@@ -722,8 +722,8 @@
             var p = _aiEnsurePanel();
             _aiOpenPanel("✨ " + t("ai.label.residuals"));
             var h = '<p class="fs-sm ct-mb-3 ct-muted">' + t("ai.prompt_intro") + '</p>';
-            // Ce panneau ne passe pas par l'écran d'options générique : la case y
-            // est posée ici, avant la sélection du scénario, donc lisible au clic.
+            // This panel does not go through the generic options screen: the box
+            // is placed here, before the scenario selection, readable on click.
             h += _measureCtxToggleHTML("residuals");
             h += '<div class="settings-label fs-sm ct-mb-2">' + t("ai.select_ss") + '</div>';
             D.ss.forEach(function (s, i) {
@@ -754,20 +754,20 @@
         pp.footer.innerHTML = '<button class="ct-btn ai-btn-close" data-click="_aiClosePanel">' + t("ai.close") + '</button>';
         return;
     }
-    // FEAT-40 — l'option « inclure les mesures existantes ».
+    // FEAT-40 — the "include existing measures" option.
     //
-    // Cochée par défaut : le cas normal est de ne pas vouloir de doublon.
-    // L'option sert l'exception — plan volumineux et modèle à petite fenêtre,
-    // démarrage d'analyse où le plan est vide, ou exploration délibérée sans
-    // être bridé par l'existant.
+    // Checked by default: the normal case is not wanting a duplicate.
+    // The option serves the exception — a large plan with a small-window model,
+    // the start of an analysis where the plan is empty, or a deliberate
+    // exploration unconstrained by what already exists.
     //
-    // Elle ne s'affiche que sur les panneaux qui proposent des mesures.
-    // Panneaux qui affichent l'écran d'options AVANT de lancer. Les boutons IA
-    // « en ligne » (socle_row, eco_row, sop_row) s'exécutent d'un clic, sans
-    // écran intermédiaire : pas de case à cocher pour eux, ils gardent le
-    // défaut — mesures incluses.
-    // Le panneau SOP se lance en deux temps (choix du scénario, puis mode) :
-    // la case n'existe plus au moment de l'appel, on retient donc sa valeur.
+    // It is only shown on the panels that propose measures.
+    // Panels that show the options screen BEFORE running. The "inline" AI
+    // buttons (socle_row, eco_row, sop_row) run on a single click, with no
+    // intermediate screen: no checkbox for them, they keep the default —
+    // measures included.
+    // The SOP panel runs in two steps (scenario choice, then mode): the box no
+    // longer exists at call time, so we remember its value.
     var _aiSopIncludeMeasures = true;
     var MEASURE_PANELS = ["measures", "socle", "eco", "residuals", "sop"];
     function _measureCtxToggleHTML(type) {
@@ -779,8 +779,8 @@
             + '<br><span class="ct-muted">' + esc(t("ai.include_measures_help")) + '</span></span>'
             + '</label>';
     }
-    /** Lu au moment de l'appel : la case peut avoir disparu du DOM (panneau
-     *  remplacé par l'écran de chargement), auquel cas on garde le défaut. */
+    /** Read at call time: the checkbox may have disappeared from the DOM (panel
+     *  replaced by the loading screen), in which case we keep the default. */
     function _includeMeasures() {
         var el = document.getElementById("ai-include-measures");
         return el ? el.checked : true;
@@ -801,14 +801,14 @@
             var textarea = document.getElementById("ai-custom-instruction");
             userText = textarea ? textarea.value.trim() : "";
         }
-        // Lu AVANT que _aiShowLoading ne remplace le panneau : après, la case
-        // n'est plus dans le DOM et on retomberait silencieusement sur le défaut.
+        // Read BEFORE _aiShowLoading replaces the panel: afterwards the checkbox
+        // is no longer in the DOM and we would silently fall back on the default.
         var avecMesures = _includeMeasures();
         _aiShowLoading("✨ " + (labels[type] || type));
-        // Mode personnalisé : le serveur conserve les données et le schéma du
-        // panneau et remplace la seule instruction automatique (FEAT-41 —
-        // build_prompt/custom_instruction reproduit la découpe que faisait
-        // _aiPromptContext / _aiPromptSchema ici même).
+        // Custom mode: the server keeps the panel's data and schema and replaces
+        // only the automatic instruction (FEAT-41 —
+        // build_prompt/custom_instruction reproduces the split that
+        // _aiPromptContext / _aiPromptSchema used to do right here).
         if (mode === "__custom__") {
             if (!userText) {
                 _aiClosePanel();
@@ -841,18 +841,18 @@
     };
     window.suggestFor = suggestFor;
     // SOP generation after SS selection — show prompt panel
-    /** FEAT-40 — ce que la phase fera de sa mesure : réutiliser, ou créer.
-     *  Le panneau SOP n'a pas d'action `enrich` (son schéma est par phase, pas par
-     *  mesure) : la réutilisation s'y exprime par `mesure_existante_id`. Sans
-     *  affichage dédié, elle était indiscernable d'une création. */
+    /** FEAT-40 — what the phase will do with its measure: reuse, or create.
+     *  The SOP panel has no `enrich` action (its schema is per phase, not per
+     *  measure): reuse is expressed there by `mesure_existante_id`. With no
+     *  dedicated display, it was indistinguishable from a creation. */
     function _sopMeasureCellHTML(ph) {
         if (ph && ph.mesure_existante_id) {
             var m = D.measures.find(function (x) { return x.id === ph.mesure_existante_id; });
             if (m) {
-                // Réutilisée telle quelle, ou réutilisée AVEC un complément : les
-                // deux touchent une mesure existante, mais la seconde la modifie.
-                // Les confondre masquerait une écriture derrière une simple
-                // référence.
+                // Reused as-is, or reused WITH an addition: both touch an
+                // existing measure, but the second one modifies it. Confusing
+                // the two would hide a write behind what looks like a plain
+                // reference.
                 var ajout = ph.mesure_ajustement
                     ? _detailsAddition(m.details || "", ph.mesure_ajustement) : "";
                 var nouveauTitre = (ph.mesure_titre || "").trim();
@@ -870,7 +870,7 @@
                 return '<span class="ct-text-ok ct-strong">&#8635; ' + esc(t("ai.sop.reused")) + '</span>'
                     + '<br><span class="ct-muted">' + esc(m.id + " — " + m.mesure) + '</span>';
             }
-            // Identifiant inconnu : le handler retombera sur une création, on le dit.
+            // Unknown identifier: the handler will fall back on a creation, say so.
             return '<span class="ct-text-high">' + esc(t("ai.sop.unknown_measure", { id: ph.mesure_existante_id })) + '</span>';
         }
         if (ph && ph.mesure_proposee) {
@@ -880,7 +880,7 @@
         return '<span class="ct-muted">—</span>';
     }
     window._aiGenSOP = function (ssId) {
-        // Lu MAINTENANT : le panneau va être remplacé par le sélecteur de mode.
+        // Read NOW: the panel is about to be replaced by the mode selector.
         _aiSopIncludeMeasures = _includeMeasures();
         _lastSuggestType = "_aiGenSOP";
         _lastSuggestArgs = [ssId];
@@ -911,8 +911,8 @@
         p.body.innerHTML = '<div class="ai-loading"><div class="spinner"></div><p class="ct-mt-3">' + t("ai.generating_sop", { id: ssId }) + '</p></div>';
         p.footer.innerHTML = "";
         try {
-            // Un scénario stratégique inconnu est refusé par le serveur (422),
-            // qui seul connaît l'analyse en base.
+            // An unknown strategic scenario is rejected by the server (422), which
+            // alone knows the analysis stored in the DB.
             var result = await _callAI({ panel: "sop", ssId: ssId, custom: userText || undefined,
                 includeMeasures: _aiSopIncludeMeasures });
             // Render as a single SOP card with phases listed
@@ -942,9 +942,9 @@
                         h += '<td class="ct-p-1">' + esc(ph.action || "") + '</td>';
                         h += '<td class="ct-py-1 ct-px-1 ct-nowrap">' + esc((ph.bs || "").split(" - ")[0]) + '</td>';
                         h += '<td style="padding:3px 6px;color:' + effColor + ';font-weight:600">' + esc(ph.efficacite || "Absent") + '</td>';
-                        // FEAT-40 — sans cette colonne, réutiliser une mesure
-                        // existante ou en inventer une produisait exactement le
-                        // même affichage : l'anti-doublon était invisible.
+                        // FEAT-40 — without this column, reusing an existing
+                        // measure or inventing one produced exactly the same
+                        // display: the anti-duplicate was invisible.
                         h += '<td class="ct-py-1 ct-px-1">' + _sopMeasureCellHTML(ph) + '</td>';
                         h += '</tr>';
                     });
@@ -1069,7 +1069,7 @@
         _linkEcoRef(ppId, id, s.mesure);
         return id;
     };
-    /** Rattache une mesure à la fiche écosystème de la partie prenante `ppId`. */
+    /** Links a measure to the ecosystem record of the stakeholder `ppId`. */
     function _linkEcoRef(ppId, mid, libelle) {
         var i = D.eco.findIndex(function (e) { return (e.pp_id || "").split(" - ")[0].trim() === ppId; });
         if (i < 0)
@@ -1083,24 +1083,24 @@
     // suggestion carries the baseline ref it targets (s.ref_socle); we match
     // it back to the right row in socle_anssi / socle_iso to keep the
     // mesures_prevues column in sync.
-    /** FEAT-40 — l'issue « réutiliser » commune à TOUS les handlers de mesure.
+    /** FEAT-40 — the "reuse" outcome shared by ALL the measure handlers.
      *
-     *  Rend l'id de la mesure existante quand la suggestion demande de l'enrichir,
-     *  après y avoir écrit ; rend "" quand il faut créer. Les handlers l'appellent
-     *  AVANT de créer, sinon le prompt demande `enrich` et le handler fabrique
-     *  quand même un doublon — à partir d'un fragment de description, ce qui est
-     *  pire que l'état d'origine.
+     *  Returns the id of the existing measure when the suggestion asks to enrich
+     *  it, after writing into it; returns "" when a creation is needed. Handlers
+     *  call it BEFORE creating, otherwise the prompt asks for `enrich` and the
+     *  handler builds a duplicate anyway — out of a description fragment, which
+     *  is worse than the original state.
      *
-     *  `rattacher(id, libelle)` relie la mesure réutilisée à l'élément traité
-     *  (ligne de socle, PP, phase SOP) : sans cet effet visible, accepter ne
-     *  produit rien et l'utilisateur recrée la mesure à la main.
+     *  `rattacher(id, libelle)` links the reused measure to the item being
+     *  processed (baseline row, PP, SOP phase): without that visible effect,
+     *  accepting produces nothing and the user recreates the measure by hand.
      */
     function _reuseMeasure(s, rattacher) {
         if (!s || s.action !== "enrich" || !s.id)
             return "";
         var cible = D.measures.find(function (m) { return m.id === s.id; });
         if (!cible)
-            return ""; // id inventé : l'appelant crée, plutôt que perdre la suggestion
+            return ""; // invented id: the caller creates, rather than losing the suggestion
         if (s.details)
             cible.details = _mergeDetails(cible.details || "", s.details);
         var nt = (s.mesure || "").trim();
@@ -1118,7 +1118,7 @@
         _persist("measures");
         return cible.id;
     }
-    /** Préfixe de description pour une mesure créée EN COMPLÉMENT d'une autre. */
+    /** Description prefix for a measure created IN ADDITION to another one. */
     function _complementPrefix(s) {
         if (!s || s.action !== "complement" || !s.complete_id)
             return "";
@@ -1138,7 +1138,7 @@
         _linkSocleRef(refSocle, id, s.mesure);
         return id;
     };
-    /** Rattache une mesure à la ligne de socle portant `refSocle`. */
+    /** Links a measure to the baseline row carrying `refSocle`. */
     function _linkSocleRef(refSocle, mid, libelle) {
         var isAnssi = D.socle_type !== "iso";
         var section = isAnssi ? "socle_anssi" : "socle_iso";
@@ -1274,9 +1274,9 @@
                         h += '<div class="ai-card-details">' + esc(m.details) + '</div>';
                     if (m.responsable)
                         h += '<div class="ai-card-meta">' + t("ai.residual.owner") + ' : ' + esc(m.responsable) + '</div>';
-                    // FEAT-40 — accepter cette carte peut ÉCRIRE dans une mesure
-                    // existante (via _reuseMeasure) : c'était le seul endroit où
-                    // cela se faisait sans badge ni aperçu avant/après.
+                    // FEAT-40 — accepting this card can WRITE into an existing
+                    // measure (via _reuseMeasure): it was the only place where
+                    // that happened with no badge and no before/after preview.
                     if (m.action === "enrich" && m.id && D.measures.some(function (x) { return x.id === m.id; })) {
                         h += '<div class="ct-text-label ct-text-high ct-strong ct-mt-1">&#9998; ' + t("ai.update_existing", { id: esc(m.id) }) + '</div>';
                         h += _enrichPreviewHTML(m);
@@ -1311,7 +1311,7 @@
         }
     };
     window._aiResidualForSS = function (ssIdx) {
-        // Lu MAINTENANT : suggestResidualMeasures remplace aussitôt le panneau.
+        // Read NOW: suggestResidualMeasures replaces the panel right away.
         window.suggestResidualMeasures(ssIdx, _includeMeasures());
     };
     window._aiAcceptResidual = function () {
@@ -1347,16 +1347,16 @@
         });
         if (result.new_measures) {
             result.new_measures.forEach(function (nm, i) {
-                // Décochée = AUCUNE écriture. `_reuseMeasure` écrivait dans la
-                // mesure existante (fusion de details, renommage) AVANT ce test :
-                // décocher la carte ne bloquait que la création, pas
-                // l'enrichissement — une écriture sans consentement.
+                // Unchecked = NO write at all. `_reuseMeasure` used to write into
+                // the existing measure (details merge, rename) BEFORE this test:
+                // unchecking the card only blocked the creation, not the
+                // enrichment — a write without consent.
                 if (checkedNewIdxs.indexOf(i) === -1)
                     return; // skip unchecked
-                // FEAT-40 — ce panneau propose aussi des mesures NEUVES à côté de
-                // celles qu'il sélectionne. Sans ce court-circuit, un `enrich`
-                // renvoyé par le modèle devenait une mesure de plus, construite à
-                // partir d'un simple incrément de description.
+                // FEAT-40 — this panel also proposes BRAND-NEW measures alongside
+                // the ones it selects. Without this short-circuit, an `enrich`
+                // returned by the model became one more measure, built from a
+                // mere description increment.
                 var reutilise = _reuseMeasure(nm, function (mid, lib) {
                     var r = D.residuals[ssIdx] || (D.residuals[ssIdx] = {});
                     if ((r.mesures || "").indexOf(mid + " - ") === -1) {
@@ -1433,8 +1433,8 @@
             return;
         var rows = table.querySelectorAll("tbody tr");
         rows.forEach(function (row, i) {
-            // Ancrer sur l'action et non sur une classe de style : .btn-add-sm a
-            // disparu avec la migration ct-*, ce qui faisait disparaitre ce bouton.
+            // Anchor on the action and not on a style class: .btn-add-sm went away
+            // with the ct-* migration, which made this button disappear.
             var addBtn = row.querySelector('[data-click="' + fnName.replace(/^suggest/, "add") + '"]');
             if (!addBtn)
                 return;

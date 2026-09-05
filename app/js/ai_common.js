@@ -242,7 +242,7 @@
             systemPrompt += "\n\n--- METHODOLOGY INSTRUCTIONS (provided by the user) ---\n" + ctx;
         }
         var apiKey = _aiGetApiKey();
-        // Historique : null = IA non configurée (le contrat Window expose Promise<string>)
+        // Legacy: null = AI not configured (the Window contract exposes Promise<string>)
         if (!apiKey)
             return null;
         var provider = _aiGetProvider();
@@ -461,10 +461,10 @@
             p.footer.innerHTML = '<button class="ai-btn-all">' + esc(opts.acceptAllLabel || t("ai.accept_all")) + '</button>' +
                 '<button class="ai-btn-close">' + esc(opts.closeLabel || t("ai.close")) + '</button>' + (opts.extraHTML || "");
             p.footer.querySelector(".ai-btn-all").onclick = function () {
-                // FEAT-40 — « Tout accepter » n'applique pas les enrichissements :
-                // un enrich ÉCRIT dans une mesure existante, et l'aperçu
-                // avant/après de sa carte est le seul contrôle humain sur cette
-                // écriture. Il reste dans la liste, à accepter carte par carte.
+                // FEAT-40 — "Accept all" does not apply enrichments: an
+                // enrich WRITES into an existing measure, and the before/after
+                // preview on its card is the only human check on that write.
+                // It stays in the list, to be accepted card by card.
                 var gardes = [];
                 items.slice().forEach(function (s, i) {
                     if (s && s.action === "enrich") {

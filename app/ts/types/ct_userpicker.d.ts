@@ -21,7 +21,7 @@
  *     mount() — use render() only if you need to inline the HTML.
  *
  *   ct_userpicker.promptCreateUser(opts) → Promise<user|null>
- *     Opens a ct_modal to create a user (Nom*, Prénom*, Email*, Fonction?)
+ *     Opens a ct_modal to create a user (last name*, first name*, email*, role?)
  *     then POSTs to opts.apiUrl. Handles 409 (duplicate email) by fetching
  *     the existing user and returning it. Rejects silently to null on
  *     user cancel.
@@ -40,7 +40,7 @@
  *                     null to skip detection and always render the picker
  *                     (e.g. in Pilot itself, which is the native directory).
  *   onCreate        — callback(query) → Promise<user|null>. Enables the
- *                     "+ Créer" option. Caller is responsible for the
+ *                     "+ Create" option. Caller is responsible for the
  *                     snapshot-and-reopen pattern around promptCreateUser()
  *                     since ct_modal is a single overlay — see
  *                     ct_measure_modal for a reference implementation.

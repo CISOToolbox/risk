@@ -4,26 +4,26 @@
 // Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
 // -----------------------------------------------------------------------------
 /**
- * CISO Toolbox — Bibliothèque JS commune
+ * CISO Toolbox — shared JS library
  *
- * Chaque application doit définir avant de charger ce fichier :
+ * Every application must define, before loading this file:
  *   window.CT_CONFIG = {
- *     autosaveKey: "compliance_autosave",  // clé localStorage
- *     initDataVar: "COMPLIANCE_INIT_DATA", // variable globale des données initiales
- *     refNamespace: "COMPLIANCE_REF",      // namespace des référentiels lazy
- *     descNamespace: "COMPLIANCE_DESCRIPTIONS", // namespace des descriptions
- *     label: "évaluation",                 // label pour les messages ("Nouvelle évaluation")
- *     filePrefix: "Conformite",            // préfixe par défaut du nom de fichier
+ *     autosaveKey: "compliance_autosave",  // localStorage key
+ *     initDataVar: "COMPLIANCE_INIT_DATA", // global holding the initial data
+ *     refNamespace: "COMPLIANCE_REF",      // namespace of the lazy frameworks
+ *     descNamespace: "COMPLIANCE_DESCRIPTIONS", // namespace of the descriptions
+ *     label: "évaluation",                 // label used in messages ("Nouvelle évaluation")
+ *     filePrefix: "Conformite",            // default file-name prefix
  *     getSociete: function() { return D.meta?.societe || ""; },
  *     getDate: function() { return D.meta?.date_evaluation || ""; }
  *   };
  *
- * Et les globales :
- *   D                  — objet de données
- *   REFERENTIELS_META  — catalogue des référentiels
- *   _ASSET_BASE        — préfixe des fichiers assets
- *   ensureKeys()       — migration/init des données (app-specific)
- *   renderAll()        — rendu complet (app-specific)
+ * And the globals:
+ *   D                  — data object
+ *   REFERENTIELS_META  — framework catalog
+ *   _ASSET_BASE        — asset file prefix
+ *   ensureKeys()       — data migration/init (app-specific)
+ *   renderAll()        — full render (app-specific)
  */
 declare function _autoSave(): void;
 interface Window {

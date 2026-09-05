@@ -255,7 +255,7 @@ function newAnalysis() {
         showStatus(t("status_new", { label: lbl }));
     });
 }
-// Mot de passe du fichier courant (en mémoire uniquement)
+// Password of the current file (in memory only)
 var _filePwd = null;
 // The file binding (handle + password) belongs to the analysis it came from.
 // Any switch of D to something else (multi-import, opening from a catalog)
@@ -368,7 +368,7 @@ async function openFile() {
         document.getElementById("file-input").click();
     }
 }
-// Sérialiser D en contenu fichier (chiffré ou non)
+// Serialize D into file content (encrypted or not)
 async function _serializeForSave() {
     if (typeof ctSchemaStamp === "function")
         ctSchemaStamp(D);
@@ -439,7 +439,7 @@ async function saveJSON() {
         showStatus(t("status_downloaded") + (_filePwd ? t("status_saved_encrypted") : ""));
     }
 }
-// Activer/désactiver le chiffrement du fichier
+// Enable/disable file encryption
 async function enableFileEncryption() {
     var pwd = await _promptPassword(t("pwd_title_choose_file"), true);
     if (!pwd)

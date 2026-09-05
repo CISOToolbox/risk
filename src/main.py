@@ -34,11 +34,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-        # Même politique de cache que le proxy de la suite (nginx $cache_policy) :
-        # sans Cache-Control, un déploiement standalone (sans proxy) laisse le
-        # navigateur au cache heuristique — vieux JS sur nouveau backend, la
-        # classe de panne la plus déroutante qui soit (formats d'API croisés).
-        # Ne touche pas aux routes qui posent déjà leur propre politique.
+        # Same cache policy as the suite proxy (nginx $cache_policy):
+        # without Cache-Control, a standalone deployment (no proxy) leaves
+        # the browser on heuristic caching — old JS on a new backend, the
+        # most confusing failure class there is (crossed API formats).
+        # Does not touch routes that already set their own policy.
         if "cache-control" not in response.headers:
             ct = response.headers.get("content-type", "")
             if ct.startswith(("image/", "font/")):

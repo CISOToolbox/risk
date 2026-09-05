@@ -26,12 +26,12 @@ from src.ai_proxy_common import (
 from src.auth import get_current_user
 from src.database import get_db
 from src.models import Analysis, User
-# _can / _reconstruct_data vivent dans routes/analyses.py : l'assistant applique
-# EXACTEMENT le même contrôle d'accès et la même reconstruction que la lecture
-# normale d'une analyse. Les redéfinir ici ferait diverger les deux chemins.
+# _can / _reconstruct_data live in routes/analyses.py: the assistant applies
+# EXACTLY the same access control and the same reconstruction as a normal
+# analysis read. Redefining them here would make the two paths diverge.
 from src.routes.analyses import _can, _reconstruct_data
 
-# Common /api/ai endpoints; the métier endpoint below is appended to it.
+# Common /api/ai endpoints; the business endpoint below is appended to it.
 router = make_ai_router(generic_complete=False)
 
 
@@ -77,25 +77,25 @@ def _parse_lax_or_refuse(text: str):
 
 
 class RiskSuggestRequest(BaseModel):
-    """FEAT-41 — le client déclare QUOI suggérer, pas quoi envoyer au modèle.
+    """FEAT-41 — the client declares WHAT to suggest, not what to send to the model.
 
-    Il n'y a **pas** de champ portant un prompt pré-composé, et il ne doit pas
-    en réapparaître : voir `CLAUDE.md` §5.1 et le test de contrat
+    There is **no** field carrying a pre-composed prompt, and none must
+    reappear: see `CLAUDE.md` §5.1 and the contract test
     `test_ai_requests_carry_no_precomposed_prompt`.
     """
     analysis_id: uuid.UUID
     panel: str
-    ss_id: str | None = None          # panneau `sop` uniquement
-    row: int | None = None            # panneaux « en ligne » : la ligne visée
+    ss_id: str | None = None          # `sop` panel only
+    row: int | None = None            # "inline" panels: the targeted row
     language: str = "fr"
-    # Deux sémantiques distinctes, héritées du frontend : `custom_instruction`
-    # REMPLACE l'instruction automatique du panneau (données et schéma JSON
-    # conservés), `extra_instruction` s'y AJOUTE (boîte « affiner »).
+    # Two distinct semantics, inherited from the frontend: `custom_instruction`
+    # REPLACES the panel's automatic instruction (data and JSON schema kept),
+    # `extra_instruction` is ADDED to it ("refine" box).
     custom_instruction: str | None = None
     extra_instruction: str | None = None
-    # FEAT-40 — le client exprime une INTENTION, pas des données : le serveur
-    # lit le plan de mesures en base. Un client ne peut donc ni le fabriquer
-    # ni le tronquer, seulement demander à s'en passer.
+    # FEAT-40 — the client expresses an INTENT, not data: the server reads
+    # the measure plan from the database. A client can therefore neither
+    # fabricate nor truncate it, only ask to do without it.
     include_existing_measures: bool = True
 
 
@@ -103,13 +103,13 @@ class RiskSuggestRequest(BaseModel):
 async def risk_suggest(body: RiskSuggestRequest,
                        user: User = Depends(get_current_user),
                        db: AsyncSession = Depends(get_db)):
-    """Point d'entrée des suggestions EBIOS RM.
+    """Entry point of the EBIOS RM suggestions.
 
-    Le serveur relit l'analyse en base et compose lui-même le prompt (FEAT-41).
-    Avant, le navigateur envoyait la chaîne complète : le contenu réellement
-    soumis au fournisseur échappait au serveur, et **aucun contrôle d'accès à
-    l'analyse n'était possible** — le prompt arrivait déjà rempli de ses
-    données. Il l'est désormais.
+    The server re-reads the analysis from the database and composes the
+    prompt itself (FEAT-41). Before, the browser sent the full string: the
+    content actually submitted to the provider escaped the server, and
+    **no access control on the analysis was possible** — the prompt arrived
+    already filled with its data. It is enforced now.
     """
     _check_ai_access(user)
     _check_rate_limit(str(user.id) if user else "anonymous")
@@ -120,7 +120,7 @@ async def risk_suggest(body: RiskSuggestRequest,
     analysis = await db.get(Analysis, body.analysis_id)
     if analysis is None:
         raise HTTPException(status_code=404, detail="analysis not found")
-    # Lire l'analyse d'autrui via l'assistant serait une exfiltration déguisée.
+    # Reading someone else's analysis via the assistant would be a disguised exfiltration.
     if not _can("read", analysis, user):
         raise HTTPException(status_code=403, detail="no access to this analysis")
 
@@ -134,10 +134,10 @@ async def risk_suggest(body: RiskSuggestRequest,
 
     provider, model = await _runtime_provider_model(db)
     raw = await call_llm(db, RISK_SYSTEM_PROMPT, user_prompt, provider, model)
-    # Le serveur IMPOSE la forme attendue plutôt que de faire confiance au
-    # modèle : un texte hostile stocké en base peut le détourner, il ne peut
-    # pas faire passer le résultat. Les champs inconnus sont écartés ici,
-    # jamais transmis à l'interface.
+    # The server ENFORCES the expected shape rather than trusting the
+    # model: hostile text stored in the database can hijack it, it cannot
+    # get the result through. Unknown fields are discarded here, never
+    # forwarded to the UI.
     try:
         return {"result": validate_output(body.panel, _parse_lax_or_refuse(raw))}
     except ValueError as e:

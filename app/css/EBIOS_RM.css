@@ -1,6 +1,6 @@
 /* ── EBIOS RM — App-specific styles ────────────────────────────── */
 
-/* ── Analysis Catalog — rendu dans .ct-rail-foot (rail clair) ──── */
+/* ── Analysis Catalog — rendered in .ct-rail-foot (light rail) ──── */
 .catalog-actions-bar { display: flex; gap: 4px; padding: 4px 4px 6px; }
 .catalog-search { background: var(--ct-surface); border: 1px solid var(--ct-line); color: var(--ct-text-body); font-size: 0.72em; padding: 3px 8px; border-radius: var(--ct-r-sm); width: 100%; transition: border-color 0.2s; }
 .catalog-search:focus { outline: none; border-color: var(--ct-accent); }
@@ -14,8 +14,8 @@
 .catalog-empty { padding: 8px; font-size: 0.78em; color: var(--ct-text-meta); font-style: italic; }
 
 
-/* 44px = bouton icone 22px + les 2x10px de rembourrage de la cellule. A 35px
-   le bouton debordait du bord droit depuis le passage en data-icon. */
+/* 44px = 22px icon button + the 2x10px of cell padding. At 35px the button
+   overflowed the right edge since the move to data-icon. */
 .col-actions { width: 44px !important; min-width: 44px; max-width: 44px; }
 .eff-badge { cursor: pointer; }
 .eff-badge:hover { opacity: 0.8; }
@@ -53,9 +53,10 @@ footer { display: none; text-align: center; padding: 20px; color: var(--ct-ink-2
 .synth-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
 .ct-synth-card h3 { font-size: 0.9em; color: var(--ct-ink); margin-bottom: 8px; }
 .risk-dist { display: flex; gap: 8px; margin-top: 8px; }
-/* Pas de color ici : les barres portent un fond -tint (pâle) et leur couleur
-   de texte vient de .ct-text-*-ink (foncé). Forcer onsolid (clair) écrasait ces
-   classes à spécificité égale et rendait le texte illisible sur fond pâle. */
+/* No color here: the bars carry a -tint (pale) background and their text
+   color comes from .ct-text-*-ink (dark). Forcing onsolid (light) overrode
+   those classes at equal specificity and made the text unreadable on a pale
+   background. */
 .risk-bar { flex: 1; text-align: center; padding: 8px 6px; border-radius: 6px; font-weight: 600; }
 .risk-bar .count { font-size: 1.4em; }
 .risk-bar .label { font-size: 0.75em; opacity: 0.9; }
@@ -132,21 +133,21 @@ footer { display: none; text-align: center; padding: 20px; color: var(--ct-ink-2
 .text-black { color: var(--ct-ink); }
 .bg-white { background: var(--ct-surface); }
 
-/* ── Dark mode — re-thémage des couleurs legacy inline ─────────────
-   Les badges legacy (ctBadge / CT_COLORS) portent des hex pastel light
-   en style inline ; l'attribut data-tone (posé par EBIOS_RM_app.ts)
-   permet de les surcharger ici avec les paires -tint/-ink du design
-   system. Rendu light strictement inchangé (scopé data-theme=dark). */
+/* ── Dark mode — re-theming the legacy inline colors ─────────────
+   The legacy badges (ctBadge / CT_COLORS) carry light pastel hex values
+   in their inline style; the data-tone attribute (set by EBIOS_RM_app.ts)
+   lets us override them here with the design system's -tint/-ink pairs.
+   Light rendering strictly unchanged (scoped to data-theme=dark). */
 
-/* Boutons "+ Nouvelle SR" / "+ Nouvel OV" / "+ Phase" */
+/* "+ Nouvelle SR" / "+ Nouvel OV" / "+ Phase" buttons */
 
-/* Chips référentiels complémentaires (fond inline "white" en light) */
+/* Complementary framework chips (inline "white" background in light) */
 
-/* Matrices du dashboard (ctRenderMatrix) : traits blancs entre cellules et
-   points bleus à halo blanc codés en attributs SVG — surchargés en dark.
-   Les exports rapport extraient le <svg> hors DOM : non affectés. */
+/* Dashboard matrices (ctRenderMatrix): white strokes between cells and blue
+   dots with a white halo, coded as SVG attributes — overridden in dark.
+   The report exports pull the <svg> out of the DOM: unaffected. */
 
-/* Ton "extrême" (niveau max de l'échelle de gravité) : un cran au-dessus de
-   critical-tint sans sauter au critical plein — suit le thème via ses deux
-   composantes (même approche que --tprm-extreme côté vendor). */
+/* "extrême" tone (top level of the severity scale): one notch above
+   critical-tint without jumping to full critical — follows the theme through
+   its two components (same approach as --tprm-extreme on the vendor side). */
 :root { --ebios-extreme: var(--ct-critical-fill); }

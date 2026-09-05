@@ -4,10 +4,10 @@
 // Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
 // -----------------------------------------------------------------------------
 /**
- * CISO Toolbox — Système i18n (FR/EN)
+ * CISO Toolbox — i18n system (FR/EN)
  *
- * Charger AVANT cisotoolbox.js et les fichiers app.
- * Chaque app ajoute ses traductions via _registerTranslations().
+ * Load BEFORE cisotoolbox.js and the app files.
+ * Each app registers its own translations via _registerTranslations().
  */
 declare var _baseLang: string;
 declare var _locale: string;

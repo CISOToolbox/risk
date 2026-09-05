@@ -29,7 +29,7 @@ interface CtAiProvider {
     placeholder: string;
     endpoint: string;
 }
-/** Forme retournée par _aiEnsurePanel (panel inclus pour les usages internes). */
+/** Shape returned by _aiEnsurePanel (panel included for internal uses). */
 interface CtAiPanel {
     panel: HTMLElement;
     title: HTMLElement;

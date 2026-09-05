@@ -8,9 +8,9 @@
  *   <script src="js/risk_api.js"></script>
  */
 
-/* ── Types du client REST (effacés à l'emit) ───────────────────── */
+/* ── REST client types (erased at emit) ────────────────────────── */
 
-/** Options de _fetch : RequestInit assoupli (body objet → JSON.stringify). */
+/** _fetch options: relaxed RequestInit (object body → JSON.stringify). */
 interface RiskFetchOpts {
     method?: string;
     body?: unknown;
@@ -19,7 +19,7 @@ interface RiskFetchOpts {
     keepalive?: boolean;
 }
 
-/** Résumé d'analyse retourné par GET /analyses. */
+/** Analysis summary returned by GET /analyses. */
 interface RiskAnalysisSummary {
     id: string | number;
     name: string;
@@ -32,20 +32,20 @@ interface RiskAnalysisSummary {
     ss_count?: number | null;
 }
 
-/** Partage d'analyse (shared_with[]). */
+/** Analysis share (shared_with[]). */
 interface RiskShare {
     email: string;
     name?: string;
     permissions?: string[];
 }
 
-/** Analyse complète (GET /analyses/{id}). */
+/** Full analysis (GET /analyses/{id}). */
 interface RiskAnalysis extends RiskAnalysisSummary {
     data: EbiosData | string;
     shared_with?: RiskShare[];
 }
 
-/** Utilisateur (admin, GET /users). */
+/** User (admin, GET /users). */
 interface RiskUser {
     id: string;
     name?: string;

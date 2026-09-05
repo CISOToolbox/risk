@@ -21,7 +21,7 @@
  *     mount() — use render() only if you need to inline the HTML.
  *
  *   ct_userpicker.promptCreateUser(opts) → Promise<user|null>
- *     Opens a ct_modal to create a user (Nom*, Prénom*, Email*, Fonction?)
+ *     Opens a ct_modal to create a user (last name*, first name*, email*, role?)
  *     then POSTs to opts.apiUrl. Handles 409 (duplicate email) by fetching
  *     the existing user and returning it. Rejects silently to null on
  *     user cancel.
@@ -40,7 +40,7 @@
  *                     null to skip detection and always render the picker
  *                     (e.g. in Pilot itself, which is the native directory).
  *   onCreate        — callback(query) → Promise<user|null>. Enables the
- *                     "+ Créer" option. Caller is responsible for the
+ *                     "+ Create" option. Caller is responsible for the
  *                     snapshot-and-reopen pattern around promptCreateUser()
  *                     since ct_modal is a single overlay — see
  *                     ct_measure_modal for a reference implementation.
@@ -117,7 +117,7 @@
                 + (u.email ? '<div style="font-size:0.75em;color:var(--ct-ink-2)">' + esc(u.email) + '</div>' : '')
                 + '</div>';
         });
-        // "+ Créer" only when onCreate is wired AND the query doesn't
+        // "+ Create" only when onCreate is wired AND the query doesn't
         // exactly match an existing entry.
         var exact = inst.users.some(function (u) {
             return _userLabel(u).toLowerCase() === q || (u.email || "").toLowerCase() === q;
@@ -342,7 +342,7 @@
                 // FEAT-15 Lot 5: when the directory is the central Pilot hub,
                 // identities are owned by Access (the source). Consuming
                 // modules may search/select but NOT create here — drop the
-                // "+ Créer" affordance. Local-writable directories keep it.
+                // "+ Create" affordance. Local-writable directories keep it.
                 var mountOpts = effective === "pilot"
                     ? Object.assign({}, opts, { onCreate: undefined })
                     : opts;
@@ -352,14 +352,14 @@
         });
     }
     // ──────────────────────────────────────────────────────────────
-    // User creation modal (Nom*, Prénom*, Email*, Fonction?)
+    // User creation modal (last name*, first name*, email*, role?)
     // ──────────────────────────────────────────────────────────────
     function promptCreateUser(opts) {
         opts = opts || {};
         var query = (opts.query || "").trim();
         var apiUrl = opts.apiUrl || "api/directory";
         // Pre-fill: if query looks like an email → email; else split
-        // "Prénom Nom" into prenom+nom.
+        // "first-name last-name" into prenom+nom.
         var prefEmail = "", prefNom = "", prefPrenom = "";
         if (query.indexOf("@") > 0) {
             prefEmail = query;

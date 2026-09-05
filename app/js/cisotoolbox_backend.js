@@ -11,22 +11,22 @@
  * Snapshots disabled (use database backups instead).
  * Load AFTER cisotoolbox.js. Used by backend apps only.
  *
- * MASTER FACTORISÉ (migration TS) — remplace les variantes historiques
- * par un seul fichier paramétré par un flag runtime, lu au moment de
- * l'action (jamais au chargement) :
+ * FACTORED MASTER (TS migration) — replaces the historical variants with a
+ * single file parameterised by a runtime flag, read at action time (never
+ * at load time):
  *
  *   window._CT_IMPORT_NO_UNWRAP = true
- *       → désactive la détection/dépliage du format de backup Pilot
- *         {"module":...,"data":[{"id":...,"data":{...}}]} à l'import.
- *         À poser par le front du module PILOT (il ne doit pas déplier
- *         ses propres backups). Défaut : unwrap actif (8/9 modules).
+ *       → disables detection/unwrapping of the Pilot backup format
+ *         {"module":...,"data":[{"id":...,"data":{...}}]} on import.
+ *         To be set by the PILOT module's front end (it must not unwrap
+ *         its own backups). Default: unwrap enabled (8/9 modules).
  *
- * La délégation newAnalysis → window.catalogCreate reste gardée par un
- * typeof à l'exécution : les modules sans catalogue (pilot, appsec,
- * watch) ne définissent pas catalogCreate, comportement inchangé.
+ * The newAnalysis → window.catalogCreate delegation stays guarded by a
+ * runtime typeof: modules with no catalog (pilot, appsec, watch) do not
+ * define catalogCreate, behaviour unchanged.
  */
-// Flag historique posé par les variantes appsec/watch ; aucun lecteur
-// connu dans le code (gardé pour les forks clients éventuels).
+// Legacy flag set by the appsec/watch variants; no known reader in the
+// code (kept for possible client forks).
 window._CT_HAS_BACKEND = true;
 // ═══════════════════════════════════════════════════════════════════════
 // AUTO-SAVE — No-ops (data persisted in PostgreSQL)
@@ -59,9 +59,9 @@ function newAnalysis() {
         showStatus(t("status_new", { label: lbl }));
     });
 }
-// Mot de passe du fichier courant (en mémoire uniquement)
+// Password of the current file (in memory only)
 var _filePwd = null;
-// Charger un buffer (chiffré ou non) et retourner l'objet JSON
+// Load a buffer (encrypted or not) and return the JSON object
 async function _loadBuffer(buffer, filename) {
     var bytes = new Uint8Array(buffer);
     var jsonStr;
@@ -89,7 +89,7 @@ async function _loadBuffer(buffer, filename) {
     delete parsed.constructor;
     delete parsed.prototype;
     // Detect Pilot backup format: {"module":"...","data":[{"id":"...","data":{...}}]}
-    // (désactivable via window._CT_IMPORT_NO_UNWRAP — cf. en-tête)
+    // (can be disabled with window._CT_IMPORT_NO_UNWRAP — see the header)
     if (!window._CT_IMPORT_NO_UNWRAP && parsed.module && Array.isArray(parsed.data) && parsed.data.length > 0 && parsed.data[0].data) {
         parsed = parsed.data[0].data;
     }
@@ -148,7 +148,7 @@ async function openFile() {
         document.getElementById("file-input").click();
     }
 }
-// Sérialiser D en contenu fichier (chiffré ou non)
+// Serialize D into file content (encrypted or not)
 async function _serializeForSave() {
     var jsonStr = JSON.stringify(D, null, 2);
     if (_filePwd) {
@@ -217,7 +217,7 @@ async function saveJSON() {
         showStatus(t("status_downloaded") + (_filePwd ? t("status_saved_encrypted") : ""));
     }
 }
-// Activer/désactiver le chiffrement du fichier
+// Enable/disable file encryption
 async function enableFileEncryption() {
     var pwd = await _promptPassword(t("pwd_title_choose_file"), true);
     if (!pwd)
@@ -238,9 +238,9 @@ document.addEventListener("keydown", function (e) {
     }
 });
 // ═══════════════════════════════════════════════════════════════════════
-// SNAPSHOTS / HISTORIQUE — retirés en suite/standalone.
-// Fonctionnalité supprimée (l'onglet Historique n'existe plus). Stubs
-// conservés au cas où un vieux code appellerait encore ces noms.
+// SNAPSHOTS / HISTORY — removed in the suite/standalone variants.
+// Feature dropped (the History tab no longer exists). Stubs kept in case
+// older code still calls these names.
 // ═══════════════════════════════════════════════════════════════════════
 function createSnapshot() { }
 function restoreSnapshot() { }

@@ -4,13 +4,13 @@
 // Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
 // -----------------------------------------------------------------------------
 /**
- * CISO Toolbox — Système i18n (FR/EN)
+ * CISO Toolbox — i18n system (FR/EN)
  *
- * Charger AVANT cisotoolbox.js et les fichiers app.
- * Chaque app ajoute ses traductions via _registerTranslations().
+ * Load BEFORE cisotoolbox.js and the app files.
+ * Each app registers its own translations via _registerTranslations().
  */
-// Langue de base (fallback de t() ET défaut au 1er chargement). Toujours
-// embarquée. Surchargeable par le packaging via window._CT_BASE_LANG.
+// Base language (t() fallback AND default on first load). Always bundled.
+// Overridable at packaging time via window._CT_BASE_LANG.
 var _baseLang = (typeof window !== "undefined" && window._CT_BASE_LANG) || "en";
 var _locale = _baseLang;
 var _translations = { en: {}, fr: {} };
@@ -45,8 +45,8 @@ function tEsc(key, params) {
     return esc(t(key, params));
 }
 function _initLocale() {
-    // Priorité : préférence explicite stockée > langue du navigateur (si elle
-    // fait partie des langues disponibles) > langue de base (anglais) en repli.
+    // Precedence: explicit stored preference > browser language (when it is
+    // one of the available languages) > base language (English) as fallback.
     var stored = localStorage.getItem("ct_lang");
     if (stored && _translations[stored]) {
         _locale = stored;
@@ -56,9 +56,9 @@ function _initLocale() {
         _locale = _translations[nav] ? nav : _baseLang;
     }
 }
-// Langues disponibles pour ce déploiement : injectées au packaging via
-// window._CT_LANGS (ex. ["en","fr"]), sinon déduites des dictionnaires chargés.
-// Les noms s'affichent dans leur propre langue.
+// Languages available in this deployment: injected at packaging time via
+// window._CT_LANGS (e.g. ["en","fr"]), else derived from the loaded dicts.
+// Names are displayed in their own language.
 var _LANG_NAMES = {
     en: "English", fr: "Français", de: "Deutsch", es: "Español",
     it: "Italiano", pt: "Português", nl: "Nederlands"
@@ -79,9 +79,9 @@ function _loadI18nFile(lang, cb) {
             cb();
         return;
     }
-    // Une langue chargée à la demande = le socle (i18n_core_<lang>.js) + le
-    // dictionnaire du module (_ASSET_BASE + "_i18n_" + lang + ".js"). Le socle
-    // vit dans le même dossier js/ que le module.
+    // A lazily loaded language = the core dict (i18n_core_<lang>.js) plus the
+    // module dict (_ASSET_BASE + "_i18n_" + lang + ".js"). The core dict lives
+    // in the same js/ directory as the module.
     var base = (typeof _ASSET_BASE !== "undefined") ? _ASSET_BASE : "";
     var dir = base.replace(/[^/]*$/, ""); // "js/Surface" -> "js/"
     var files = [dir + "i18n_core_" + lang + ".js"];
@@ -91,7 +91,7 @@ function _loadI18nFile(lang, cb) {
     files.forEach(function (f) {
         var s = document.createElement("script");
         s.src = f;
-        // On avance même si un fichier manque (langue partiellement absente).
+        // Carry on even when a file is missing (partially deployed language).
         s.onload = s.onerror = function () {
             if (--pending === 0) {
                 _i18nLoaded[lang] = true;
@@ -166,20 +166,20 @@ function _rt(obj, field) {
     }
     return obj[field] || "";
 }
-// Les traductions socle partagées vivent désormais dans i18n_core_<lang>.js
-// (un fichier par langue, chargés juste après i18n.js). Le découpage permet de
-// n'embarquer que les langues retenues au packaging.
-// Init locale on load. Aujourd'hui les deux langues sont chargées via <script>
-// statique (Phase 3 restreindra au seul socle de base, les autres en lazy).
+// The shared core translations now live in i18n_core_<lang>.js (one file per
+// language, loaded right after i18n.js). The split makes it possible to bundle
+// only the languages selected at packaging time.
+// Init locale on load. Today both languages are loaded through static
+// <script> tags (Phase 3 will keep only the base core, lazy-loading the rest).
 _i18nLoaded["fr"] = true;
 _i18nLoaded["en"] = true;
 _initLocale();
-// Sélecteur de langue : masqué s'il n'y a qu'une langue déployée.
+// Language selector: hidden when a single language is deployed.
 if (typeof document !== "undefined" && _availableLangs().length <= 1) {
     document.querySelectorAll('[data-click="ct_toggleLang"]').forEach(function (b) { b.style.display = "none"; });
 }
-// Si la locale retenue n'est pas la base (préférence stockée / navigateur) et
-// n'est pas encore chargée, la charger puis rafraîchir.
+// When the resolved locale is not the base one (stored preference / browser)
+// and is not loaded yet, load it then refresh.
 if (_locale !== _baseLang && !_i18nLoaded[_locale]) {
     _loadI18nFile(_locale, function () {
         _applyStaticTranslations();

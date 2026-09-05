@@ -89,7 +89,7 @@ async def restore_root_fields(db: Any, obj: Any, body: dict, user_model: Any) ->
             obj.owner_id = oid
 
 
-# ── Recovery reads (FEAT-30 phase 2, étage 3) ──────────────────────────
+# ── Recovery reads (FEAT-30 phase 2, stage 3) ──────────────────────────
 # The backup agent restores the module's database at instant T into a
 # scratch instance listening on RECOVERY_DB_HOST:RECOVERY_DB_PORT
 # (static env — no client-supplied DSN, no injection surface). The module

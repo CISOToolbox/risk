@@ -4,17 +4,17 @@
 // Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
 // -----------------------------------------------------------------------------
 /**
- * ct-core.d.ts — types transverses CISO Toolbox, copiés dans chaque app
- * (app/ts/types/). Complète les déclarations PAR FICHIER générées dans
- * shared/types/gen/*.d.ts (une par lib shared, copiées selon les
- * <script src> de l'index.html de l'app).
+ * ct-core.d.ts — CISO Toolbox cross-cutting types, copied into every app
+ * (app/ts/types/). Complements the PER-FILE declarations generated in
+ * shared/types/gen/*.d.ts (one per shared lib, copied according to the
+ * <script src> tags of the app's index.html).
  *
- * NE déclare PAS les globals fournis par l'app elle-même : chaque app
- * déclare/définit son propre `D` (typé), `REFERENTIELS_META`,
+ * Does NOT declare the globals provided by the app itself: each app
+ * declares/defines its own `D` (typed), `REFERENTIELS_META`,
  * `_ASSET_BASE`, `ensureKeys()`, `renderAll()`, `renderHistory()`,
  * `selectPanel()`, `toggleMenu()`…
  *
- * Généré/maintenu à la main — voir frontend-ts/docs/PLAN.md.
+ * Generated/maintained by hand — see frontend-ts/docs/PLAN.md.
  */
 
 /* ── Config app → libs shared ──────────────────────────────────── */
@@ -44,7 +44,7 @@ interface AiAppConfig {
     onSettingsRendered?: () => void;
 }
 
-/** Dictionnaire i18n plat clé → traduction. */
+/** Flat i18n dictionary, key → translation. */
 type CtI18nDict = Record<string, string>;
 
 interface CtColor { bg: string; txt: string; vivid: string; }
@@ -59,13 +59,13 @@ interface CtAiRuntime {
     openai_configured?: boolean;
 }
 
-/* ── File System Access API (non incluse dans lib.dom) ─────────── */
+/* ── File System Access API (not included in lib.dom) ──────────── */
 
 interface FilePickerAcceptType { description?: string; accept?: Record<string, string[]>; }
 interface OpenFilePickerOptions { types?: FilePickerAcceptType[]; multiple?: boolean; }
 interface SaveFilePickerOptions { suggestedName?: string; types?: FilePickerAcceptType[]; }
 
-/* ── Propriétés Window transverses ─────────────────────────────── */
+/* ── Cross-cutting Window properties ───────────────────────────── */
 
 interface Window {
     SCHEMA_REV?: number;
@@ -74,7 +74,7 @@ interface Window {
     ctSchemaStamp?: (d: Record<string, any>) => void;
     CT_CONFIG?: CtConfig;
     AI_APP_CONFIG?: AiAppConfig;
-    /** Délégué de création en mode backend-catalogue (risk). */
+    /** Creation delegate in backend-catalog mode (risk). */
     catalogCreate?: () => void;
     _aiRuntime?: CtAiRuntime;
     showOpenFilePicker?: (opts?: OpenFilePickerOptions) => Promise<FileSystemFileHandle[]>;

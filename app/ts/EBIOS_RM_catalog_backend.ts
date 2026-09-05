@@ -119,13 +119,13 @@ function _flushNow() {
 window.addEventListener("pagehide", _flushNow);
 document.addEventListener("visibilitychange", function() { if (document.visibilityState === "hidden") _flushNow(); });
 
-// FEAT-41 — vidage ATTENDABLE des écritures en attente.
+// FEAT-41 — AWAITABLE flush of the pending writes.
 //
-// Depuis que le serveur relit l'analyse en base pour composer les prompts IA,
-// l'autosave débouncé (800 ms) est devenu un piège : éditer puis cliquer
-// aussitôt sur l'assistant ferait travailler le modèle sur l'état d'avant
-// l'édition, sans que rien ne le signale. `_flushNow` ne convient pas ici —
-// il tire en keepalive, sans rien à attendre.
+// Now that the server re-reads the analysis from the database to compose the
+// AI prompts, the debounced autosave (800 ms) has become a trap: editing then
+// immediately clicking the assistant would make the model work on the
+// pre-edit state, with nothing to signal it. `_flushNow` does not fit here —
+// it fires in keepalive mode, with nothing to await.
 window._riskFlushPending = function(): Promise<void> {
     if (!_activeId || _saveLocked) return Promise.resolve();
     if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
@@ -137,15 +137,15 @@ window._riskFlushPending = function(): Promise<void> {
         if (data === undefined) continue;
         jobs.push(RiskAPI._putSection(_activeId, _SECTION_MAP[section] || section, data));
     }
-    // Le blob PUT couvre les mutations non encore migrées vers _persist.
+    // The blob PUT covers the mutations not yet migrated to _persist.
     jobs.push(RiskAPI.update(_activeId, {
         name: (D.context && D.context.societe) || "",
         data: D,
         expected_server_rev: _serverRev
     } as any));
-    // Un échec d'écriture ne doit pas bloquer la suggestion : le serveur
-    // travaillera sur le dernier état enregistré, ce qui reste préférable à
-    // un assistant qui refuse de répondre.
+    // A write failure must not block the suggestion: the server will work on
+    // the last saved state, which remains preferable to an assistant that
+    // refuses to answer.
     return Promise.all(jobs.map(function(p) { return p.catch(function() {}); }))
         .then(function() { return; });
 };
