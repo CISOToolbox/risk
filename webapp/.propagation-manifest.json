@@ -1,8 +1,9 @@
 {
   "$comment": "Files replicated from a private upstream repository. Do NOT edit them here: the next propagation overwrites them and CI rejects local edits. See CONTRIBUTING.md, section 'Shared code'.",
-  "generated": "2026-09-05T20:14:29Z",
+  "generated": "2026-09-06T06:05:45Z",
   "checker": "check-replicated-files.py (run it in CI)",
   "files": {
+    "check-replicated-files.py": "sha256:dc673db3a6c15a1e07766588847ca47ba21be77f6b1a6f660c5d3efc33c10da9",
     "css/cisotoolbox.css": "sha256:3143b0ac334266cfbd1878b7d992ee132425a531ce1c52954dfaf6c35c5ded09",
     "fonts/IBMPlexMono-Medium.woff2": "sha256:309f31ec72260a823fc712000504015fe43f2aba3d80835516b63ae10a10a5db",
     "fonts/IBMPlexMono-Regular.woff2": "sha256:0988deb4552a1dddf06df11fcc32dee1a90e2b83e07d041a6884d10d28e66cb0",
@@ -19,7 +20,6 @@
     "js/i18n.js": "sha256:33be94a01c250b0d5a89e915b797593ef4930820ed33af7eea1d2ca83af81e7e",
     "js/i18n_core_en.js": "sha256:c77e03a122414dbb4f792cf37bd63eff690eac49d0f44359bca986b8142bde64",
     "js/i18n_core_fr.js": "sha256:44a93aa916f5f333c6b8226645d04681f2cb3c3a71652a7f3b2a2a0a8c6a09ee",
-    "js/referentiels_catalog.js": "sha256:58a0e68ce7473400e15ff7d3b76154fd11a9ea5fb7ce39752b0a3081dcbccb4b",
     "ts/types/ai_common.d.ts": "sha256:24136ff532b1cb1d1a91b669992d0a29b16a60510dc91ff6c5e7c2dc3e2ebe8e",
     "ts/types/cisotoolbox.d.ts": "sha256:208ab82b11aa73ab72ef2deb05dfb193fbedc1045b65404a8d5d2aef611fb543",
     "ts/types/cisotoolbox_local.d.ts": "sha256:aeeb9c1832865c0a307158757bcf62a0508d59710bede44e9d138d09be887d4d",
@@ -30,7 +30,6 @@
     "ts/types/ct_settings.d.ts": "sha256:212cc9d24c19e0515cf6cfef0b17b5dfc91684bb966ede53e7416b2141b5c40b",
     "ts/types/i18n.d.ts": "sha256:4ef9486aace1d2772a5528d0f2fe66dc2f8f91167370d0566412e7b3ea5beec6",
     "ts/types/i18n_core_en.d.ts": "sha256:19c006c31760a6886a053f6cf9b9d3cd02a36f96363db972d44e45fc03980190",
-    "ts/types/i18n_core_fr.d.ts": "sha256:fa39368005b6e15cce6e8664fb3c251ecfb95d919be42ff39072de616f4f5875",
-    "ts/types/referentiels_catalog.d.ts": "sha256:b76f20a51432bf782be6d8a2e834b1f8c6c8683708da2079c642a7471f42d757"
+    "ts/types/i18n_core_fr.d.ts": "sha256:fa39368005b6e15cce6e8664fb3c251ecfb95d919be42ff39072de616f4f5875"
   }
 }
