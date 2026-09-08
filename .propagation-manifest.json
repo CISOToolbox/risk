@@ -1,10 +1,10 @@
 {
   "$comment": "Files replicated from a private upstream repository. Do NOT edit them here: the next propagation overwrites them and CI rejects local edits. See CONTRIBUTING.md, section 'Shared code'.",
-  "generated": "2026-09-06T06:46:25Z",
+  "generated": "2026-09-08T13:28:16Z",
   "checker": "check-replicated-files.py (run it in CI)",
   "files": {
     "Dockerfile": "sha256:013fb7e624fb6cb1e5c6a557610a383cb176ab418c3a9e009c70a94195b3714f",
-    "VERSION": "sha256:f5e5c9534532840fcd45bb002e69ed85c61dba2753450e26b448b7df1481e24d",
+    "VERSION": "sha256:d1b77b88f4b9f675a900e4143ac768a21218623cfe1703ca43162388c3271bd6",
     "alembic.ini": "sha256:f73e41778bf4b6f1b63c514527f1f0f64343d813618a36501cbc6d79208f9241",
     "alembic/env.py": "sha256:5d67480af4794f606ed2f4d715a26cba33c26b098cf14cc34bc1e42ce98d49b8",
     "alembic/script.py.mako": "sha256:304a8bfb6a804e5493f5300e79882c70c9f5bb2e87512f4d16f0e097dddd323f",
