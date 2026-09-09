@@ -17,44 +17,25 @@ Opening `index.html` straight from the filesystem (`file://`) mostly works, but
 `fetch()`-based features (loading `demo-*.json`, lazy-loaded frameworks) are
 blocked by the browser's origin rules. Use a static server.
 
-## Replicated files
+## Generated files
 
 > **Read this before editing anything under `js/`, `css/` or `ts/types/`.**
 
-Part of this repository is **replicated from a private shared repository** —
-the design system and the cross-module libraries that all CISO Toolbox modules
-have in common. Those files carry this banner:
+Part of this repository is **generated** — the design system and the
+cross-module libraries that all CISO Toolbox modules have in common. Those
+files carry this banner:
 
 ```
 // ─────────────────────────────────────────────────────────────
-// REPLICATED from the private shared repository — do not edit here.
-// GENERATED from shared/ts/ (or shared/types/) by shared/ts-build.sh.
+// Generated file - do not edit.
+// It is overwritten at every release; a change made here is lost.
 // ─────────────────────────────────────────────────────────────
 ```
 
-They are produced by `shared/ts-build.sh` from TypeScript sources that live
-outside this repository, and are copied into every module. **A pull request
-that modifies one of them cannot be merged**: the next synchronisation would
-silently overwrite your change, and the same change would be missing from the
-other modules.
-
-The authoritative list is in [`.replicated-files`](.replicated-files). It
-currently covers:
-
-- `js/cisotoolbox.js`, `js/cisotoolbox_local.js`, `js/i18n.js`,
-  `js/ai_common.js`, `js/referentiels_catalog.js`
-- the shared widgets `js/ct_*.js` (`ct_table`, `ct_modal`, `ct_bulkbar`,
-  `ct_refselect`, `ct_settings`, `ct_measure_modal`, `ct_userpicker`, …)
-- the design-system stylesheet `css/cisotoolbox.css`
-- every declaration file under `ts/types/`
-
-If you found a real bug in one of them, **open an issue** describing it (with a
-reproduction) instead of a pull request. The fix will be made upstream and will
-reach this repository — and all the other modules — on the next sync.
-
-Everything else *is* yours to change: `index.html`, the module stylesheet
-(`css/EBIOS_RM.css`), the `js/`-prefixed module files, `ts/` module sources,
-`demo-*.json`, the docs and the `e2e/` tests.
+**A pull request that modifies one of them cannot be merged**: the next
+release would silently overwrite your change, and the same change would be
+missing from the other modules. Open an issue describing the change instead;
+it is applied at the source and reaches every module in the next release.
 
 ## TypeScript sources
 

@@ -37,8 +37,8 @@ function _lockSave() {
 // for now. When granular PATCH routes are added to the Risk API,
 // swap this implementation like Vendor's vendor_api.js does.
 //
-// See shared/js/cisotoolbox_local.js for the contract and
-// CLAUDE.md § "Persistence adapter" for the full specification.
+// See cisotoolbox_local.js for the contract and
+// the persistence adapter contract for the full specification.
 // ═══════════════════════════════════════════════════════════════
 
 // Blob PUT — used as fallback for unmigrated mutations, import, undo

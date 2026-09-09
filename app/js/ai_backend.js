@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------------
-// REPLICATED from the private shared repository (shared/js/backend/ai_backend.js).
-// DO NOT EDIT HERE - changes will be overwritten by the next propagation run.
-// Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
+// Generated file - do not edit.
+// It is overwritten at every release; a change made here is lost.
+// See CONTRIBUTING.md.
 // -----------------------------------------------------------------------------
 /**
  * CISO Toolbox — AI Backend Overrides
@@ -9,9 +9,8 @@
  * Pilot-managed AI mode: runtime probe, proxy calls, managed settings UI.
  * Load AFTER ai_common.js. Used by backend apps only (never in opensource).
  *
- * Canonical source of the TS port: demo-docker/risk/app/js/ai_backend.js
- * (identical across 9 modules; the shared/js master was an undeployed
- * rewrite — see STATUS.md).
+ * Ported from the module's original JavaScript implementation.
+ * (identical across 9 modules).
  */
 (function () {
     "use strict";

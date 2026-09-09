@@ -148,7 +148,7 @@ bash tests/check-deps-drift.sh
 
 ## Contributing
 
-Part of this repository is **replicated** from a private shared repository and
+Some files in this repository are **generated** and
 must not be edited here - read [`CONTRIBUTING.md`](./CONTRIBUTING.md) before
 opening a pull request.
 

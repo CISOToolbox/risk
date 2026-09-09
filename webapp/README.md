@@ -151,11 +151,10 @@ tsconfig.json
 
 The design system and the cross-module libraries (`js/cisotoolbox*.js`,
 `js/i18n.js`, `js/ai_common.js`, `js/ct_*.js`, `css/cisotoolbox.css`,
-`ts/types/*.d.ts`) are **replicated from a private shared repository** and
-carry a `REPLICATED … do not edit here` banner. They are regenerated and
-overwritten on each sync — see [`.replicated-files`](.replicated-files) for the
-exact list and [CONTRIBUTING.md](CONTRIBUTING.md) for what to do if you find a
-bug in one of them.
+`ts/types/*.d.ts`) are **generated** and carry a "Generated file - do not
+edit" banner. They are overwritten at every release — see
+[CONTRIBUTING.md](CONTRIBUTING.md) for what to do if you find a bug in one of
+them.
 
 ## Tests
 

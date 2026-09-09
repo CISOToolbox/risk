@@ -154,7 +154,7 @@ async def set_source(body: dict, user: Optional[User] = Depends(get_current_user
 
 
 # ---- FEAT-31: module-switcher menu proxied from the Pilot registry ----
-# Same block in every module's directory_proxy.py — propagate fixes manually.
+# Same block in every module's directory_proxy.py — keep them identical.
 _menu_cache: dict = {"at": 0.0, "data": None}
 _MENU_TTL = 300.0
 

@@ -73,7 +73,7 @@ to be runnable against a long-lived development instance.
 
 ## Why there are no browser tests here
 
-The browser-level journeys (Playwright) live in the private monorepo and target
+The browser-level journeys (Playwright) belong to the integrated suite repository and target
 the **integrated suite**: they authenticate by forging the suite-wide
 `pilot_token` cookie and navigate module path prefixes behind the nginx proxy
 (`/risk/`). A standalone deployment has none of that - it serves the module at

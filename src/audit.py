@@ -1,7 +1,7 @@
 """CISO Toolbox — server-side write journal (FEAT-30 P1.6).
 
-Propagated from the shared backend library (audit_common) — do not edit this
-module's src/audit.py-equivalent (shared/python is NOT auto-synced).
+Shared backend library (audit_common) — do not edit this
+module's src/audit.py-equivalent (identical in every module).
 
 Superset of the historical surface/appsec/watch ``log_action``: adds the
 technical identity of the touched object (``entity_type`` / ``entity_id``)

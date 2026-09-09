@@ -155,7 +155,7 @@
     //
     // The server re-reads the analysis from the DB and composes the prompt (src/ai_prompts.py).
     // The frontend now declares ONLY what it wants: the panel, the language and
-    // the optional free-form instruction. See CLAUDE.md §5.1.
+    // the optional free-form instruction. See the server-side prompt composition rule.
     //
     // The browser variant (webapp/) keeps its builders: with no backend, it
     // calls the provider directly. Declared divergence.

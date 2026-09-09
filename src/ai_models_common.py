@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
-# REPLICATED from the private shared repository (shared/python/ai_models_common.py).
-# DO NOT EDIT HERE - changes will be overwritten by the next propagation run.
-# Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
+# Generated file - do not edit.
+# It is overwritten at every release; a change made here is lost.
+# See CONTRIBUTING.md.
 # -----------------------------------------------------------------------------
 """The suite's single catalogue of AI providers and models.
 
@@ -23,7 +23,7 @@ SQLAlchemy, no schema import** — that is precisely what let Pilot stay off
 
 Keeping the frontend in step
 ----------------------------
-``shared/ts/ai_common.ts`` carries the same catalogue for standalone mode,
+``ai_common.ts`` carries the same catalogue for standalone mode,
 where the browser talks to the provider directly and cannot import Python.
 That copy is unavoidable, so it is *verified* instead: the suite contract test
 fails if the two lists diverge. Change this file, run the test, fix the TS.

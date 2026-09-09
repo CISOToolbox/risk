@@ -1,6 +1,6 @@
 """Auth module — thin wrapper over auth_common.py.
 
-Edit the shared auth logic in shared/python/auth_common.py, not here.
+Edit the shared auth logic in auth_common.py, not here.
 This file only re-exports symbols so existing imports keep working.
 """
 from src.auth_common import (  # noqa: F401 — re-export

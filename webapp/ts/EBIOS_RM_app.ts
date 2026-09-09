@@ -2951,7 +2951,7 @@ ${esc(e.stack||"")}</pre></section>`;
 }
 
 // ===== Managerial synthesis (PPTX) + EBIOS RM output report (Word) =====
-// Ported from backend-clients/demo-docker/risk (source of truth).
+// Ported from risk (source of truth).
 
 function _synthesisData() {
     const sopVop = _computeSOPVop().sopVop;

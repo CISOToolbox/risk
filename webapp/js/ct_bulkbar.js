@@ -1,9 +1,9 @@
 // ─────────────────────────────────────────────────────────────
-// REPLICATED from the private shared repository — do not edit here.
-// GENERATED from shared/ts/ (or shared/types/) by shared/ts-build.sh.
+// Generated file - do not edit.
+// Generated file - do not edit.
 // Edit the shared source instead: any change made in this repository is
-// overwritten by the next sync, and pull requests touching this file
-// cannot be merged. See CONTRIBUTING.md § Replicated files.
+// It is overwritten at every release; a change made here is lost.
+// See CONTRIBUTING.md.
 // ─────────────────────────────────────────────────────────────
 /**
  * ct_bulkbar — Fixed bottom bulk-action bar for CISO Toolbox tables.

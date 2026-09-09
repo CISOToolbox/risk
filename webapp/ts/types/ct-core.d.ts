@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------------
-// REPLICATED from the private shared repository (shared/types/ct-core.d.ts).
-// DO NOT EDIT HERE - changes will be overwritten by the next propagation run.
-// Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
+// Generated file - do not edit.
+// It is overwritten at every release; a change made here is lost.
+// See CONTRIBUTING.md.
 // -----------------------------------------------------------------------------
 /**
  * ct-core.d.ts — CISO Toolbox cross-cutting types, copied into every app
@@ -14,7 +14,7 @@
  * `_ASSET_BASE`, `ensureKeys()`, `renderAll()`, `renderHistory()`,
  * `selectPanel()`, `toggleMenu()`…
  *
- * Generated/maintained by hand — see frontend-ts/docs/PLAN.md.
+ * Maintained by hand.
  */
 
 /* ── Config app → libs shared ──────────────────────────────────── */

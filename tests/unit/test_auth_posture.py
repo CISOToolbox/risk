@@ -7,7 +7,7 @@ error). The fix makes AUTH_MODE=none the ONLY way to run without a credential;
 `assert_auth_posture()` refuses to boot when the mode's credential is missing
 in any other mode.
 
-Exercised on risk's copy of the shared master; auth_common.py is byte-identical
+Exercised on risk's copy of the shared source; auth_common.py is byte-identical
 across all modules (md5-verified), so this guards every backend service.
 """
 import importlib

@@ -243,13 +243,13 @@ interface Window {
     _appInitCallback?: () => void;
     /** Logged-in user (backend variant only). */
     _currentUser?: { name?: string; email?: string; role?: string };
-    /** Backend persistence (demo-docker variant) — absent in opensource. */
+    /** Backend persistence (backend variant) — absent in opensource. */
     _persistSettings?: () => void;
     /* App globals exposed on window (catalog + ai_assistant) */
     renderSocle?: EbAiWrappedRender;
     renderEco?: EbAiWrappedRender;
     renderSOP?: EbAiWrappedRender;
-    /* demo-docker variant: backend analysis ids are string | number
+    /* backend variant: backend analysis ids are string | number
        (PostgreSQL serial) — params widened vs opensource (string only). */
     catalogOpen?: (id: string | number) => void;
     catalogDuplicate?: (id: string | number) => void;

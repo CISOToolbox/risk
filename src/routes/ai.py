@@ -80,7 +80,7 @@ class RiskSuggestRequest(BaseModel):
     """FEAT-41 — the client declares WHAT to suggest, not what to send to the model.
 
     There is **no** field carrying a pre-composed prompt, and none must
-    reappear: see `CLAUDE.md` §5.1 and the contract test
+    reappear: see the server-side prompt composition rule and the contract test
     `test_ai_requests_carry_no_precomposed_prompt`.
     """
     analysis_id: uuid.UUID

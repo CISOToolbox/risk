@@ -3,69 +3,29 @@
 Thanks for taking the time to contribute. A few things about this repository
 are unusual, so please read this before opening a pull request.
 
-## This repository is partly replicated and partly generated
+## Generated files
 
-Risk is developed in a private monorepo and published here. Three categories
-of file coexist:
+Some files in this repository are generated and must not be edited here — the
+next release overwrites them and the change is lost. They carry a header that
+says so ("Generated file - do not edit"):
 
 | Category | Where | Editable here? |
 |----------|-------|----------------|
 | Module code | `src/`, `alembic/`, `app/ts/`, `app/index.html`, `Dockerfile`, `docker-compose.yml` | **Yes** |
-| Replicated Python helpers | `src/*_common.py`, `src/ssrf_guard.py`, `src/default_project.py` | **No** |
-| Generated frontend assets | `app/js/*.js` and `app/css/*.css` carrying a `GENERATED` header | **No** |
+| Shared Python helpers | `src/*_common.py`, `src/ssrf_guard.py`, `src/default_project.py` | **No** |
+| Generated frontend assets | `app/js/*.js` and `app/css/*.css` carrying the generated-file header | **No** |
 
-### Replicated Python helpers
+The shared Python helpers (`auth_common.py`, `ai_proxy_common.py`, `directory_common.py`, `upload_common.py`, `connectors_common.py`, `csv_common.py`, `evidence_common.py`, `mailer_common.py`, `default_project.py` and `ssrf_guard.py`) are identical in every CISO Toolbox
+module on purpose: a fix that lands in one module only is exactly the class of
+bug they exist to prevent. The shared frontend (design system, i18n runtime,
+common widgets) is compiled once and shipped into `app/js/` and `app/css/`.
+Module-specific TypeScript lives in `app/ts/` and **is** editable; a file in
+`app/js/` without the header is module-specific build output.
 
-Files such as `auth_common.py`, `ai_proxy_common.py`, `directory_common.py`,
-`upload_common.py`, `connectors_common.py`, `csv_common.py`,
-`evidence_common.py`, `mailer_common.py`, `default_project.py` and
-`ssrf_guard.py` are **verbatim copies** of a single master kept in the private
-shared repository (`shared/python/`). Each one carries this banner:
-
-```
-# -----------------------------------------------------------------------------
-# REPLICATED from the private shared repository (shared/python/<name>).
-# DO NOT EDIT HERE - changes will be overwritten by the next propagation run.
-# -----------------------------------------------------------------------------
-```
-
-Every module ships the same copy. A patch applied here would be silently
-reverted on the next propagation *and* would leave the other modules unfixed -
-which is exactly the class of bug (a fix landing in one module only) the shared
-master exists to prevent. **Open an issue describing the change instead**, and
-it will be applied to the master and propagated to every module at once.
-
-### Generated frontend assets
-
-`shared/ts-build.sh` in the private monorepo compiles the shared TypeScript
-sources (`shared/ts/`) and the shared stylesheets (`shared/css/`) once, then
-distributes the emitted `.js` / `.css` into each module's `app/js/` and
-`app/css/`, prefixing each file with:
-
-```
-// -------------------------------------------------------------
-// GENERATED from shared/ts/ - do NOT edit here.
-// Edit the shared TypeScript source and run shared/ts-build.sh.
-// -------------------------------------------------------------
-```
-
-(the stylesheet variant reads `GENERATED from shared/css/`). Same rule: the
-build is the single writer of those files.
-
-Module-specific TypeScript lives in `app/ts/` and **is** editable - it is
-compiled in place into `app/js/`. A file in `app/js/` without a `GENERATED`
-header is module-specific build output, not a shared asset.
-
-### Why two different banners
-
-`GENERATED` marks build output, `REPLICATED` marks a verbatim copy. The wording
-differs because the mechanisms differ, and the `GENERATED` banner is emitted by
-the existing build script - it is left exactly as the build writes it so the
-build is not broken. In both cases the practical rule is identical: **the file
-is overwritten on the next run, so do not edit it here.**
-
-One of the end-to-end tests asserts that the shared frontend assets still carry
-their `GENERATED` header, so a hand-edit is caught before it is silently lost.
+**To change a generated file, open an issue describing the change**: it is
+applied at the source and reaches every module in the next release. One of the
+end-to-end tests asserts that the shared frontend assets still carry their
+header, so a hand-edit is caught before it is silently lost.
 
 ## Development
 

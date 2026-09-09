@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------------
-// REPLICATED from the private shared repository (shared/js/ct_schema.js).
-// DO NOT EDIT HERE - changes will be overwritten by the next propagation run.
-// Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
+// Generated file - do not edit.
+// It is overwritten at every release; a change made here is lost.
+// See CONTRIBUTING.md.
 // -----------------------------------------------------------------------------
 // ct_schema — versioned exports + migration-on-load (FEAT-36).
 //
@@ -25,7 +25,7 @@
 // Saves stamp too (ctSchemaStamp before every serialize), so any file
 // produced from now on carries its revision.
 //
-// Backend twin: shared/python/schema_migrations.py — SAME revs, SAME
+// Backend twin: schema_migrations.py — SAME revs, SAME
 // migration chains. Bumping SCHEMA_REV in one side without the other (or
 // without an archived fixture in tests/fixtures/exports/) fails the
 // fixture test.

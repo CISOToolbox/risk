@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
-# REPLICATED from the private shared repository (shared/python/settings_crypto.py).
-# DO NOT EDIT HERE - changes will be overwritten by the next propagation run.
-# Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
+# Generated file - do not edit.
+# It is overwritten at every release; a change made here is lost.
+# See CONTRIBUTING.md.
 # -----------------------------------------------------------------------------
 """Encryption for secrets kept in the `AppSettings` key/value table.
 
@@ -13,7 +13,7 @@ independent copies exporting three DIFFERENT APIs for it — `encrypt_config`
 Live client data is already encrypted with those, so unifying them is a
 migration, not a refactor, and not something to attempt while fixing an
 unrelated finding. This module therefore adds only the missing capability, is
-propagated from a single master, and reaches the modules that have no crypto.py
+identical in every module, and reaches the modules that have no crypto.py
 at all — Pilot in particular, which stores SMTP and cloud-connector credentials.
 
 Storage format and lazy migration

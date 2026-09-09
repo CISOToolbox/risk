@@ -1,11 +1,11 @@
 # -----------------------------------------------------------------------------
-# REPLICATED from the private shared repository (shared/python/schema_migrations.py).
-# DO NOT EDIT HERE - changes will be overwritten by the next propagation run.
-# Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
+# Generated file - do not edit.
+# It is overwritten at every release; a change made here is lost.
+# See CONTRIBUTING.md.
 # -----------------------------------------------------------------------------
 """FEAT-36 — versioned exports + migration-on-import (backend twin).
 
-The frontend twin is ``shared/ts/ct_schema.ts``. The CONTRACT is shared:
+The frontend twin is ``ct_schema.ts``. The CONTRACT is shared:
 
 * every blob app has an integer schema revision (below, ``MODULE_REVS``);
 * a file without ``meta.schema_rev`` is rev 0 (every pre-FEAT-36 export);

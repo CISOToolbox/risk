@@ -239,7 +239,7 @@ interface Window {
     _appInitCallback?: () => void;
     /** Logged-in user (backend variant only). */
     _currentUser?: { name?: string; email?: string };
-    /** Backend persistence (demo-docker variant) — absent in opensource. */
+    /** Backend persistence (backend variant) — absent in opensource. */
     _persistSettings?: () => void;
     /* App globals exposed on window (catalog + ai_assistant) */
     renderSocle?: EbAiWrappedRender;

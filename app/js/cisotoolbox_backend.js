@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------------
-// REPLICATED from the private shared repository (shared/js/backend/cisotoolbox_backend.js).
-// DO NOT EDIT HERE - changes will be overwritten by the next propagation run.
-// Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
+// Generated file - do not edit.
+// It is overwritten at every release; a change made here is lost.
+// See CONTRIBUTING.md.
 // -----------------------------------------------------------------------------
 /**
  * CISO Toolbox — Backend persistence layer
@@ -11,7 +11,7 @@
  * Snapshots disabled (use database backups instead).
  * Load AFTER cisotoolbox.js. Used by backend apps only.
  *
- * FACTORED MASTER (TS migration) — replaces the historical variants with a
+ * FACTORED SOURCE — replaces the historical variants with a
  * single file parameterised by a runtime flag, read at action time (never
  * at load time):
  *

@@ -1,13 +1,12 @@
 # -----------------------------------------------------------------------------
-# REPLICATED from the private shared repository (shared/python/ai_proxy_common.py).
-# DO NOT EDIT HERE - changes will be overwritten by the next propagation run.
-# Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
+# Generated file - do not edit.
+# It is overwritten at every release; a change made here is lost.
+# See CONTRIBUTING.md.
 # -----------------------------------------------------------------------------
 """Shared AI-proxy core for CISO Toolbox backend modules.
 
-This file is COPIED into each module's src/ directory (like auth_common.py).
-Do NOT edit the per-module copies — edit the original at
-shared/python/ai_proxy_common.py and propagate.
+An identical copy of this file ships in every module's src/ directory.
+Do NOT edit the per-module copies: open an issue describing the change.
 
 It owns everything the AI endpoints share across modules — the provider
 registry, the SigV4 signer, key/settings accessors, the rate limiter, the

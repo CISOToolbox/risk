@@ -1,11 +1,10 @@
 // -----------------------------------------------------------------------------
-// REPLICATED from the private shared repository (shared/types/ct-vendor-libs.d.ts).
-// DO NOT EDIT HERE - changes will be overwritten by the next propagation run.
-// Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
+// Generated file - do not edit.
+// It is overwritten at every release; a change made here is lost.
+// See CONTRIBUTING.md.
 // -----------------------------------------------------------------------------
 /* ============================================================================
  * CISO Toolbox — ambient type declarations for vendored / CDN libraries
- * (frontend-ts migration)
  *
  * Covers ONLY the API surface actually exercised by the apps:
  *   - ExcelJS       → EBIOS_RM_app.js, TPRM_app.js, TPRM_dora_export.js,

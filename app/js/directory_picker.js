@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------------
-// REPLICATED from the private shared repository (shared/js/backend/directory_picker.js).
-// DO NOT EDIT HERE - changes will be overwritten by the next propagation run.
-// Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
+// Generated file - do not edit.
+// It is overwritten at every release; a change made here is lost.
+// See CONTRIBUTING.md.
 // -----------------------------------------------------------------------------
 /**
  * Directory Picker — shared component for user/personnel selection.
@@ -12,7 +12,7 @@
  *
  * Load AFTER cisotoolbox.js and the module's *_api.js.
  *
- * Canonical source of the TS port: demo-docker/risk/app/js/directory_picker.js
+ * Ported from the module's original JavaScript implementation.
  * (identical ×5: risk, vendor, compliance, asset, access).
  */
 (function () {

@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
-# REPLICATED from the private shared repository (shared/e2e/test_posture.py).
-# DO NOT EDIT HERE - changes will be overwritten by the next propagation run.
-# Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
+# Generated file - do not edit.
+# It is overwritten at every release; a change made here is lost.
+# See CONTRIBUTING.md.
 # -----------------------------------------------------------------------------
 """Deployment posture — end-to-end, over HTTP, no browser.
 
@@ -10,7 +10,7 @@ module, and that break first when the packaging drifts.
 
   1. the stack boots and reports healthy
   2. the SPA is served and every asset it references resolves
-  3. the assets replicated from the shared repository still carry their banner
+  3. the shared frontend assets still carry their generated-file banner
   4. the authentication posture is the expected one, and it fails closed
   5. the login journey works end to end
 
@@ -29,7 +29,7 @@ import re
 
 import pytest
 
-BANNERS = ("GENERATED from shared/", "REPLICATED from the private shared repository")
+BANNERS = ("Generated file - do not edit",)
 
 from conftest import (AUTH_TOKEN, HAS_OPENAPI, HAS_TOKEN_LOGIN, MODULE,
                       POSTURE_FLAG, auth_disabled)
@@ -84,7 +84,7 @@ def test_every_referenced_asset_resolves(client):
 
 
 def test_replicated_frontend_assets_keep_their_generated_header(client):
-    """Shared JS distributed by `shared/ts-build.sh` keeps its GENERATED banner.
+    """Shared JS keeps its generated-file banner.
 
     Losing the banner means a generated file was hand-edited in the module -
     the edit will be silently overwritten by the next build. See CONTRIBUTING.md.
@@ -100,12 +100,11 @@ def test_replicated_frontend_assets_keep_their_generated_header(client):
         pytest.skip("this module serves no shared frontend asset")
     for path in shared:
         head = client.get(path).text[:400]
-        # Two generators write these files, with two wordings: ts-build.sh
-        # ("GENERATED from shared/") and propagate.py ("REPLICATED from the
-        # private shared repository"). Expecting only one of them amounted to
-        # checking nothing — 176 files carry the second, 3 the first.
+        # Every shared asset served by a module carries the generated-file
+        # banner: a copy without it is a module-local edit that the next
+        # release would silently overwrite.
         assert any(b in head for b in BANNERS), (
-            "%s carries no replication banner - it was probably hand-edited" % path
+            "%s carries no generated-file banner - it was probably hand-edited" % path
         )
 
 

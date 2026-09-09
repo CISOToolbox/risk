@@ -1,12 +1,12 @@
 # -----------------------------------------------------------------------------
-# REPLICATED from the private shared repository (shared/python/backup_common.py).
-# DO NOT EDIT HERE - changes will be overwritten by the next propagation run.
-# Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
+# Generated file - do not edit.
+# It is overwritten at every release; a change made here is lost.
+# See CONTRIBUTING.md.
 # -----------------------------------------------------------------------------
 """CISO Toolbox — shared helpers for /api/internal/export + /internal/restore.
 
-Propagated from the shared backend library (backup_common) — do not edit this
-module's src/ (shared/python is NOT auto-synced; propagate manually).
+Shared backend library (backup_common) — do not edit this
+module's src/ (an identical copy ships in every module).
 
 Design rules (FEAT-30 phase 0 audit):
 - Timestamps ARE exported (created_at/updated_at included): a restore that

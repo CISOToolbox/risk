@@ -1,7 +1,7 @@
 /* -----------------------------------------------------------------------------
-   REPLICATED from the private shared repository (shared/css/cisotoolbox.css).
-   DO NOT EDIT HERE - changes will be overwritten by the next propagation run.
-   Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
+   Generated file - do not edit.
+   It is overwritten at every release; a change made here is lost.
+   See CONTRIBUTING.md.
    ----------------------------------------------------------------------------- */
 /* ── CISO Toolbox — Shared CSS ─────────────────────────────────────
    UI v2 design system (SPEC-implementationv2.md).
@@ -1020,7 +1020,6 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
        help-* (8), pwd-* (8), sidebar-* (8), role-* (7), np-* (6),
        toolbar-* (6), puis des isolees.
 
-   Voir private/docs/MIGRATION-ct.md pour l'etat par famille et par emetteur.
 
    AVERTISSEMENT sur toute suppression ou renommage ici : une classe est
    emise par au moins cinq mecanismes differents — attribut class= dans du

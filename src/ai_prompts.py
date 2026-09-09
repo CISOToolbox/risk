@@ -2,7 +2,7 @@
 
 These builders used to live in `app/ts/EBIOS_RM_ai_assistant.ts`: the browser
 assembled the string and the backend forwarded it verbatim. A guarantee can
-only be enforced where the prompt is built (cf. `CLAUDE.md` §5.1) — this move
+only be enforced where the prompt is built (cf. the server-side prompt composition rule) — this move
 is what makes verifiable, for instance, "the model saw the whole measure plan"
 (FEAT-40).
 
@@ -25,7 +25,7 @@ string. It is therefore testable without a stack, which
 
 > The browser variant (`webapp/`) keeps its own copy of these builders: it has
 > no backend and calls the provider directly. Declared divergence, not a second
-> source of truth — see `CLAUDE.md` §5.1.
+> source of truth — see the server-side prompt composition rule.
 """
 from __future__ import annotations
 
@@ -724,7 +724,7 @@ def build_prompt(panel: str, D: dict, language: str = "fr",
     In every case the free-form instruction is **framed** by a structure
     the server owns — it cannot substitute itself for it. That is what
     distinguishes it from a pre-composed prompt in the sense of
-    `CLAUDE.md` §5.1.
+    the server-side prompt composition rule.
     """
     builder = _BUILDERS.get(panel)
     if builder is None:

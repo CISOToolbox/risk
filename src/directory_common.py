@@ -1,12 +1,12 @@
 # -----------------------------------------------------------------------------
-# REPLICATED from the private shared repository (shared/python/directory_common.py).
-# DO NOT EDIT HERE - changes will be overwritten by the next propagation run.
-# Fix the master in the shared repository and re-propagate. See CONTRIBUTING.md.
+# Generated file - do not edit.
+# It is overwritten at every release; a change made here is lost.
+# See CONTRIBUTING.md.
 # -----------------------------------------------------------------------------
 """Local personnel directory — standalone fallback for the user picker.
 
 When a module runs WITHOUT Pilot (standalone), `directory_source == 'local'`
-and there is no central directory. This master gives each module its own local
+and there is no central directory. This file gives each module its own local
 personnel base, stored as a JSON list in `app_settings` (key DIRECTORY_KEY) so
 **no dedicated table / Alembic migration** is needed.
 
