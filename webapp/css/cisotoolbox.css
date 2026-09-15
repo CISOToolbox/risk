@@ -331,6 +331,16 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
    which nevertheless have jobs in progress. Bare attribute, like data-fill. */
 .ct-badge[data-live] { animation: ct-pulse 1.5s ease-in-out infinite; }
 @keyframes ct-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+/* Inline form feedback (modals): the list of what is missing, and the fields
+   concerned. Required fields carry a marker in their label. */
+.ct-form-errors { background: var(--ct-critical-tint); color: var(--ct-critical-ink); border-left: 3px solid var(--ct-critical);
+  padding: 8px 10px; border-radius: var(--ct-r-sm); font-size: 12.5px; margin-bottom: 10px; }
+.ct-form-errors ul { margin: 4px 0 0 16px; padding: 0; }
+.ct-field-error { outline: 2px solid var(--ct-critical) !important; outline-offset: -1px; }
+.ct-req { color: var(--ct-critical); margin-left: 2px; }
+/* Row a navigation lands on (e.g. "see the requirement"): flashed, then plain. */
+@keyframes ct-row-target { 0%, 60% { box-shadow: inset 0 0 0 2px var(--ct-accent); } 100% { box-shadow: none; } }
+.ct-row-target > td { animation: ct-row-target 3s ease-out 1; }
 @media (prefers-reduced-motion: reduce) {
     /* The pulsing is a reading comfort, not information: the tone
        already carries the state. We turn it off for whoever asked for that. */
