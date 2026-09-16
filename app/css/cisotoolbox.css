@@ -331,6 +331,9 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
    which nevertheless have jobs in progress. Bare attribute, like data-fill. */
 .ct-badge[data-live] { animation: ct-pulse 1.5s ease-in-out infinite; }
 @keyframes ct-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+/* A scrollable checklist inside a modal (e.g. the measures of a remediation). */
+.ct-checklist { max-height: 180px; overflow-y: auto; border: 1px solid var(--ct-line); border-radius: var(--ct-r-sm); padding: 6px 8px; }
+.ct-checklist input[type="checkbox"] { margin-right: 6px; vertical-align: middle; }
 /* Inline form feedback (modals): the list of what is missing, and the fields
    concerned. Required fields carry a marker in their label. */
 .ct-form-errors { background: var(--ct-critical-tint); color: var(--ct-critical-ink); border-left: 3px solid var(--ct-critical);
@@ -702,6 +705,8 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-w-full { width: 100%; }
 .ct-m-0 { margin: 0; }
 .ct-clickable { cursor: pointer; }
+.ct-link { color: var(--ct-accent); text-decoration: underline dotted; text-underline-offset: 2px; }
+.ct-clickable:hover .ct-link { text-decoration-style: solid; }
 .ct-hidden { display: none; }
 .ct-row { display: flex; align-items: center; gap: var(--ct-s2); }
 .ct-row-wrap { flex-wrap: wrap; }
