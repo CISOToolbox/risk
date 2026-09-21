@@ -4,12 +4,23 @@
 // See CONTRIBUTING.md.
 // -----------------------------------------------------------------------------
 var _ctRefCounter = 0;
+// Registry for instance callbacks (registered by the host before rendering).
+var _ctRefRegistry = {};
+function _ctRefTagContent(uid, id, display, cfg, tagClick) {
+    var href = cfg && cfg.hrefFor ? cfg.hrefFor(id) : null;
+    if (href)
+        return '<a href="' + esc(href) + '" target="_blank" rel="noopener" data-click="_noop" data-stop>' + display + ' ↗</a>';
+    if (tagClick)
+        return '<span style="cursor:pointer" data-click="ctRefTagClick" data-args=\'' + _da(uid, id) + '\' data-stop>' + display + '</span>';
+    return display;
+}
 function ctRefSelect(uid, value, options, opts) {
     if (!uid)
         uid = "ctref" + (_ctRefCounter++);
     opts = opts || {};
     var selected = (value || "").split(",").map(function (s) { return s.trim().split(" - ")[0].trim(); }).filter(Boolean);
     var hideId = !!opts.hideId;
+    var cfg = _ctRefRegistry[uid];
     // Tags
     var tags = "";
     for (var i = 0; i < options.length; i++) {
@@ -17,13 +28,7 @@ function ctRefSelect(uid, value, options, opts) {
         if (selected.indexOf(opt.id) < 0)
             continue;
         var display = hideId ? esc(opt.label || opt.id) : (esc(opt.id) + " - " + esc(opt.label));
-        var tagContent = "";
-        if (opts.tagClick) {
-            tagContent = '<span style="cursor:pointer" data-click="ctRefTagClick" data-args=\'' + _da(uid, opt.id) + '\' data-stop>' + display + '</span>';
-        }
-        else {
-            tagContent = display;
-        }
+        var tagContent = _ctRefTagContent(uid, opt.id, display, cfg, !!opts.tagClick);
         tags += '<span class="ct-ref-tag">' + tagContent + '<span class="ct-ref-tag-x" data-click="ctRefRemove" data-args=\'' + _da(uid, opt.id) + '\' data-stop>x</span></span>';
     }
     if (!tags)
@@ -43,6 +48,7 @@ function ctRefSelect(uid, value, options, opts) {
         '<div class="ct-ref-dropdown" id="' + uid + '-dd">' +
         '<input class="ct-ref-search" placeholder="' + esc(placeholder) + '" data-input="ctRefFilter" data-args=\'' + _da(uid) + '\' data-pass-value data-click="_noop" data-stop />' +
         '<div class="ct-ref-options">' + oh + '</div>' +
+        (opts.createLabel ? '<div class="ct-ref-create" data-click="ctRefCreate" data-args=\'' + _da(uid) + '\' data-stop>+ ' + esc(opts.createLabel) + '</div>' : '') +
         '</div></div>';
 }
 function ctRefOpen(uid) {
@@ -106,12 +112,27 @@ function ctRefToggle(uid, el) {
     _ctRefUpdateTags(uid, ids, cfg);
     wrap.dataset.dirty = "1";
 }
+// The tag's cross: the host's own removal when it registered one (a data
+// model to update), otherwise the option is simply unticked.
 function ctRefRemove(uid, optionId) {
     var cfg = _ctRefRegistry[uid];
     if (!cfg)
         return;
-    if (cfg.onRemove)
+    if (cfg.onRemove) {
         cfg.onRemove(uid, optionId);
+        return;
+    }
+    var dd = document.getElementById(uid + "-dd");
+    if (!dd)
+        return;
+    var inputs = dd.querySelectorAll("input");
+    for (var i = 0; i < inputs.length; i++) {
+        if (inputs[i].value === optionId && inputs[i].checked) {
+            inputs[i].checked = false;
+            ctRefToggle(uid, inputs[i]);
+            return;
+        }
+    }
 }
 function ctRefTagClick(uid, optionId) {
     var cfg = _ctRefRegistry[uid];
@@ -119,8 +140,18 @@ function ctRefTagClick(uid, optionId) {
         return;
     cfg.tagClick(uid, optionId);
 }
-// Registry for instance callbacks
-var _ctRefRegistry = {};
+// "+ create" row: closes the dropdown and hands the typed query to the host,
+// which creates the item its own way and reselects it.
+function ctRefCreate(uid) {
+    var cfg = _ctRefRegistry[uid];
+    if (!cfg || !cfg.onCreate)
+        return;
+    var dd = document.getElementById(uid + "-dd");
+    var search = dd ? dd.querySelector(".ct-ref-search") : null;
+    if (dd)
+        dd.classList.remove("open");
+    cfg.onCreate(uid, search ? search.value : "");
+}
 function ctRefRegister(uid, cfg) {
     _ctRefRegistry[uid] = cfg;
 }
@@ -140,13 +171,7 @@ function _ctRefUpdateTags(uid, selectedIds, cfg) {
             display = esc(label || id);
         else
             display = label ? (esc(id) + " - " + esc(label)) : esc(id);
-        var tagContent = "";
-        if (cfg.tagClick) {
-            tagContent = '<span style="cursor:pointer" data-click="ctRefTagClick" data-args=\'' + _da(uid, id) + '\' data-stop>' + display + '</span>';
-        }
-        else {
-            tagContent = display;
-        }
+        var tagContent = _ctRefTagContent(uid, id, display, cfg, !!cfg.tagClick);
         html += '<span class="ct-ref-tag">' + tagContent + '<span class="ct-ref-tag-x" data-click="ctRefRemove" data-args=\'' + _da(uid, id) + '\' data-stop>x</span></span>';
     }
     if (!html)
@@ -178,4 +203,5 @@ window.ctRefFilter = ctRefFilter;
 window.ctRefToggle = ctRefToggle;
 window.ctRefRemove = ctRefRemove;
 window.ctRefTagClick = ctRefTagClick;
+window.ctRefCreate = ctRefCreate;
 window.ctRefRegister = ctRefRegister;

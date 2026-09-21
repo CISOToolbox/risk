@@ -14,6 +14,8 @@ interface CtRefSelectOpts {
     emptyText?: string;
     single?: boolean;
     placeholder?: string;
+    /** Label of a "+ create" row at the foot of the dropdown (needs cfg.onCreate). */
+    createLabel?: string;
 }
 interface CtRefConfig {
     single?: boolean;
@@ -24,6 +26,10 @@ interface CtRefConfig {
     onRemove?: (uid: string, optionId: string) => void;
     tagClick?: (uid: string, optionId: string) => void;
     labelFor?: (id: string) => string;
+    /** The "+ create" row: the host opens its creation flow with the typed query. */
+    onCreate?: (uid: string, query: string) => void;
+    /** A page for the option: its tag links to it (new tab). */
+    hrefFor?: (id: string) => string | null;
 }
 interface Window {
     ctRefSelect?: (uid: string | null | undefined, value: string | null | undefined, options: CtRefOption[], opts?: CtRefSelectOpts) => string;
@@ -33,15 +39,18 @@ interface Window {
     ctRefRemove?: (uid: string, optionId: string) => void;
     ctRefTagClick?: (uid: string, optionId: string) => void;
     ctRefRegister?: (uid: string, cfg: CtRefConfig) => void;
+    ctRefCreate?: (uid: string) => void;
 }
 declare var _ctRefCounter: number;
+declare var _ctRefRegistry: Record<string, CtRefConfig>;
+declare function _ctRefTagContent(uid: string, id: string, display: string, cfg: CtRefConfig | undefined, tagClick: boolean): string;
 declare function ctRefSelect(uid: string | null | undefined, value: string | null | undefined, options: CtRefOption[], opts?: CtRefSelectOpts): string;
 declare function ctRefOpen(uid: string): void;
 declare function ctRefFilter(uid: string, query: string): void;
 declare function ctRefToggle(uid: string, el: HTMLInputElement): void;
 declare function ctRefRemove(uid: string, optionId: string): void;
 declare function ctRefTagClick(uid: string, optionId: string): void;
-declare var _ctRefRegistry: Record<string, CtRefConfig>;
+declare function ctRefCreate(uid: string): void;
 declare function ctRefRegister(uid: string, cfg: CtRefConfig): void;
 declare function _ctRefUpdateTags(uid: string, selectedIds: string[], cfg: CtRefConfig): void;
 declare function _ctRefFlush(dd: Element): void;

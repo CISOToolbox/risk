@@ -332,8 +332,6 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-badge[data-live] { animation: ct-pulse 1.5s ease-in-out infinite; }
 @keyframes ct-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
 /* A scrollable checklist inside a modal (e.g. the measures of a remediation). */
-.ct-checklist { max-height: 180px; overflow-y: auto; border: 1px solid var(--ct-line); border-radius: var(--ct-r-sm); padding: 6px 8px; }
-.ct-checklist input[type="checkbox"] { margin-right: 6px; vertical-align: middle; }
 /* Inline form feedback (modals): the list of what is missing, and the fields
    concerned. Required fields carry a marker in their label. */
 .ct-form-errors { background: var(--ct-critical-tint); color: var(--ct-critical-ink); border-left: 3px solid var(--ct-critical);
@@ -522,8 +520,8 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-kpi-adv-status[data-tone="info"] { color: var(--ct-info-ink); background: var(--ct-info-tint); }
 .ct-kpi-adv-status[data-tone="neutral"] { color: var(--ct-neutral-ink); background: var(--ct-neutral-tint); }
 .ct-kpi-adv-viz { margin-top: 2px; }
-.ct-kpi-adv-meta { display: flex; justify-content: space-between; gap: var(--ct-s2); white-space: nowrap; padding-top: 9px; border-top: 1px solid var(--ct-line-soft); }
-.ct-kpi-adv-meta span { font-size: 11px; color: var(--ct-ink-2); font-variant-numeric: tabular-nums; }
+.ct-kpi-adv-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--ct-s1) var(--ct-s2); padding-top: 9px; border-top: 1px solid var(--ct-line-soft); }
+.ct-kpi-adv-meta span { white-space: nowrap; font-size: 11px; color: var(--ct-ink-2); font-variant-numeric: tabular-nums; }
 .ct-kpi-adv-meta b { color: var(--ct-ink-1); font-weight: 600; }
 .ct-kpi-adv-foot { font-size: var(--ct-text-label); color: var(--ct-ink-2); }
 .ct-kpi-adv[data-state="inactive"] { opacity: 0.75; background: var(--ct-surface-2); }
@@ -1336,6 +1334,12 @@ td .ct-ref-select, td .ct-ref-select * { box-shadow: none; }
 .ct-ref-option { padding: 4px 8px; cursor: pointer; font-size: 0.82em; display: flex; align-items: center; gap: 6px; }
 .ct-ref-option:hover { background: var(--ct-neutral-tint); }
 .ct-ref-option input { margin: 0; }
+.ct-ref-create { padding: 6px 8px; cursor: pointer; font-size: 0.82em; color: var(--ct-accent); border-top: 1px solid var(--ct-line); }
+.ct-ref-create:hover { background: var(--ct-neutral-tint); }
+/* In a form, the selector lines up with the inputs around it. */
+.ct-ref-field .ct-ref-tags { font-size: inherit; padding: 5px 8px; min-height: 0; border-radius: var(--ct-r-sm); background: var(--ct-surface); }
+.ct-ref-field .ct-ref-tag { font-size: 0.9em; padding: 2px 8px; }
+.ct-ref-field .ct-ref-option, .ct-ref-field .ct-ref-search, .ct-ref-field .ct-ref-create { font-size: 0.92em; }
 .filters-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
 
 /* ── ct_table (legacy — collision, migrates with ct_table.ts) ── */
