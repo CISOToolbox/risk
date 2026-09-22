@@ -95,6 +95,6 @@ interface Window {
     ct_userpicker?: CtUserpickerApi;
     _ctUpFocus?: (id: string) => void;
     _ctUpSearch?: (id: string, query: string) => void;
-    _ctUpPick?: (id: string, label: string, email?: string) => void;
-    _ctUpCreate?: (id: string, query: string) => void;
+    _ctUpPick?: (id: string, label: string, email?: string, ev?: Event) => void;
+    _ctUpCreate?: (id: string, query: string, ev?: Event) => void;
 }

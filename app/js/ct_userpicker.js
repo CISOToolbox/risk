@@ -111,8 +111,12 @@
         var h = "";
         matches.forEach(function (u) {
             var lbl = _userLabel(u);
+            // `data-pass-event`: the picker is mounted inside the field's
+            // <label>, so a click on an item is forwarded by the label to the
+            // input it labels — a second click that reopened the list right
+            // after the pick. The handler cancels that default action.
             h += '<div class="ct-userpicker-item" data-click="_ctUpPick" data-args=\''
-                + _da(id, lbl, u.email || "") + '\' data-stop>'
+                + _da(id, lbl, u.email || "") + '\' data-stop data-pass-event>'
                 + '<div style="font-weight:600">' + esc(lbl) + '</div>'
                 + (u.email ? '<div style="font-size:0.75em;color:var(--ct-ink-2)">' + esc(u.email) + '</div>' : '')
                 + '</div>';
@@ -125,7 +129,7 @@
         if (inst.onCreate && q && !exact) {
             var tmpl = _i18n("ct.userpicker.create", 'Créer "{q}"');
             h += '<div class="ct-userpicker-create" data-click="_ctUpCreate" data-args=\''
-                + _da(id, query) + '\' data-stop>'
+                + _da(id, query) + '\' data-stop data-pass-event>'
                 + '<span style="font-size:1.1em;color:var(--ct-ink);font-weight:700">+</span> '
                 + esc(tmpl.replace("{q}", query))
                 + '</div>';
@@ -208,7 +212,11 @@
             inst.value = (query || "").trim();
         _renderDropdown(id, query || "");
     };
-    window._ctUpPick = function (id, label, email) {
+    window._ctUpPick = function (id, label, email, ev) {
+        // The field's <label> would forward this click to the search input and
+        // reopen the list we are about to close.
+        if (ev && typeof ev.preventDefault === "function")
+            ev.preventDefault();
         var inst = _instances[id];
         if (!inst)
             return;
@@ -224,7 +232,9 @@
         if (inst.onChange)
             inst.onChange(email || "");
     };
-    window._ctUpCreate = function (id, query) {
+    window._ctUpCreate = function (id, query, ev) {
+        if (ev && typeof ev.preventDefault === "function")
+            ev.preventDefault();
         var inst = _instances[id];
         if (!inst || !inst.onCreate)
             return;
