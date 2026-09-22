@@ -546,7 +546,13 @@ def require_min_role(user: Optional[User], min_role: str, hierarchy: list[str]) 
 
 
 def require_admin(user: Optional[User]) -> None:
-    """Admin gate. `user is None` = auth disabled = admin: pass through."""
+    """Admin gate. `user is None` = auth disabled = admin: pass through.
+
+    Strictly `admin`: this gate gives the module's administration — accounts,
+    connector secrets, AI keys — so the admin-equivalent `control` of the
+    permission ladder does NOT pass here. A feature that means "administers
+    the business objects" checks `ADMIN_MODULE_ROLES` itself.
+    """
     if user is None:
         return
     role = get_module_role(user)
