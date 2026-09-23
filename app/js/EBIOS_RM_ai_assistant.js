@@ -61,6 +61,8 @@
             "ai.no_analysis": "Aucune analyse ouverte : ouvrez ou créez une analyse avant d'utiliser l'assistant.",
             "ai.include_measures": "Tenir compte des mesures déjà identifiées",
             "ai.include_measures_help": "Transmet le plan de mesures complet pour éviter les doublons. À décocher sur un plan volumineux si le modèle a une petite fenêtre de contexte.",
+            "ai.keep_ignored": "Ne plus proposer ce que j'ai ignoré",
+            "ai.keep_ignored_help": "Retient les propositions écartées, écran par écran, et demande au modèle de ne pas y revenir. Décocher vide toute cette mémoire.",
             "ai.measure.completes": "Complète la mesure {id} — {nom}.",
             "ai.preview.title": "Ce que l'acceptation va écrire",
             "ai.preview.name": "Titre :",
@@ -118,6 +120,8 @@
             "ai.no_analysis": "No analysis open: open or create one before using the assistant.",
             "ai.include_measures": "Take existing measures into account",
             "ai.include_measures_help": "Sends the full measure plan so the model avoids duplicates. Uncheck on a large plan if your model has a small context window.",
+            "ai.keep_ignored": "Do not propose again what I ignored",
+            "ai.keep_ignored_help": "Remembers the proposals set aside, screen by screen, and asks the model not to come back to them. Unchecking empties all of it.",
             "ai.measure.completes": "Complements measure {id} — {nom}.",
             "ai.preview.title": "What accepting will write",
             "ai.preview.name": "Title:",
@@ -192,7 +196,10 @@
                 row: (ask.row === undefined ? null : ask.row),
                 include_existing_measures: ask.includeMeasures !== false,
                 custom_instruction: ask.custom || null,
-                extra_instruction: extra || null
+                extra_instruction: extra || null,
+                // FEAT-49 — labels, never a sentence: the server writes the
+                // instruction around them (server-side prompt composition).
+                ignored_suggestions: ask.ignored || []
             })
         });
         if (!resp.ok) {
@@ -358,6 +365,7 @@
         // Store suggestions for accept handlers
         window._aiSuggestions = suggestions;
         window._aiAcceptFn = acceptFn;
+        _aiIgnoreKey = IGNORE_PANELS.indexOf(type) >= 0 ? _ignoreKeyFor(type) : "";
     }
     // ═══════════════════════════════════════════════════════════════════════
     // ACCEPT HANDLERS — insert or update suggestions in D
@@ -394,6 +402,28 @@
                 existing[f] = s[f];
         });
         return true;
+    }
+    // FEAT-48 — a scenario serves several RO/TO pairs: the model may answer a list
+    // or a single string, and the row stores the comma-separated form the screen
+    // itself writes.
+    /** A multi-reference field of a strategic scenario. The model answers a
+     *  string most of the time, a list when the schema opens up (FEAT-48 for the
+     *  RO/TO pairs, FEAT-50 for the feared events): the row stores the comma
+     *  form the screen reads back. Storing the array as-is left an "[object
+     *  Object]" in the table. */
+    function _refList(valeur) {
+        if (Array.isArray(valeur)) {
+            return valeur.map(function (v) {
+                // A list of objects lands here too — joining it raw produced the
+                // very "[object Object]" this function exists to avoid.
+                if (v && typeof v === "object")
+                    return String(v.id || v.nom || v.label || "");
+                return String(v == null ? "" : v);
+            }).filter(Boolean).join(", ");
+        }
+        if (valeur && typeof valeur === "object")
+            return String(valeur.id || "");
+        return String(valeur || "");
     }
     var ACCEPT_HANDLERS = {
         vm: function (s) {
@@ -467,10 +497,14 @@
             return couple;
         },
         ss: function (s) {
+            s.couple_id = _refList(s.couple_id);
+            s.pp = _refList(s.pp);
+            s.bs = _refList(s.bs);
+            s.er = _refList(s.er);
             if (_updateIfExists(D.ss, s, ["scenario", "couple_id", "couple_desc", "pp", "bs", "er"]))
                 return s.id + " ✓";
             var id = nextId("ss");
-            D.ss.push({ id: id, scenario: s.scenario || "", couple_id: s.couple_id || "", couple_desc: s.couple_desc || "", pp: s.pp || "", bs: s.bs || "", er: s.er || "" });
+            D.ss.push({ id: id, scenario: s.scenario || "", couple_id: s.couple_id, couple_desc: s.couple_desc || "", pp: s.pp, bs: s.bs, er: s.er });
             return id;
         },
         sop: function (s) {
@@ -616,6 +650,19 @@
     var _lastSuggestArgs = null;
     var _extraContext = "";
     window._aiIgnore = function (idx) {
+        // FEAT-49 — record BEFORE removing the card: the suggestion is read from
+        // the list, not from the DOM, but the two are meant to stay in step.
+        if (_aiIgnoreKeep && _aiIgnoreKey) {
+            var s = (window._aiSuggestions || [])[idx];
+            var label = _ignoreLabel(_aiIgnoreKey.split("|")[1] || "", s);
+            if (label) {
+                var liste = _aiIgnored[_aiIgnoreKey] || (_aiIgnored[_aiIgnoreKey] = []);
+                if (liste.indexOf(label) === -1)
+                    liste.push(label);
+                if (liste.length > IGNORE_MAX)
+                    liste.splice(0, liste.length - IGNORE_MAX);
+            }
+        }
         var card = document.getElementById("ai-card-" + idx);
         if (card)
             card.remove();
@@ -724,6 +771,9 @@
             var h = '<p class="fs-sm ct-mb-3 ct-muted">' + t("ai.prompt_intro") + '</p>';
             // This panel does not go through the generic options screen: the box
             // is placed here, before the scenario selection, readable on click.
+            // No box here: the residual panel answers with check-boxes and a
+            // single "Accept", it has no "Ignore" gesture. A box that can never
+            // fill is worse than no box.
             h += _measureCtxToggleHTML("residuals");
             h += '<div class="settings-label fs-sm ct-mb-2">' + t("ai.select_ss") + '</div>';
             D.ss.forEach(function (s, i) {
@@ -746,7 +796,7 @@
         _aiOpenPanel(panelTitle);
         pp.body.innerHTML =
             '<p class="fs-sm ct-mb-4 ct-muted">' + t("ai.prompt_intro") + '</p>' +
-                _measureCtxToggleHTML(type) +
+                _measureCtxToggleHTML(type) + _ignoreToggleHTML(type) +
                 '<button class="ct-btn ai-btn-accept ct-w-full ct-p-2 ct-text-data ct-mb-4" data-variant="primary" data-click="_aiRunSuggest" data-args=\'' + _da(type, "") + '\'>' + t("ai.auto_suggest") + '</button>' +
                 '<div class="settings-label fs-sm ct-mb-1">' + t("ai.custom_instruction_label") + '</div>' +
                 '<textarea id="ai-custom-instruction" class="w-full ct-bordered ct-r-md ct-p-2 ct-text-meta ct-resize-y" rows="4" placeholder="' + esc(t("ai.custom_instruction_placeholder")) + '"></textarea>' +
@@ -769,6 +819,75 @@
     // The SOP panel runs in two steps (scenario choice, then mode): the box no
     // longer exists at call time, so we remember its value.
     var _aiSopIncludeMeasures = true;
+    // FEAT-49 — what the analyst has set aside, for the rest of the session.
+    //
+    // A suggestion lives only in the panel: ignoring it leaves no trace, so the
+    // next call proposes it again, sometimes reworded. We keep a short label per
+    // screen and hand it to the next prompt. In memory only: this is the memory
+    // of a working session, not analysis data — it is never saved with it.
+    var _aiIgnoreKeep = true; // the checkbox, remembered between panels
+    var _aiIgnored = {};
+    var _aiIgnoreKey = ""; // set by whoever renders the cards
+    // The screens that carry the box, and they alone, remember. The "inline" AI
+    // buttons (a measure on one row) have no launch screen: they keep nothing —
+    // a bucket nobody ever reads back is not a memory, it is dead weight.
+    var IGNORE_PANELS = ["vm", "bs", "er", "srov", "pp", "ss", "sop", "eco", "measures", "socle"];
+    var IGNORE_MAX = 40, IGNORE_LEN = 200;
+    /** Per analysis AND per screen: what is set aside on supporting assets says
+     *  nothing about scenarios, and an analysis does not inherit another's. The
+     *  kill chain is generated per strategic scenario, so it is keyed per
+     *  scenario too. */
+    function _ignoreKeyFor(type, ssId) {
+        var analysis = localStorage.getItem("ebios_catalog_active") || "-";
+        return analysis + "|" + type + (ssId ? "|" + ssId : "");
+    }
+    /** A label the model can recognise: what the card shows, not the whole
+     *  object. A kill chain has no name — its phases are what one recognises. */
+    function _ignoreLabel(type, s) {
+        if (!s || typeof s !== "object")
+            return "";
+        var txt = "";
+        if (s.phases && s.phases.length) {
+            txt = s.phases.map(function (ph) { return String(ph.action || ph.phase || ""); })
+                .filter(function (x) { return !!x; }).join(" → ");
+        }
+        else if (type === "srov") {
+            txt = String(s.sr_nom || s.sr_id || "?") + " / " + String(s.ov_nom || s.ov_id || "?");
+        }
+        else {
+            txt = String(s._title || s.nom || s.scenario || s.mesure || s.evenement || "");
+            var detail = String(s.description || s.justification || s.details || "");
+            if (detail)
+                txt = txt ? txt + " — " + detail : detail;
+        }
+        txt = txt.trim();
+        return txt.length > IGNORE_LEN ? txt.substring(0, IGNORE_LEN) : txt;
+    }
+    function _ignoredFor(key) {
+        return (_aiIgnoreKeep && _aiIgnored[key]) ? _aiIgnored[key] : [];
+    }
+    /** Unchecking empties the memory on the spot — that is what the box says.
+     *  Re-checking starts from a blank page. */
+    window._aiToggleIgnoreKeep = function (on) {
+        _aiIgnoreKeep = !!on;
+        if (!_aiIgnoreKeep)
+            _aiIgnored = {};
+        // The count is painted once, when the panel opens. Emptying the memory
+        // without repainting it left the screen claiming what it no longer held.
+        var n = document.getElementById("ai-keep-ignored-n");
+        if (n)
+            n.textContent = "";
+    };
+    function _ignoreToggleHTML(type, ssId) {
+        var n = _ignoredFor(_ignoreKeyFor(type, ssId)).length;
+        return '<label class="ct-flex ct-items-start ct-gap-2 ct-mb-4 ct-clickable">'
+            + '<input type="checkbox" id="ai-keep-ignored" class="ct-mt-1" data-change="_aiToggleIgnoreKeep" data-pass-checked'
+            + (_aiIgnoreKeep ? ' checked' : '') + '>'
+            + '<span class="fs-sm"><strong>' + esc(t("ai.keep_ignored")) + '</strong>'
+            + ' <span id="ai-keep-ignored-n" class="ct-muted">' + (n ? "(" + n + ")" : "") + '</span>'
+            + '<br><span class="ct-muted">' + esc(t("ai.keep_ignored_help")) + '</span></span>'
+            + '</label>';
+    }
     var MEASURE_PANELS = ["measures", "socle", "eco", "residuals", "sop"];
     function _measureCtxToggleHTML(type) {
         if (MEASURE_PANELS.indexOf(type) === -1)
@@ -815,7 +934,8 @@
                 return;
             }
             try {
-                var cResult = await _callAI({ panel: type, custom: userText, includeMeasures: avecMesures });
+                var cResult = await _callAI({ panel: type, custom: userText, includeMeasures: avecMesures,
+                    ignored: _ignoredFor(_ignoreKeyFor(type)) });
                 _renderCards(type, _normalizeSuggestions(type, cResult), ACCEPT_HANDLERS[type]);
             }
             catch (e) {
@@ -829,7 +949,8 @@
         if (AI_PANELS.indexOf(type) === -1)
             return;
         try {
-            var result = await _callAI({ panel: type, includeMeasures: avecMesures });
+            var result = await _callAI({ panel: type, includeMeasures: avecMesures,
+                ignored: _ignoredFor(_ignoreKeyFor(type)) });
             var suggestions = _normalizeSuggestions(type, result);
             _renderCards(type, suggestions, ACCEPT_HANDLERS[type]);
         }
@@ -890,6 +1011,10 @@
         p.body.innerHTML =
             '<p class="fs-sm ct-mb-2 ct-muted">' + esc(ssLabel) + '</p>' +
                 '<p class="fs-sm ct-mb-4 ct-muted">' + t("ai.prompt_intro") + '</p>' +
+                // The kill chain is generated per scenario, so its memory is too:
+                // the box belongs here, where the scenario is known, not on the
+                // selector before it.
+                _ignoreToggleHTML("sop", ssId) +
                 '<button class="ct-btn ai-btn-accept ct-w-full ct-p-2 ct-text-data ct-mb-4" data-variant="primary" data-click="_aiRunSOP" data-args=\'' + _da(ssId, "") + '\'>' + t("ai.auto_suggest") + '</button>' +
                 '<div class="settings-label fs-sm ct-mb-1">' + t("ai.custom_instruction_label") + '</div>' +
                 '<textarea id="ai-custom-instruction" class="w-full ct-bordered ct-r-md ct-p-2 ct-text-meta ct-resize-y" rows="4" placeholder="' + esc(t("ai.custom_instruction_placeholder")) + '"></textarea>' +
@@ -914,7 +1039,8 @@
             // An unknown strategic scenario is rejected by the server (422), which
             // alone knows the analysis stored in the DB.
             var result = await _callAI({ panel: "sop", ssId: ssId, custom: userText || undefined,
-                includeMeasures: _aiSopIncludeMeasures });
+                includeMeasures: _aiSopIncludeMeasures,
+                ignored: _ignoredFor(_ignoreKeyFor("sop", ssId)) });
             // Render as a single SOP card with phases listed
             var suggestions;
             if (result.phases) {
@@ -958,6 +1084,7 @@
             p.body.innerHTML = h;
             p.footer.innerHTML = '<button class="ct-btn ai-btn-close" data-click="_aiClosePanel">' + t("ai.close") + '</button>';
             window._aiSuggestions = suggestions;
+            _aiIgnoreKey = _ignoreKeyFor("sop", ssId);
         }
         catch (e) {
             p.body.innerHTML = '<div class="ai-error">' + t("ai.error", { msg: esc(e.message) }) + '</div>';

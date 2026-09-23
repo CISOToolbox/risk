@@ -1412,7 +1412,7 @@ function renderSS() {
         const gNum = computeSSGravity(s.er);
         const lbl = gravLabel(gNum);
         h += `<tr><td><strong>${esc(s.id)}</strong></td><td>${ta("ss",i,"scenario",s.scenario)}</td>
-            <td${hd("srov")}>${refSelect("ss",i,"couple_id",s.couple_id,srovOptions(),true)}</td>
+            <td${hd("srov")}>${refSelect("ss",i,"couple_id",s.couple_id,srovOptions())}</td>
             <td${hd("pp")}>${refSelect("ss",i,"pp",s.pp,ppOptions())}</td>
             <td${hd("bs")}>${refSelect("ss",i,"bs",s.bs,bsOptions())}</td>
             <td${hd("er")}>${refSelect("ss",i,"er",s.er,erOptions())}</td>

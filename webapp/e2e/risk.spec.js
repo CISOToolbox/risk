@@ -410,4 +410,64 @@ test.describe('EBIOS RM — local frontend journeys', () => {
         expect(en.dict).toContain('Availability'); // full name in the tooltip
     });
 
+
+    // ── AI assistant: the memory of set-aside proposals ────────────────
+    //
+    // The provider is never called: the request is intercepted, so what is
+    // asserted is what the app SENDS (the labels carried into the next
+    // prompt) and what it SHOWS (the counter), not the model. This app
+    // composes its prompts in the browser, which is why the check belongs
+    // here and not only on the suite side.
+    test('ignored proposals are carried into the next prompt, and unchecking empties the memory', async ({ page }) => {
+        await openApp(page);
+        await seedAnalysis(page);
+        await page.evaluate(() => {
+            localStorage.setItem('ebios_ai_enabled', 'true');
+            localStorage.setItem('ebios_ai_apikey', 'e2e-intercepted');
+        });
+        await page.reload();
+        await page.waitForLoadState('domcontentloaded');
+
+        const prompts = [];
+        await page.route('https://api.anthropic.com/**', async (route) => {
+            const body = route.request().postDataJSON();
+            prompts.push(JSON.stringify(body.messages || body));
+            return route.fulfill({
+                json: { content: [{ type: 'text', text: JSON.stringify([
+                    { nom: 'Baie de sauvegarde', type: 'Materiel', vm: 'VM-01 - Dossier' },
+                    { nom: 'Bastion administration', type: 'Materiel', vm: 'VM-01 - Dossier' },
+                ]) }] },
+            });
+        });
+
+        await page.locator(NAV_ITEMS, { hasText: /Biens supports|Supporting/i }).first().click();
+        await page.locator('#toggles-bs .btn-ai').click();
+        await expect(page.locator('#ai-keep-ignored')).toBeChecked();
+        await page.locator('[data-click="_aiRunSuggest"]').first().click();
+        await expect.poll(() => prompts.length).toBe(1);
+
+        // Set them aside, then ask again: the panel reopens with the count,
+        // and the labels leave with the call. ("Generate more" only appears
+        // once the panel is empty, hence both.)
+        await expect(page.locator('.ai-card')).toHaveCount(2);
+        await page.locator('.ai-btn-ignore').first().click();
+        await page.locator('.ai-btn-ignore').first().click();
+        await page.locator('[data-click="_aiRestart"]').click();
+        await expect(page.locator('#ai-keep-ignored-n')).toHaveText('(2)');
+        await page.locator('[data-click="_aiRunSuggest"]').first().click();
+        await expect.poll(() => prompts.length).toBe(2);
+        expect(prompts[1]).toContain('set aside these proposals');
+        expect(prompts[1]).toContain('Baie de sauvegarde');
+        expect(prompts[1]).toContain('Bastion administration');
+
+        // Unchecking empties the memory AND says so on the screen.
+        await page.locator('.ai-btn-ignore').first().click();
+        await page.locator('.ai-btn-ignore').first().click();
+        await page.locator('[data-click="_aiRestart"]').click();
+        await page.locator('#ai-keep-ignored').uncheck();
+        await expect(page.locator('#ai-keep-ignored-n')).toHaveText('');
+        await page.locator('[data-click="_aiRunSuggest"]').first().click();
+        await expect.poll(() => prompts.length).toBe(3);
+        expect(prompts[2]).not.toContain('set aside these proposals');
+    });
 });
