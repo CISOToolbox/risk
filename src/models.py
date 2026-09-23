@@ -271,7 +271,9 @@ class AnalysisSS(Base):
     id = Column(String(20), primary_key=True)
     sort_order = Column(Integer, nullable=False, default=0)
     scenario = Column(Text, nullable=True, default="")
-    couple_id = Column(String(50), nullable=True, default="")
+    # FEAT-48 — a scenario serves several RO/TO pairs, stored as the other
+    # reference columns of this row are: "id - label", comma separated.
+    couple_id = Column(Text, nullable=True, default="")
     couple_desc = Column(Text, nullable=True, default="")
     pp = Column(Text, nullable=True, default="")
     bs = Column(Text, nullable=True, default="")

@@ -211,8 +211,10 @@ def _bs(D: dict, lang: str, **_) -> str:
         "\n\nBusiness assets: " + _j(_pick(_rows(D, "vm"), "id", "nom")) +
         "\n\nExisting supporting assets: " + _j(_pick(_rows(D, "bs"), "id", "nom", "type", "vm")) +
         "\n\nPropose 3-5 additional supporting assets (BS) missing to support these business assets."
-        " Include type and which VMs they support (use VM IDs). You may also suggest updates to"
-        " existing BSs by including their id." +
+        " For each one give its type, the business assets it supports (use VM IDs), where it"
+        " runs or is held (localisation: site, datacentre, cloud region, provider) and who is"
+        " accountable for it (proprietaire: the internal team or role that owns it)."
+        " You may also suggest updates to existing BSs by including their id." +
         "\n\nRespond in " + lang + "." +
         '\n\nJSON schema: [{"id":"BS-XX (only if updating existing)","nom":"...","type":"...",'
         '"vm":"VM-01 - Name, VM-02 - Name","localisation":"...","proprietaire":"..."}]'
@@ -273,8 +275,16 @@ def _srov(D: dict, lang: str, **_) -> str:
                                                  "motivation", "ressources", "activite")) +
         "\n\nPropose 3-5 additional RO/TO pairs that are missing. You may suggest new risk origins"
         " (SR) or target objectives (OV) if needed. Score Motivation/Resources/Activity from 0 to 4."
-        " Include a detailed justification for each pair. Use existing SR/OV IDs when possible, and"
-        " include the name (sr_nom, ov_nom) for clarity." +
+        " Use existing SR/OV IDs when possible, and include the name (sr_nom, ov_nom)."
+        "\n\nCross what the analysis already holds before inventing anything: an objective belongs to nobody, and several origins can pursue the same one — a criminal who resells it, a state that collects, a competitor who exploits. For each existing objective, ask which other origin of the analysis would pursue it, and for each origin, which existing objective it would go after. Those crossings are where the missing pairs are. Each pair is scored FOR ITS ORIGIN: motivation, resources and activity describe the origin facing that objective, so two pairs sharing an objective have no reason to carry the same scores." +
+        "\n\nA RO/TO pair belongs to workshop 2 and answers two questions only: WHO could"
+        " act (the risk origin) and WHAT IT SEEKS (the target objective, an end it pursues —"
+        " extort a payment, resell health data, disrupt the service, make a statement)."
+        " It is NOT a scenario: never describe a path, a means or a sequence, and never name"
+        " stakeholders, supporting assets, attack steps or feared events — those belong to"
+        " workshops 3 and 4. You may imagine a strategic scenario to find a pair, but report"
+        " only the pair. The justification says, in 2-3 sentences, why this origin would"
+        " pursue this objective against this organisation in its context." +
         "\n\nRespond in " + lang + "." +
         '\n\nJSON schema: {"new_sr":[{"id":"SR-XX","nom":"..."}], "new_ov":[{"id":"OV-XX",'
         '"nom":"..."}], "pairs":[{"sr_id":"SR-XX","sr_nom":"name of the risk origin",'
@@ -290,10 +300,15 @@ def _pp(D: dict, lang: str, **_) -> str:
         "\n\nExisting stakeholders: " + _j(_pick(_rows(D, "pp"), "id", "nom", "type")) +
         "\n\nPropose 3-5 additional stakeholders (PP) in the ecosystem. Only EXTERNAL actors"
         " (suppliers, partners, clients). Assess Dependency/Penetration/Maturity/Trust from 1 to 4."
-        " Link to relevant BS (using ID - Name format)." +
+        " Link to relevant BS (using ID - Name format)."
+        " Give BOTH fields the screen holds: `categorie` is a closed list — exactly one of"
+        " Client, Partenaire, Prestataire — and `type` is free text naming what the"
+        " stakeholder does for the organisation (hosting provider, software vendor,"
+        " biomedical maintainer...). Never put the category in the type." +
         "\n\nRespond in " + lang + "." +
         '\n\nJSON schema: [{"id":"PP-XX (only if updating existing)","nom":"...",'
-        '"type":"Fournisseur|Partenaire|Client","dependance":1-4,"penetration":1-4,'
+        '"categorie":"Client|Partenaire|Prestataire","type":"free text: its role",'
+        '"dependance":1-4,"penetration":1-4,'
         '"maturite":1-4,"confiance":1-4,"bs":"BS-01 - Name"}]'
     )
 
@@ -316,12 +331,95 @@ def _ss(D: dict, lang: str, **_) -> str:
         "\n\nFeared events: " + _j(_pick(_rows(D, "er"), "id", "evenement", "vm", "gravite")) +
         "\n\nExisting strategic scenarios: " + _j(_pick(_rows(D, "ss"), "id", "scenario")) +
         "\n\nPropose 2-4 additional strategic scenarios (SS) linking: WHO (RO/TO pair) → THROUGH"
-        " WHOM (PP) → targeting WHAT (BS) → causing WHICH feared event (ER). Use existing element"
-        " IDs." +
+        " WHOM (PP, when a stakeholder is on the path) → targeting WHAT (BS) → causing WHICH"
+        " feared event (ER). Use existing element"
+        " IDs."
+        " A path is rarely walked by one origin only: list in `couple_id` EVERY RO/TO pair the"
+        " scenario serves, comma separated, not just the first that comes to mind. The same"
+        " route through the same stakeholder to the same feared event serves every origin that"
+        " would take it."
+        " What a path CAUSES is plural in the same way: a path general enough reaches several"
+        " feared events, so list in `er` EVERY feared event this same path makes possible, comma"
+        " separated. Only those it actually reaches — a feared event that needs another"
+        " stakeholder or another business asset is a different scenario, not an extra entry here."
+        " The severity follows on its own: the screen takes the highest of them." +
+        "\n\nA strategic scenario is read at the level of the ECOSYSTEM. Write ONE sentence of business language, of this shape and no longer: <risk origin> exploits <what opens the path> to reach <business asset>, causing <feared event(s)>. What opens the path is said at the level of the ecosystem: the position of a stakeholder, an exposure of the organisation, an internal error, an access obtained. At most ONE intermediary, and only if there is one. It is NOT a kill chain: no technical step, no lateral movement, no workstation, hypervisor, snapshot, log or credential, no tool and no ATT&CK tactic. That detail belongs to workshop 4 and is proposed on the operational scenario screen, where it is expected. If your sentence says HOW the attacker proceeds inside the information system, you have left workshop 3." +
+        "\n\nNaming the NATURE of what opens the path is expected — an exploited vulnerability on an exposed service, a configuration error, an access obtained from a provider, the trust granted to a partner. What does not belong is the SEQUEL: what the attacker alters next, which component, product or module he goes through, in what order. No vendor product name, no connector, interface, role, policy or named account. A sentence that chains two mechanisms — `then`, `in order to`, `by ...ing`, `through the ... exposed to ...` — is an operational scenario, whatever its vocabulary." +
+        "\n\nA path does NOT have to go through a stakeholder. Workshop 3 covers direct paths too — the origin reaches the asset without a third party, through an exposure or a weakness of the organisation itself. For such a scenario, say so and leave `pp` empty. Vary your proposals: a set where every scenario starts with the same formula, or rests on the same kind of entry, is a template and not an analysis. Across the proposals, alternate what opens the path — the position of a stakeholder, an exposure, an internal error, an access obtained — and never repeat the same opening words twice." +
+        "\n\nTest each sentence before proposing it: SEVERAL different technical paths must fit under it, because workshop 4 details them one by one as operational scenarios, on their own screen. If only one path fits your sentence, you have written that path instead of the scenario — make it general again." +
+        "\n\nToo operational: `An attacker compromises the vendor support to alter the access policies and roles defined in the identity governance product, causing a massive leak of personal data through the provisioning connectors exposed to the business applications.` The same scenario at the right level: `A cybercriminal exploits the access held by the identity management provider (PP-03) to reach the identity system (BS-07) and cause the mass leak of the personal data it holds (ER-02).` A direct path, just as valid: `A cybercriminal exploits a vulnerability exposed on the online booking portal (BS-02) to reach the patient records it serves and cause their mass leak (ER-01)` — no stakeholder in that one, and `pp` stays empty." +
         "\n\nRespond in " + lang + "." +
-        '\n\nJSON schema: [{"id":"SS-XX (only if updating existing)","scenario":"...",'
-        '"couple_id":"SR-XX/OV-XX","pp":"PP-01 - Name","bs":"BS-01 - Name","er":"ER-01 - Name"}]'
+        '\n\nJSON schema: [{"id":"SS-XX (only if updating existing)",'
+        '"scenario":"ONE sentence: origin, through a stakeholder OR directly, reaches the business asset, causing the feared event(s) — no technical step",'
+        '"couple_id":"SR-XX/OV-XX, SR-YY/OV-YY (every pair this scenario serves)",'
+        '"pp":"PP-01 - Name (empty if the path is direct)","bs":"BS-01 - Name",'
+        '"er":"ER-01 - Name, ER-02 - Name (every feared event this path makes possible)"}]'
     )
+
+
+def _socle_statut(conformite: Any) -> str:
+    """The word the baseline screen shows for a conformity level.
+
+    Same thresholds as `socleStatut` in the frontend: 80 is where a
+    requirement counts as applied. Reading the baseline differently here
+    would make the assistant contradict the screen the analyst just filled.
+    """
+    try:
+        valeur = float(conformite)
+    except (TypeError, ValueError):
+        return ""
+    if valeur >= 80:
+        return "applied"
+    if valeur > 0:
+        return "partial"
+    return "not applied"
+
+
+# "Not applicable" is entered by hand or imported from a spreadsheet: it comes
+# in more shapes than a closed list would suggest.
+_NON_APPLICABLE = ("non", "no", "n/a", "na", "n.a.", "sans objet", "hors perimetre")
+
+
+def _non_applicable(valeur: Any) -> bool:
+    texte = str(valeur or "").strip().lower()
+    return texte in _NON_APPLICABLE or texte.startswith("non applicable") or texte.startswith("not applicable")
+
+
+# The ISO baseline carries 93 requirements. A cap of 60, applied after a sort
+# by conformity descending, silently dropped the THIRTY-THREE least conformant
+# — exactly the rows whose `mesures_prevues` the assistant is asked to build
+# on, and exactly where it is supposed to propose a measure.
+SOCLE_MAX = 120
+
+
+def _socle_evalue(D: dict, limite: int = SOCLE_MAX) -> list[dict]:
+    """The baseline requirements the analysis has assessed, applied ones first.
+
+    Not applicable and not assessed rows say nothing about what is in place,
+    so they are left out.
+    """
+    is_anssi = D.get("socle_type") != "iso"
+    rows = _rows(D, "socle_anssi" if is_anssi else "socle_iso")
+    out = []
+    for e in rows:
+        if _non_applicable(e.get("applicable")):
+            continue
+        statut = _socle_statut(e.get("conformite"))
+        if not statut:
+            continue
+        out.append({
+            "ref": ("#" + str(e.get("num", ""))) if is_anssi else (e.get("ref") or ""),
+            "theme": e.get("thematique") or e.get("theme") or "",
+            "mesure": e.get("mesure", ""),
+            "conformite": e.get("conformite", ""),
+            "statut": statut,
+            "mesures_prevues": e.get("mesures_prevues", ""),
+        })
+    out.sort(key=lambda r: -(float(r["conformite"]) if str(r["conformite"]).strip() not in ("", "None") else 0))
+    if len(out) > limite:
+        logger.warning("baseline context capped: %d assessed requirements, %d sent to the model",
+                       len(out), limite)
+    return out[:limite]
 
 
 def _sop(D: dict, lang: str, ss_id: str | None = None,
@@ -338,6 +436,8 @@ def _sop(D: dict, lang: str, ss_id: str | None = None,
             "couple_id": cible.get("couple_id", ""), "pp": cible.get("pp", ""),
             "bs": cible.get("bs", ""), "er": cible.get("er", "")}) +
         "\n\nSupporting assets: " + _j(_pick(_rows(D, "bs"), "id", "nom", "type")) +
+        "\n\nBaseline assessment (what the organisation already has in place): "
+        + _j(_socle_evalue(D)) +
         "\n\nExisting SOP for this SS: " + _j([
             {"phase": d.get("phase", ""), "phase_label": _attack_label(d.get("phase", "")),
              "action": d.get("action", ""), "bs": d.get("bs", "")}
@@ -359,8 +459,15 @@ def _sop(D: dict, lang: str, ss_id: str | None = None,
         " phases maximum. Set each phase to the MITRE ATT&CK tactic id that best matches it,"
         " following the canonical order: " +
         ", ".join(f"{k} {v}" for k, v in ATTACK_TACTICS.items()) +
-        ". Put the specific ATT&CK technique id (TXXXX) in the action description. For phases with"
-        " Absent or Partiel effectiveness, also propose a security measure (mesure_proposee)." +
+        ". Put the specific ATT&CK technique id (TXXXX) in the action description." +
+        "\n\nRead the existing control of a phase from the baseline assessment above, not from"
+        " imagination. A requirement assessed as `applied` means its measures ARE in place:"
+        " put its reference in `ref`, what it requires in `controle`, and set `efficacite` to"
+        " Efficace. A requirement assessed as `partial` gives Partiel. When no assessed"
+        " requirement counters the phase, or the one that would is `not applied`, set Absent"
+        " and leave `controle` empty — never credit a control the baseline does not carry."
+        " For phases with Absent or Partiel effectiveness, also propose a security measure"
+        " (mesure_proposee)." +
         "\n\nRespond in " + lang + "." +
         '\n\nJSON schema: {"ss":"' + str(ss_id) + '","phases":[{"phase":"TA00XX (ATT&CK tactic id'
         ' from the list above)","action":"Short description (TXXXX)","bs":"BS-XX - Name",'
@@ -701,12 +808,35 @@ def prompt_schema(auto: str) -> str:
     return m.group(1) if m else ""
 
 
+# FEAT-49 — what the analyst has set aside.
+#
+# The prompt already says "never propose what the analysis contains". A
+# suggestion that was IGNORED carries the same information — it is worth
+# nothing — but it exists nowhere in the database: it only ever lived in the
+# browser. The client therefore sends the labels; the server writes the
+# instruction around them and bounds them. Unbounded, this list would end up
+# eating the context the analysis needs.
+ECARTES_MAX = 40
+ECARTE_LEN = 200
+
+
+def _ecartes(ignored: list | None) -> list[str]:
+    propres: list[str] = []
+    for item in (ignored or []):
+        texte = str(item or "").strip()[:ECARTE_LEN]
+        # The client already deduplicates; a forged one need not.
+        if texte and texte not in propres:
+            propres.append(texte)
+    return propres[-ECARTES_MAX:]
+
+
 def build_prompt(panel: str, D: dict, language: str = "fr",
                  ss_id: str | None = None,
                  custom_instruction: str | None = None,
                  extra_instruction: str | None = None,
                  row: int | None = None,
-                 avec_mesures: bool = True) -> str:
+                 avec_mesures: bool = True,
+                 ignored: list | None = None) -> str:
     """Compose a panel's user prompt.
 
     Without ``custom_instruction``: the panel's automatic prompt.
@@ -738,20 +868,34 @@ def build_prompt(panel: str, D: dict, language: str = "fr",
             return prompt
         return prompt + "\n\nAdditional user instruction: " + ajout[:2000]
 
+    def _avec_ecartes(prompt: str) -> str:
+        ecartes = _ecartes(ignored)
+        if not ecartes:
+            return prompt
+        return (prompt +
+                "\n\nThe analyst has already seen and set aside these proposals: " +
+                _j(ecartes) +
+                " Do NOT propose any of them again, and do not propose a rephrasing"
+                " of one either — a different wording of a proposal that was set"
+                " aside is the same proposal. Propose something else.")
+
     texte = (custom_instruction or "").strip()
     if not texte:
-        return _avec_extra(auto)
+        return _avec_ecartes(_avec_extra(auto))
 
     schema = prompt_schema(auto)
-    return _avec_extra(
+    return _avec_ecartes(_avec_extra(
         prompt_context(auto) +
         "\n\nIMPORTANT: You are working on this specific section of the analysis."
-        " You must ONLY propose elements that fit this section." +
+        " You must ONLY propose elements that fit this section."
+        " Fill EVERY field of the schema below: a field you leave empty is a field the"
+        " analyst has to type again. Leave one empty only when the context makes any"
+        " value a guess." +
         "\n\nUser instruction: " + texte[:2000] +
         "\n\nRespond in " + _lang(language) + "." +
         ("\n\nRespond with valid JSON matching this schema: " + schema if schema
          else "\n\nRespond with valid JSON.")
-    )
+    ))
 
 
 # ── Validation of the model's OUTPUT ──────────────────────────────────────
@@ -774,7 +918,11 @@ _CHAMPS: dict[str, tuple[str, ...]] = {
     "vm": ("id", "nom", "nature", "description", "responsable"),
     "bs": ("id", "nom", "type", "vm", "localisation", "proprietaire"),
     "er": ("id", "evenement", "vm", "dict", "impacts", "gravite", "gravite_cat"),
-    "pp": ("id", "nom", "type", "dependance", "penetration", "maturite", "confiance", "bs"),
+    # `categorie` is a field of its own (BUG-30): the prompt asks for it and
+    # the screen has a column for it. Missing from this tuple, it was dropped
+    # here — the instruction was right, the answer arrived emptied.
+    "pp": ("id", "nom", "categorie", "type", "dependance", "penetration",
+           "maturite", "confiance", "bs"),
     "ss": ("id", "scenario", "couple_id", "pp", "bs", "er"),
     "eco": ("action", "id", "complete_id", "mesure", "details", "pp_id", "type",
             "ref_socle", "responsable"),

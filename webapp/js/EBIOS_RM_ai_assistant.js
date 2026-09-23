@@ -37,6 +37,8 @@
             "ai.generate_more": "Générer d'autres suggestions",
             "ai.context_placeholder": "Contexte additionnel (ex : « propose des VM liées aux RH »)",
             "ai.prompt_intro": "Que souhaitez-vous demander à l'assistant IA ?",
+            "ai.keep_ignored": "Ne plus proposer ce que j'ai ignoré",
+            "ai.keep_ignored_help": "Retient les propositions écartées, écran par écran, et demande au modèle de ne pas y revenir. Décocher vide toute cette mémoire.",
             "ai.auto_suggest": "Proposer automatiquement des éléments",
             "ai.custom_instruction_label": "Ou donnez vos instructions :",
             "ai.custom_instruction_placeholder": "Décrivez ce que vous attendez de l'IA (ex : « propose des scénarios liés au ransomware », « identifie les risques cloud »...)",
@@ -78,6 +80,8 @@
             "ai.generate_more": "Generate more suggestions",
             "ai.context_placeholder": "Additional context (e.g. \"suggest VM related to HR\")",
             "ai.prompt_intro": "What would you like the AI assistant to do?",
+            "ai.keep_ignored": "Do not propose again what I ignored",
+            "ai.keep_ignored_help": "Remembers the proposals set aside, screen by screen, and asks the model not to come back to them. Unchecking empties all of it.",
             "ai.auto_suggest": "Automatically suggest elements",
             "ai.custom_instruction_label": "Or provide your instructions:",
             "ai.custom_instruction_placeholder": "Describe what you expect from the AI (e.g. \"suggest ransomware-related scenarios\", \"identify cloud risks\"...)",
@@ -143,6 +147,53 @@
     // ═══════════════════════════════════════════════════════════════════════
     // PROMPT BUILDERS (one per panel type)
     // ═══════════════════════════════════════════════════════════════════════
+    // FEAT-46 — what the baseline screen holds, for the prompts that need to know
+    // what is already in place. Same thresholds as `socleStatut` in the app: 80 is
+    // where a requirement counts as applied. Reading it differently here would
+    // make the assistant contradict the screen the analyst just filled.
+    function _socleStatutIA(conformite) {
+        var valeur = parseFloat(String(conformite));
+        if (isNaN(valeur))
+            return "";
+        if (valeur >= 80)
+            return "applied";
+        if (valeur > 0)
+            return "partial";
+        return "not applied";
+    }
+    // "Not applicable" is entered by hand or imported from a spreadsheet: it comes
+    // in more shapes than a closed list would suggest.
+    var NON_APPLICABLE = ["non", "no", "n/a", "na", "n.a.", "sans objet", "hors perimetre"];
+    function _nonApplicable(valeur) {
+        var t = String(valeur || "").trim().toLowerCase();
+        return NON_APPLICABLE.indexOf(t) >= 0 || t.indexOf("non applicable") === 0 || t.indexOf("not applicable") === 0;
+    }
+    // The ISO baseline carries 93 requirements. A cap of 60, applied after a sort
+    // by conformity descending, silently dropped the least conformant — exactly
+    // the rows whose `mesures_prevues` the assistant is asked to build on.
+    var SOCLE_MAX = 120;
+    function _socleEvalue(limite) {
+        var isAnssi = D.socle_type !== "iso";
+        var rows = ((isAnssi ? D.socle_anssi : D.socle_iso) || []);
+        var out = [];
+        rows.forEach(function (e) {
+            if (_nonApplicable(e.applicable))
+                return;
+            var statut = _socleStatutIA(e.conformite);
+            if (!statut)
+                return;
+            out.push({
+                ref: isAnssi ? ("#" + (e.num != null ? e.num : "")) : (e.ref || ""),
+                theme: e.thematique || e.theme || "",
+                mesure: e.mesure || "",
+                conformite: e.conformite,
+                statut: statut,
+                mesures_prevues: e.mesures_prevues || ""
+            });
+        });
+        out.sort(function (a, b) { return (parseFloat(String(b.conformite)) || 0) - (parseFloat(String(a.conformite)) || 0); });
+        return out.slice(0, limite || SOCLE_MAX);
+    }
     var PROMPTS = {
         vm: function () {
             var lang = typeof _locale !== "undefined" ? _locale : "fr";
@@ -159,7 +210,7 @@
                 user: "Context: " + JSON.stringify(D.context) +
                     "\n\nBusiness assets: " + JSON.stringify(D.vm.map(function (v) { return { id: v.id, nom: v.nom }; })) +
                     "\n\nExisting supporting assets: " + JSON.stringify(D.bs.map(function (b) { return { id: b.id, nom: b.nom, type: b.type, vm: b.vm }; })) +
-                    "\n\nPropose 3-5 additional supporting assets (BS) missing to support these business assets. Include type and which VMs they support (use VM IDs). You may also suggest updates to existing BSs by including their id." +
+                    "\n\nPropose 3-5 additional supporting assets (BS) missing to support these business assets. For each one give its type, the business assets it supports (use VM IDs), where it runs or is held (localisation: site, datacentre, cloud region, provider) and who is accountable for it (proprietaire: the internal team or role that owns it). You may also suggest updates to existing BSs by including their id." +
                     "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
                     '\n\nJSON schema: [{"id":"BS-XX (only if updating existing)","nom":"...","type":"...","vm":"VM-01 - Name, VM-02 - Name","localisation":"...","proprietaire":"..."}]'
             };
@@ -194,7 +245,9 @@
                     "\n\nExisting risk origins (SR): " + JSON.stringify(D.sr_list.map(function (s) { return { id: s.id, nom: s.nom }; })) +
                     "\n\nExisting target objectives (OV): " + JSON.stringify(D.ov_list.map(function (s) { return { id: s.id, nom: s.nom }; })) +
                     "\n\nExisting RO/TO pairs: " + JSON.stringify(D.srov.map(function (s) { return { couple: s.couple, sr_id: s.sr_id, ov_id: s.ov_id, motivation: s.motivation, ressources: s.ressources, activite: s.activite }; })) +
-                    "\n\nPropose 3-5 additional RO/TO pairs that are missing. You may suggest new risk origins (SR) or target objectives (OV) if needed. Score Motivation/Resources/Activity from 0 to 4. Include a detailed justification for each pair. Use existing SR/OV IDs when possible, and include the name (sr_nom, ov_nom) for clarity." +
+                    "\n\nPropose 3-5 additional RO/TO pairs that are missing. You may suggest new risk origins (SR) or target objectives (OV) if needed. Score Motivation/Resources/Activity from 0 to 4. Use existing SR/OV IDs when possible, and include the name (sr_nom, ov_nom)." +
+                    "\n\nCross what the analysis already holds before inventing anything: an objective belongs to nobody, and several origins can pursue the same one — a criminal who resells it, a state that collects it, a competitor who exploits it. For each existing objective, ask which other origin of the analysis would pursue it; for each origin, which existing objective it would go after. Those crossings are where the missing pairs are. Each pair is scored FOR ITS ORIGIN: motivation, resources and activity describe the origin facing that objective, so two pairs sharing an objective have no reason to carry the same scores." +
+                    "\n\nA RO/TO pair belongs to workshop 2 and answers two questions only: WHO could act (the risk origin) and WHAT IT SEEKS (the target objective, an end it pursues — extort a payment, resell health data, disrupt the service, make a statement). It is NOT a scenario: never describe a path, a means or a sequence, and never name stakeholders, supporting assets, attack steps or feared events — those belong to workshops 3 and 4. You may imagine a strategic scenario to find a pair, but report only the pair. The justification says, in 2-3 sentences, why this origin would pursue this objective against this organisation in its context." +
                     "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
                     '\n\nJSON schema: {"new_sr":[{"id":"SR-XX","nom":"..."}], "new_ov":[{"id":"OV-XX","nom":"..."}], "pairs":[{"sr_id":"SR-XX","sr_nom":"name of the risk origin","ov_id":"OV-XX","ov_nom":"name of the target objective","motivation":0-4,"ressources":0-4,"activite":0-4,"justification":"detailed justification (2-3 sentences)"}]}'
             };
@@ -205,9 +258,9 @@
                 user: "Context: " + JSON.stringify(D.context) +
                     "\n\nSupporting assets: " + JSON.stringify(D.bs.map(function (b) { return { id: b.id, nom: b.nom, type: b.type }; })) +
                     "\n\nExisting stakeholders: " + JSON.stringify(D.pp.map(function (p) { return { id: p.id, nom: p.nom, type: p.type }; })) +
-                    "\n\nPropose 3-5 additional stakeholders (PP) in the ecosystem. Only EXTERNAL actors (suppliers, partners, clients). Assess Dependency/Penetration/Maturity/Trust from 1 to 4. Link to relevant BS (using ID - Name format)." +
+                    "\n\nPropose 3-5 additional stakeholders (PP) in the ecosystem. Only EXTERNAL actors (suppliers, partners, clients). Assess Dependency/Penetration/Maturity/Trust from 1 to 4. Link to relevant BS (using ID - Name format). Give BOTH fields the screen holds: `categorie` is a closed list — exactly one of Client, Partenaire, Prestataire — and `type` is free text naming what the stakeholder does for the organisation (hosting provider, software vendor, biomedical maintainer...). Never put the category in the type." +
                     "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
-                    '\n\nJSON schema: [{"id":"PP-XX (only if updating existing)","nom":"...","type":"Fournisseur|Partenaire|Client","dependance":1-4,"penetration":1-4,"maturite":1-4,"confiance":1-4,"bs":"BS-01 - Name"}]'
+                    '\n\nJSON schema: [{"id":"PP-XX (only if updating existing)","nom":"...","categorie":"Client|Partenaire|Prestataire","type":"free text: its role","dependance":1-4,"penetration":1-4,"maturite":1-4,"confiance":1-4,"bs":"BS-01 - Name"}]'
             };
         },
         ss: function () {
@@ -219,9 +272,14 @@
                     "\n\nSupporting assets: " + JSON.stringify(D.bs.map(function (b) { return { id: b.id, nom: b.nom }; })) +
                     "\n\nFeared events: " + JSON.stringify(D.er.map(function (e) { return { id: e.id, evenement: e.evenement, vm: e.vm, gravite: e.gravite }; })) +
                     "\n\nExisting strategic scenarios: " + JSON.stringify(D.ss.map(function (s) { return { id: s.id, scenario: s.scenario }; })) +
-                    "\n\nPropose 2-4 additional strategic scenarios (SS) linking: WHO (RO/TO pair) → THROUGH WHOM (PP) → targeting WHAT (BS) → causing WHICH feared event (ER). Use existing element IDs." +
+                    "\n\nPropose 2-4 additional strategic scenarios (SS) linking: WHO (RO/TO pair) → THROUGH WHOM (PP, when a stakeholder is on the path) → targeting WHAT (BS) → causing WHICH feared event (ER). Use existing element IDs. A path is rarely walked by one origin only: list in `couple_id` EVERY RO/TO pair the scenario serves, comma separated, not just the first that comes to mind. The same route through the same stakeholder to the same feared event serves every origin that would take it. What a path CAUSES is plural in the same way: a path general enough reaches several feared events, so list in `er` EVERY feared event this same path makes possible, comma separated. Only those it actually reaches — a feared event that needs another stakeholder or another business asset is a different scenario, not an extra entry here. The severity follows on its own: the screen takes the highest of them." +
+                    "\n\nA strategic scenario is read at the level of the ECOSYSTEM. Write ONE sentence of business language, of this shape and no longer: <risk origin> exploits <what opens the path> to reach <business asset>, causing <feared event(s)>. What opens the path is said at the level of the ecosystem: the position of a stakeholder, an exposure of the organisation, an internal error, an access obtained. At most ONE intermediary, and only if there is one. It is NOT a kill chain: no technical step, no lateral movement, no workstation, hypervisor, snapshot, log or credential, no tool and no ATT&CK tactic. That detail belongs to workshop 4 and is proposed on the operational scenario screen, where it is expected. If your sentence says HOW the attacker proceeds inside the information system, you have left workshop 3." +
+                    "\n\nNaming the NATURE of what opens the path is expected — an exploited vulnerability on an exposed service, a configuration error, an access obtained from a provider, the trust granted to a partner. What does not belong is the SEQUEL: what the attacker alters next, which component, product or module he goes through, in what order. No vendor product name, no connector, interface, role, policy or named account. A sentence that chains two mechanisms — `then`, `in order to`, `by ...ing`, `through the ... exposed to ...` — is an operational scenario, whatever its vocabulary." +
+                    "\n\nA path does NOT have to go through a stakeholder. Workshop 3 covers direct paths too — the origin reaches the asset without a third party, through an exposure or a weakness of the organisation itself. For such a scenario, say so and leave `pp` empty. Vary your proposals: a set where every scenario starts with the same formula, or rests on the same kind of entry, is a template and not an analysis. Across the proposals, alternate what opens the path — the position of a stakeholder, an exposure, an internal error, an access obtained — and never repeat the same opening words twice." +
+                    "\n\nTest each sentence before proposing it: SEVERAL different technical paths must fit under it, because workshop 4 details them one by one as operational scenarios, on their own screen. If only one path fits your sentence, you have written that path instead of the scenario — make it general again." +
+                    "\n\nToo operational: `An attacker compromises the vendor support to alter the access policies and roles defined in the identity governance product, causing a massive leak of personal data through the provisioning connectors exposed to the business applications.` The same scenario at the right level: `A cybercriminal exploits the access held by the identity management provider (PP-03) to reach the identity system (BS-07) and cause the mass leak of the personal data it holds (ER-02).` A direct path, just as valid: `A cybercriminal exploits a vulnerability exposed on the online booking portal (BS-02) to reach the patient records it serves and cause their mass leak (ER-01)` — no stakeholder in that one, and `pp` stays empty." +
                     "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
-                    '\n\nJSON schema: [{"id":"SS-XX (only if updating existing)","scenario":"...","couple_id":"SR-XX/OV-XX","pp":"PP-01 - Name","bs":"BS-01 - Name","er":"ER-01 - Name"}]'
+                    '\n\nJSON schema: [{"id":"SS-XX (only if updating existing)","scenario":"ONE sentence: origin, through a stakeholder OR directly, reaches the business asset, causing the feared event(s) — no technical step","couple_id":"SR-XX/OV-XX, SR-YY/OV-YY (every pair this scenario serves)","pp":"PP-01 - Name (empty if the path is direct)","bs":"BS-01 - Name","er":"ER-01 - Name, ER-02 - Name (every feared event this path makes possible)"}]'
             };
         },
         sop: function (ssId) {
@@ -233,8 +291,10 @@
                 user: "Context: " + JSON.stringify({ societe: D.context.societe, socle: D.context.socle, reglementation: D.context.reglementation }) +
                     "\n\nTarget strategic scenario: " + JSON.stringify({ id: targetSS.id, scenario: targetSS.scenario, couple_id: targetSS.couple_id, pp: targetSS.pp, bs: targetSS.bs, er: targetSS.er }) +
                     "\n\nSupporting assets: " + JSON.stringify(D.bs.map(function (b) { return { id: b.id, nom: b.nom, type: b.type }; })) +
+                    "\n\nBaseline assessment (what the organisation already has in place): " + JSON.stringify(_socleEvalue()) +
                     "\n\nExisting SOP for this SS: " + JSON.stringify(D.sop_detail.filter(function (d) { return d.ss === ssId; }).map(function (d) { return { phase: d.phase, phase_label: _attackLabel(d.phase), action: d.action, bs: d.bs }; })) +
-                    "\n\nPropose a kill chain (SOP) for this strategic scenario. Use the step-by-step method (proche en proche): entry point → lateral movement → target. Keep it concise: 4-6 key phases maximum. Set each phase to the MITRE ATT&CK tactic id that best matches it, following the canonical order: TA0043 Reconnaissance, TA0042 Resource Development, TA0001 Initial Access, TA0002 Execution, TA0003 Persistence, TA0004 Privilege Escalation, TA0005 Defense Evasion, TA0006 Credential Access, TA0007 Discovery, TA0008 Lateral Movement, TA0009 Collection, TA0011 Command and Control, TA0010 Exfiltration, TA0040 Impact. Put the specific ATT&CK technique id (TXXXX) in the action description. For phases with Absent or Partiel effectiveness, also propose a security measure (mesure_proposee)." +
+                    "\n\nPropose a kill chain (SOP) for this strategic scenario. Use the step-by-step method (proche en proche): entry point → lateral movement → target. Keep it concise: 4-6 key phases maximum. Set each phase to the MITRE ATT&CK tactic id that best matches it, following the canonical order: TA0043 Reconnaissance, TA0042 Resource Development, TA0001 Initial Access, TA0002 Execution, TA0003 Persistence, TA0004 Privilege Escalation, TA0005 Defense Evasion, TA0006 Credential Access, TA0007 Discovery, TA0008 Lateral Movement, TA0009 Collection, TA0011 Command and Control, TA0010 Exfiltration, TA0040 Impact. Put the specific ATT&CK technique id (TXXXX) in the action description." +
+                    "\n\nRead the existing control of a phase from the baseline assessment above, not from imagination. A requirement assessed as `applied` means its measures ARE in place: put its reference in `ref`, what it requires in `controle`, and set `efficacite` to Efficace. A requirement assessed as `partial` gives Partiel. When no assessed requirement counters the phase, or the one that would is `not applied`, set Absent and leave `controle` empty — never credit a control the baseline does not carry. For phases with Absent or Partiel effectiveness, also propose a security measure (mesure_proposee)." +
                     "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
                     '\n\nJSON schema: {"ss":"' + ssId + '","phases":[{"phase":"TA00XX (ATT&CK tactic id from the list above)","action":"Short description (TXXXX)","bs":"BS-XX - Name","controle":"existing control or empty","ref":"baseline ref or empty","efficacite":"Absent|Partiel|Efficace","mesure_proposee":"proposed security measure or empty"}]}'
             };
@@ -385,6 +445,7 @@
         // Store suggestions for accept handlers
         window._aiSuggestions = suggestions;
         window._aiAcceptFn = acceptFn;
+        _aiIgnoreKey = IGNORE_PANELS.indexOf(type) >= 0 ? _ignoreKeyFor(type) : "";
     }
     // ═══════════════════════════════════════════════════════════════════════
     // ACCEPT HANDLERS — insert or update suggestions in D
@@ -409,6 +470,28 @@
                 existing[f] = s[f];
         });
         return true;
+    }
+    // FEAT-48 — a scenario serves several RO/TO pairs: the model may answer a list
+    // or a single string, and the row stores the comma-separated form the screen
+    // itself writes.
+    /** A multi-reference field of a strategic scenario. The model answers a
+     *  string most of the time, a list when the schema opens up (FEAT-48 for the
+     *  RO/TO pairs, FEAT-50 for the feared events): the row stores the comma
+     *  form the screen reads back. Storing the array as-is left an "[object
+     *  Object]" in the table. */
+    function _refList(valeur) {
+        if (Array.isArray(valeur)) {
+            return valeur.map(function (v) {
+                // A list of objects lands here too — joining it raw produced the
+                // very "[object Object]" this function exists to avoid.
+                if (v && typeof v === "object")
+                    return String(v.id || v.nom || v.label || "");
+                return String(v == null ? "" : v);
+            }).filter(Boolean).join(", ");
+        }
+        if (valeur && typeof valeur === "object")
+            return String(valeur.id || "");
+        return String(valeur || "");
     }
     var ACCEPT_HANDLERS = {
         vm: function (s) {
@@ -482,10 +565,14 @@
             return couple;
         },
         ss: function (s) {
+            s.couple_id = _refList(s.couple_id);
+            s.pp = _refList(s.pp);
+            s.bs = _refList(s.bs);
+            s.er = _refList(s.er);
             if (_updateIfExists(D.ss, s, ["scenario", "couple_id", "couple_desc", "pp", "bs", "er"]))
                 return s.id + " ✓";
             var id = nextId("ss");
-            D.ss.push({ id: id, scenario: s.scenario || "", couple_id: s.couple_id || "", couple_desc: s.couple_desc || "", pp: s.pp || "", bs: s.bs || "", er: s.er || "" });
+            D.ss.push({ id: id, scenario: s.scenario || "", couple_id: s.couple_id, couple_desc: s.couple_desc || "", pp: s.pp, bs: s.bs, er: s.er });
             return id;
         },
         sop: function (s) {
@@ -556,7 +643,101 @@
     var _lastSuggestType = null;
     var _lastSuggestArgs = null;
     var _extraContext = "";
+    // FEAT-49 — what the analyst has set aside, for the rest of the session.
+    //
+    // A suggestion lives only in the panel: ignoring it leaves no trace, so the
+    // next call proposes it again, sometimes reworded. We keep a short label per
+    // screen and hand it to the next prompt. In memory only: this is the memory
+    // of a working session, not analysis data — it is never saved with it.
+    var _aiIgnoreKeep = true; // the checkbox, remembered between panels
+    var _aiIgnored = {};
+    var _aiIgnoreKey = ""; // set by whoever renders the cards
+    // The screens that carry the box, and they alone, remember. The "inline" AI
+    // buttons (a measure on one row) have no launch screen: they keep nothing —
+    // a bucket nobody ever reads back is not a memory, it is dead weight.
+    var IGNORE_PANELS = ["vm", "bs", "er", "srov", "pp", "ss", "sop", "eco", "measures", "socle"];
+    var IGNORE_MAX = 40, IGNORE_LEN = 200;
+    /** Per analysis AND per screen: what is set aside on supporting assets says
+     *  nothing about scenarios, and an analysis does not inherit another's. The
+     *  kill chain is generated per strategic scenario, so it is keyed per
+     *  scenario too. */
+    function _ignoreKeyFor(type, ssId) {
+        var analysis = localStorage.getItem("ebios_catalog_active") || "-";
+        return analysis + "|" + type + (ssId ? "|" + ssId : "");
+    }
+    /** A label the model can recognise: what the card shows, not the whole
+     *  object. A kill chain has no name — its phases are what one recognises. */
+    function _ignoreLabel(type, s) {
+        if (!s || typeof s !== "object")
+            return "";
+        var txt = "";
+        if (s.phases && s.phases.length) {
+            txt = s.phases.map(function (ph) { return String(ph.action || ph.phase || ""); })
+                .filter(function (x) { return !!x; }).join(" → ");
+        }
+        else if (type === "srov") {
+            txt = String(s.sr_nom || s.sr_id || "?") + " / " + String(s.ov_nom || s.ov_id || "?");
+        }
+        else {
+            txt = String(s._title || s.nom || s.scenario || s.mesure || s.evenement || "");
+            var detail = String(s.description || s.justification || s.details || "");
+            if (detail)
+                txt = txt ? txt + " — " + detail : detail;
+        }
+        txt = txt.trim();
+        return txt.length > IGNORE_LEN ? txt.substring(0, IGNORE_LEN) : txt;
+    }
+    function _ignoredFor(key) {
+        return (_aiIgnoreKeep && _aiIgnored[key]) ? _aiIgnored[key] : [];
+    }
+    /** The webapp composes its own prompts (no backend): the same instruction the
+     *  suite module's server writes is appended here. Declared divergence. */
+    function _ignoredBlock(key) {
+        var ecartes = _ignoredFor(key);
+        if (!ecartes.length)
+            return "";
+        return "\n\nThe analyst has already seen and set aside these proposals: "
+            + JSON.stringify(ecartes)
+            + " Do NOT propose any of them again, and do not propose a rephrasing"
+            + " of one either — a different wording of a proposal that was set"
+            + " aside is the same proposal. Propose something else.";
+    }
+    /** Unchecking empties the memory on the spot — that is what the box says.
+     *  Re-checking starts from a blank page. */
+    window._aiToggleIgnoreKeep = function (on) {
+        _aiIgnoreKeep = !!on;
+        if (!_aiIgnoreKeep)
+            _aiIgnored = {};
+        // The count is painted once, when the panel opens. Emptying the memory
+        // without repainting it left the screen claiming what it no longer held.
+        var n = document.getElementById("ai-keep-ignored-n");
+        if (n)
+            n.textContent = "";
+    };
+    function _ignoreToggleHTML(type, ssId) {
+        var n = _ignoredFor(_ignoreKeyFor(type, ssId)).length;
+        return '<label class="ct-flex ct-items-start ct-gap-2 ct-mb-4" style="cursor:pointer">'
+            + '<input type="checkbox" id="ai-keep-ignored" class="ct-mt-1" data-change="_aiToggleIgnoreKeep" data-pass-checked'
+            + (_aiIgnoreKeep ? ' checked' : '') + '>'
+            + '<span class="fs-sm"><strong>' + esc(t("ai.keep_ignored")) + '</strong>'
+            + ' <span id="ai-keep-ignored-n" class="ct-muted">' + (n ? "(" + n + ")" : "") + '</span>'
+            + '<br><span class="ct-muted">' + esc(t("ai.keep_ignored_help")) + '</span></span>'
+            + '</label>';
+    }
     window._aiIgnore = function (idx) {
+        // FEAT-49 — record BEFORE removing the card: the suggestion is read from
+        // the list, not from the DOM, but the two are meant to stay in step.
+        if (_aiIgnoreKeep && _aiIgnoreKey) {
+            var s = (window._aiSuggestions || [])[idx];
+            var label = _ignoreLabel(_aiIgnoreKey.split("|")[1] || "", s);
+            if (label) {
+                var liste = _aiIgnored[_aiIgnoreKey] || (_aiIgnored[_aiIgnoreKey] = []);
+                if (liste.indexOf(label) === -1)
+                    liste.push(label);
+                if (liste.length > IGNORE_MAX)
+                    liste.splice(0, liste.length - IGNORE_MAX);
+            }
+        }
         var card = document.getElementById("ai-card-" + idx);
         if (card)
             card.remove();
@@ -648,6 +829,9 @@
             var p = _aiEnsurePanel();
             _aiOpenPanel("✨ " + t("ai.label.residuals"));
             var h = '<p class="fs-sm" style="margin-bottom:12px;color:var(--ct-ink-2)">' + t("ai.prompt_intro") + '</p>';
+            // No box here: the residual panel answers with check-boxes and a
+            // single "Accept", it has no "Ignore" gesture. A box that can never
+            // fill is worse than no box.
             h += '<div class="settings-label fs-sm" style="margin-bottom:8px">' + t("ai.select_ss") + '</div>';
             D.ss.forEach(function (s, i) {
                 h += '<div class="ai-card" style="cursor:pointer" data-click="_aiResidualForSS" data-args=\'' + _da(i) + '\'>';
@@ -669,6 +853,7 @@
         _aiOpenPanel(panelTitle);
         pp.body.innerHTML =
             '<p class="fs-sm" style="margin-bottom:16px;color:var(--ct-ink-2)">' + t("ai.prompt_intro") + '</p>' +
+                _ignoreToggleHTML(type) +
                 '<button class="ct-btn ai-btn-accept ct-w-full ct-p-2 ct-text-data ct-mb-4" data-variant="primary" data-click="_aiRunSuggest" data-args=\'' + _da(type, "") + '\'>' + t("ai.auto_suggest") + '</button>' +
                 '<div class="settings-label fs-sm" style="margin-bottom:6px">' + t("ai.custom_instruction_label") + '</div>' +
                 '<textarea id="ai-custom-instruction" class="w-full" rows="4" style="border:1px solid var(--ct-line);border-radius:6px;padding:8px;font-size:0.85em;resize:vertical" placeholder="' + esc(t("ai.custom_instruction_placeholder")) + '"></textarea>' +
@@ -712,10 +897,11 @@
             var schema = window._aiPromptSchema(autoPrompt.user);
             var customPrompt = {
                 user: contextData +
-                    "\n\nIMPORTANT: You are working on this specific section of the analysis. You must ONLY propose elements that fit this section." +
+                    "\n\nIMPORTANT: You are working on this specific section of the analysis. You must ONLY propose elements that fit this section. Fill EVERY field of the schema below: a field you leave empty is a field the analyst has to type again. Leave one empty only when the context makes any value a guess." +
                     "\n\nUser instruction: " + userText +
                     "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
                     (schema ? "\n\nRespond with valid JSON matching this schema: " + schema : "\n\nRespond with valid JSON.")
+                    + _ignoredBlock(_ignoreKeyFor(type))
             };
             try {
                 var result = await _callAI(customPrompt);
@@ -735,6 +921,8 @@
             return;
         try {
             var promptObj = promptBuilder();
+            if (promptObj)
+                promptObj.user += _ignoredBlock(_ignoreKeyFor(type));
             var result = await _callAI(promptObj);
             var suggestions = _normalizeSuggestions(type, result);
             _renderCards(type, suggestions, ACCEPT_HANDLERS[type]);
@@ -756,6 +944,9 @@
         p.body.innerHTML =
             '<p class="fs-sm" style="margin-bottom:8px;color:var(--ct-ink-2)">' + esc(ssLabel) + '</p>' +
                 '<p class="fs-sm" style="margin-bottom:16px;color:var(--ct-ink-2)">' + t("ai.prompt_intro") + '</p>' +
+                // The kill chain is generated per scenario, so its memory is too: the
+                // box belongs here, where the scenario is known, not on the selector.
+                _ignoreToggleHTML("sop", ssId) +
                 '<button class="ct-btn ai-btn-accept ct-w-full ct-p-2 ct-text-data ct-mb-4" data-variant="primary" data-click="_aiRunSOP" data-args=\'' + _da(ssId, "") + '\'>' + t("ai.auto_suggest") + '</button>' +
                 '<div class="settings-label fs-sm" style="margin-bottom:6px">' + t("ai.custom_instruction_label") + '</div>' +
                 '<textarea id="ai-custom-instruction" class="w-full" rows="4" style="border:1px solid var(--ct-line);border-radius:6px;padding:8px;font-size:0.85em;resize:vertical" placeholder="' + esc(t("ai.custom_instruction_placeholder")) + '"></textarea>' +
@@ -786,10 +977,12 @@
                 var schema = window._aiPromptSchema(promptObj.user);
                 var lang = typeof _locale !== "undefined" ? _locale : "fr";
                 promptObj.user = contextData +
+                    "\n\nIMPORTANT: Fill EVERY field of the schema below: a field you leave empty is a field the analyst has to type again. Leave one empty only when the context makes any value a guess." +
                     "\n\nUser instruction: " + userText +
                     "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
                     (schema ? "\n\nRespond with valid JSON matching this schema: " + schema : "");
             }
+            promptObj.user += _ignoredBlock(_ignoreKeyFor("sop", ssId));
             var result = await _callAI(promptObj);
             // Render as a single SOP card with phases listed
             var suggestions;
@@ -830,6 +1023,7 @@
             p.body.innerHTML = h;
             p.footer.innerHTML = '<button class="ct-btn ai-btn-close" data-click="_aiClosePanel">' + t("ai.close") + '</button>';
             window._aiSuggestions = suggestions;
+            _aiIgnoreKey = _ignoreKeyFor("sop", ssId);
         }
         catch (e) {
             p.body.innerHTML = '<div class="ai-error">' + t("ai.error", { msg: esc(e.message) }) + '</div>';

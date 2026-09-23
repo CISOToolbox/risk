@@ -266,6 +266,7 @@ interface Window {
     _aiAcceptFn?: ((s: any) => string) | undefined;
     _aiRestart?: () => void;
     _aiIgnore?: (idx: number) => void;
+    _aiToggleIgnoreKeep?: (on: boolean) => void;
     _aiRegenerate?: () => void;
     _aiAccept?: (type: string, idx: number) => void;
     _aiAcceptAll?: (type: string) => void;

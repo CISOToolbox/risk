@@ -9,9 +9,10 @@ See docs/CHANTIER_IA_BACKEND.md §Phase 2.
 from __future__ import annotations
 
 import uuid
+from typing import Annotated
 
 from fastapi import Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, StringConstraints
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.ai_prompts import PANELS, build_prompt, validate_output
@@ -97,6 +98,12 @@ class RiskSuggestRequest(BaseModel):
     # the measure plan from the database. A client can therefore neither
     # fabricate nor truncate it, only ask to do without it.
     include_existing_measures: bool = True
+    # FEAT-49 — the proposals the analyst has set aside during this session.
+    # They exist nowhere else: a suggestion only ever lived in the browser.
+    # The client sends the labels, never a sentence — the server writes the
+    # instruction around them and bounds the list (see `_ecartes`).
+    ignored_suggestions: list[Annotated[str, StringConstraints(max_length=500)]] = Field(
+        default_factory=list, max_length=200)
 
 
 @router.post("/risk/suggest")
@@ -128,7 +135,8 @@ async def risk_suggest(body: RiskSuggestRequest,
     try:
         user_prompt = build_prompt(body.panel, D, body.language, body.ss_id,
                                    body.custom_instruction, body.extra_instruction,
-                                   body.row, body.include_existing_measures)
+                                   body.row, body.include_existing_measures,
+                                   body.ignored_suggestions)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
