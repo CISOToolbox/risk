@@ -470,4 +470,142 @@ test.describe('EBIOS RM — local frontend journeys', () => {
         await expect.poll(() => prompts.length).toBe(3);
         expect(prompts[2]).not.toContain('set aside these proposals');
     });
+
+    // ── BUG-33: the kill chain prompt carries the measure plan ─────────
+    //
+    // FEAT-40 never reached this build: the prompt asked for a measure on
+    // every weak phase without ever showing what the plan already held, so a
+    // second scenario with neighbouring phases doubled it. What is asserted
+    // is what the app SENDS, and what it SHOWS of a reuse — the provider is
+    // intercepted and never called.
+    test('the kill chain prompt carries the measure plan, and a reuse is shown as one', async ({ page }) => {
+        await openApp(page);
+        await seedAnalysis(page);
+        await page.evaluate(() => {
+            localStorage.setItem('ebios_ai_enabled', 'true');
+            localStorage.setItem('ebios_ai_apikey', 'e2e-intercepted');
+        });
+        await page.reload();
+        await page.waitForLoadState('domcontentloaded');
+
+        // Seeded through the app's own seams — `D` is file-scoped, and a test
+        // that reached into it would not be exercising the app.
+        await page.locator(NAV_ITEMS, { hasText: /Mesures|Measures/i }).first().click();
+        const mesure = await page.evaluate(() => {
+            window.addRow('measures');
+            let champs = document.querySelectorAll('input[data-s="measures"][data-f="mesure"]');
+            const nom = champs[champs.length - 1];
+            nom.value = 'MFA généralisée'; window._updateFieldFromEl(nom);
+            const zones = document.querySelectorAll('textarea[data-s="measures"][data-f="details"]');
+            const det = zones[zones.length - 1];
+            det.value = 'MFA sur les portails web.'; window._updateFieldFromEl(det);
+            champs = document.querySelectorAll('input[data-s="measures"][data-f="mesure"]');
+            const tr = champs[champs.length - 1].closest('tr');
+            const m = tr && tr.textContent.match(/(?:MES|M)-\d+/g);
+            return m ? m[m.length - 1] : null;
+        });
+        expect(mesure, "identifiant de la mesure semée introuvable").toBeTruthy();
+
+        await page.locator(NAV_ITEMS, { hasText: /Scénarios stratégiques|Strategic/i }).first().click();
+        const ss = await page.evaluate(() => {
+            window.addRow('ss');
+            const champs = document.querySelectorAll('input[data-s="ss"][data-f="scenario"], textarea[data-s="ss"][data-f="scenario"]');
+            const el = champs[champs.length - 1];
+            el.value = 'Essai BUG-33'; window._updateFieldFromEl(el);
+            const tr = el.closest('tr');
+            const m = tr && tr.textContent.match(/SS-\d+/g);
+            return m ? m[m.length - 1] : null;
+        });
+        expect(ss, "identifiant du scénario semé introuvable").toBeTruthy();
+
+        // The plan as it stands before the assistant touches it.
+        await page.locator(NAV_ITEMS, { hasText: /Mesures|Measures/i }).first().click();
+        const avant = await page.evaluate(() =>
+            document.querySelectorAll('input[data-s="measures"][data-f="mesure"]').length);
+
+        // Two answers in a row. The first chain REFERENCES the measure under
+        // its current title; the second renames it. A stale label can only
+        // survive in a chain written BEFORE the rename — which is why a single
+        // generation proves nothing here.
+        const prompts = [];
+        await page.route('https://api.anthropic.com/**', async (route) => {
+            prompts.push(JSON.stringify(route.request().postDataJSON()));
+            const premier = prompts.length === 1;
+            return route.fulfill({ json: { content: [{ type: 'text', text: JSON.stringify({
+                ss,
+                phases: [{ phase: 'TA0001', action: 'Hameçonnage ciblé (T1566)', bs: 'BS-01 - SIH',
+                           controle: '', ref: '', efficacite: 'Absent',
+                           // BOTH: the model names an existing measure AND proposes a
+                           // label. That is the case the guard protects — without
+                           // `mesure_proposee` here, breaking the guard changes nothing
+                           // and the test would pass on the bug.
+                           mesure_existante_id: mesure,
+                           mesure_ajustement: premier ? '' : 'Étendre aux comptes de service.',
+                           mesure_titre: premier ? '' : 'MFA généralisée et comptes de service',
+                           mesure_proposee: 'MFA à généraliser' }],
+            }) }] } });
+        });
+
+        await page.locator(NAV_ITEMS, { hasText: /Scénarios opérationnels|Operational/i }).first().click();
+        await page.locator('#toggles-sop .btn-ai, [data-click="suggestFor"][data-args*="sop"]').first().click();
+        await page.locator('[data-click="_aiGenSOP"]').first().click();
+        await page.locator('[data-click="_aiRunSOP"]').first().click();
+        await expect.poll(() => prompts.length).toBe(1);
+
+        // The plan travelled, with the description that alone allows judging
+        // an overlap, and with the instruction to reuse rather than invent.
+        expect(prompts[0]).toContain('Existing measures (the FULL plan');
+        expect(prompts[0]).toContain('MFA sur les portails web.');
+        expect(prompts[0]).toContain('mesure_existante_id');
+
+        // First chain: a plain reuse. Accepted, it freezes "M-x - <old title>".
+        const carte1 = page.locator('.ai-card').first();
+        await expect(carte1).toContainText(/réutilis|reused/i);
+        await carte1.locator('.ai-btn-accept').first().click();
+        await page.evaluate(() => window._aiClosePanel && window._aiClosePanel());
+
+        // Second chain on the same scenario: this one widens the measure and
+        // corrects its title.
+        await page.locator(NAV_ITEMS, { hasText: /Scénarios opérationnels|Operational/i }).first().click();
+        await page.locator('#toggles-sop .btn-ai, [data-click="suggestFor"][data-args*="sop"]').first().click();
+        await page.locator('[data-click="_aiGenSOP"]').first().click();
+        await page.locator('[data-click="_aiRunSOP"]').first().click();
+        await expect.poll(() => prompts.length).toBe(2);
+        const carte = page.locator('.ai-card').first();
+        await expect(carte).toContainText(/ajust|adjust/i);
+        await expect(carte).toContainText('MFA généralisée');
+
+        // Accepting is where the writing happens, and where the duplicate used
+        // to appear. Counted in the measures table, not in a variable.
+        await carte.locator('.ai-btn-accept').first().click();
+        await page.evaluate(() => window._aiClosePanel && window._aiClosePanel());
+        await page.locator(NAV_ITEMS, { hasText: /Mesures|Measures/i }).first().click();
+        const apres = await page.evaluate(() =>
+            document.querySelectorAll('input[data-s="measures"][data-f="mesure"]').length);
+        expect(apres, "une mesure jumelle a été créée malgré la réutilisation").toBe(avant);
+
+        // The adjustment EXTENDS the description; it never replaces it.
+        const details = await page.evaluate(() => {
+            const zones = document.querySelectorAll('textarea[data-s="measures"][data-f="details"]');
+            return Array.from(zones).map((z) => z.value).join(" | ");
+        });
+        expect(details).toContain('MFA sur les portails web.');
+        expect(details).toContain('Étendre aux comptes de service.');
+
+        // A corrected title must reach the fields that FROZE the old label.
+        // Read from what is persisted, not from the screen: the selectors
+        // resolve the label from the id, so a stale reference is invisible
+        // there — and very much present in the Word and Excel exports. That
+        // is exactly why nothing caught it before.
+        const fige = await page.evaluate((cle) => {
+            const brut = localStorage.getItem(cle);
+            if (!brut) return null;
+            const d = JSON.parse(brut).data || JSON.parse(brut);
+            return (d.sop_detail || []).map((x) => x.mesure_proposee || "").join(" | ");
+        }, AUTOSAVE_KEY);
+        expect(fige, "rien n'a été persisté : le test ne prouve rien").toBeTruthy();
+        expect(fige, "l'ancien libellé a survécu dans une référence figée")
+            .not.toMatch(/MFA généralisée(?!\s+et)/);
+        expect(fige).toContain('MFA généralisée et comptes de service');
+    });
 });

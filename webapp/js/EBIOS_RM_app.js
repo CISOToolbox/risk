@@ -572,6 +572,15 @@ function propagateNameChange(id, newName) {
         ["er", "vm"], ["ss", "couple_id"], ["ss", "couple_desc"],
         ["ss", "pp"], ["ss", "bs"], ["ss", "er"],
         ["eco", "pp_id"], ["measures", "sop"], ["residuals", "mesures"],
+        // Fields carrying MEASURE references. They were missing: renaming a
+        // measure left its old label frozen here, because _csvAppendRef writes
+        // "ID - label" and never reads it back. Invisible in the selectors
+        // (which resolve the label from the id), but very much present in the
+        // Word and Excel exports — and BUG-33 made renaming reachable from the
+        // assistant, which is how the gap surfaced.
+        ["sop_detail", "mesure_proposee"],
+        ["socle_anssi", "mesures_prevues"], ["socle_iso", "mesures_prevues"],
+        ["eco", "mesures_existantes"], ["eco", "mesures_complementaires"],
     ];
     for (const [sec, fld] of refFields) {
         if (!D[sec])
