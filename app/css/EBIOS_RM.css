@@ -44,14 +44,11 @@ select { padding: 4px 6px; border: 1px solid var(--ct-line); border-radius: 4px;
 .phase-actions { display: flex; flex-direction: column; gap: 2px; align-items: center; }
 
 .meta { gap: 12px; margin: 16px 0; }
-.ct-meta-item .label { font-size: 0.75em; color: var(--ct-ink-2); text-transform: uppercase; }
-.ct-meta-item .value { margin-top: 2px; }
 
 footer { display: none; text-align: center; padding: 20px; color: var(--ct-ink-2); font-size: 0.8em; }
 @media print { footer { display: block; } }
 
 .synth-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-.ct-synth-card h3 { font-size: 0.9em; color: var(--ct-ink); margin-bottom: 8px; }
 .risk-dist { display: flex; gap: 8px; margin-top: 8px; }
 /* No color here: the bars carry a -tint (pale) background and their text
    color comes from .ct-text-*-ink (dark). Forcing onsolid (light) overrode

@@ -61,6 +61,9 @@
      themes: it is the darkening of the background that makes the overlay, it
      does not invert. A token because the value is repeated in four places. */
   --ct-scrim:        rgba(0,0,0,0.45);
+  /* Deeper veil, for a fullscreen image viewer: there the background must
+     disappear, not merely recede. Same reasoning, one level down. */
+  --ct-scrim-deep:   rgba(0,0,0,0.85);
   /* Background of code / example blocks. Dark in BOTH themes, like
      a console: it is a reading convention, not an interface surface. */
   --ct-code-bg:      #0f172a;
@@ -376,8 +379,16 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
    value, never two adding up. */
 .ct-form { display: flex; flex-direction: column; gap: 14px; }
 .ct-form .ct-field + .ct-field { margin-top: 0; }
-.ct-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+/* Two declarations of .ct-form-grid coexisted, here and in the block hoisted
+   from the modules further down; the later one won, so the responsive
+   auto-fit above it had been dead since that hoist. The EFFECTIVE values are
+   kept, which leaves every screen exactly as it renders today — whether forms
+   should go back to being responsive is a design question (BUG-40), not a
+   cleanup. */
+.ct-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .ct-form-grid .ct-field + .ct-field { margin-top: 0; }
+/* Hoisted from access.css and Pilot.css, where it was declared identically. */
+.ct-form-grid > .ct-form-row { margin-bottom: 0; }
 .ct-form-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
 .ct-label { font-size: var(--ct-text-label); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--ct-ink-2); }
 .ct-input, .ct-select, .ct-textarea {
@@ -718,6 +729,8 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-block { display: block; }
 .ct-items-center { align-items: center; }
 .ct-items-baseline { align-items: baseline; }
+.ct-items-end { align-items: flex-end; }
+.ct-flex-wrap { flex-wrap: wrap; }
 .ct-gap-1 { gap: var(--ct-s1); }
 .ct-gap-2 { gap: var(--ct-s2); }
 .ct-gap-3 { gap: var(--ct-s3); }
@@ -1303,6 +1316,9 @@ td .ct-ref-select, td .ct-ref-select * { box-shadow: none; }
    used anywhere. */
 .ct-meta-item { background: var(--ct-surface); border: 1px solid var(--ct-line); border-radius: var(--ct-r-lg); padding: 10px 16px; flex: 1; min-width: 200px; }
 .ct-meta-item label { font-size: 0.72em; font-weight: 600; color: var(--ct-ink-2); text-transform: uppercase; letter-spacing: 0.5px; }
+/* Hoisted from Compliance.css and EBIOS_RM.css, identical in both. */
+.ct-meta-item .label { font-size: 0.75em; color: var(--ct-ink-2); text-transform: uppercase; }
+.ct-meta-item .value { margin-top: 2px; }
 /* Shared forms & cards — hoisted from 4 modules (audit v2 §3).
    Identical base in access/asset/pilot/vendor; the modules keep only their
    own refinements (responsive, grid refinements, specific rules).
@@ -1312,13 +1328,14 @@ td .ct-ref-select, td .ct-ref-select * { box-shadow: none; }
 .ct-tprm-form input, .ct-tprm-form select, .ct-tprm-form textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--ct-line); border-radius: 6px; font-size: 0.9em; font-family: inherit; box-sizing: border-box; }
 .ct-tprm-form input:focus, .ct-tprm-form select:focus, .ct-tprm-form textarea:focus { border-color: var(--ct-accent); outline: none; }
 .ct-form-row { margin-bottom: 10px; }
-.ct-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .ct-groupe-card { background: var(--ct-surface); border: 1px solid var(--ct-line); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
 .ct-groupe-card:hover { border-color: var(--ct-accent); }
 .ct-compliance-tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.72em; font-weight: 700; }
 .ct-compliance-tag.ok { background: var(--ct-low-tint); color: var(--ct-low-ink); }
 .ct-compliance-tag.ko { background: var(--ct-critical-tint); color: var(--ct-critical-ink); }
 .ct-synth-card { background: var(--ct-surface); border: 1px solid var(--ct-line); border-radius: var(--ct-r-lg); box-shadow: var(--ct-shadow-card); padding: 16px; }
+/* Hoisted from Compliance.css and EBIOS_RM.css, identical in both. */
+.ct-synth-card h3 { font-size: 0.9em; color: var(--ct-ink); margin-bottom: 8px; }
 .ct-ref-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 12px; font-size: 0.72em; font-weight: 600; cursor: pointer; border: 2px solid var(--ct-line); background: var(--ct-surface); transition: all 0.15s; }
 .ct-ref-chip.active { border-color: var(--ct-accent); background: var(--ct-neutral-tint); color: var(--ct-accent); }
 .ct-ref-chip .chip-x { font-size: 0.9em; color: var(--ct-critical); margin-left: 2px; }

@@ -269,7 +269,7 @@
         var cible = D.measures.find(function (m) { return m.id === s.id; });
         if (!cible)
             return "";
-        var h = '<div class="ai-diff ct-mt-2 ct-p-2 ct-r-md" style="background:var(--ct-bg-alt)">';
+        var h = '<div class="ai-diff ct-mt-2 ct-p-2 ct-r-md" style="background:var(--ct-surface-2)">';
         h += '<div class="ct-text-label ct-strong ct-mb-1">' + esc(t("ai.preview.title")) + '</div>';
         var nouveauTitre = (s.mesure || "").trim();
         if (nouveauTitre && nouveauTitre !== cible.mesure) {
@@ -289,7 +289,7 @@
             // string subtraction, which slips on trailing whitespace.
             var ajout = _detailsAddition(cible.details || "", s.details);
             h += ajout
-                ? '<div class="ct-text-label ct-text-ok ct-strong">+ ' + esc(ajout) + '</div>'
+                ? '<div class="ct-text-label ct-text-low ct-strong">+ ' + esc(ajout) + '</div>'
                 : '<div class="ct-text-label ct-muted"><em>' + esc(t("ai.preview.no_change")) + '</em></div>';
         }
         h += '</div>';
@@ -985,10 +985,10 @@
                             + '<br><span class="ct-strong">' + esc(m.id + " — " + nouveauTitre) + '</span>'
                         : '<br><span class="ct-muted">' + esc(m.id + " — " + m.mesure) + '</span>';
                     if (ajout)
-                        c += '<br><span class="ct-text-ok">+ ' + esc(ajout) + '</span>';
+                        c += '<br><span class="ct-text-low">+ ' + esc(ajout) + '</span>';
                     return c;
                 }
-                return '<span class="ct-text-ok ct-strong">&#8635; ' + esc(t("ai.sop.reused")) + '</span>'
+                return '<span class="ct-text-low ct-strong">&#8635; ' + esc(t("ai.sop.reused")) + '</span>'
                     + '<br><span class="ct-muted">' + esc(m.id + " — " + m.mesure) + '</span>';
             }
             // Unknown identifier: the handler will fall back on a creation, say so.
