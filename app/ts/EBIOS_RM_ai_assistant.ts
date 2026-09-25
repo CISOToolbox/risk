@@ -285,7 +285,7 @@ function _enrichPreviewHTML(s: any): string {
     var cible = D.measures.find(function(m) { return m.id === s.id; }) as any;
     if (!cible) return "";
 
-    var h = '<div class="ai-diff ct-mt-2 ct-p-2 ct-r-md" style="background:var(--ct-surface-2)">';
+    var h = '<div class="ai-diff ct-mt-2 ct-p-2 ct-r-md ct-bg-alt">';
     h += '<div class="ct-text-label ct-strong ct-mb-1">' + esc(t("ai.preview.title")) + '</div>';
 
     var nouveauTitre = (s.mesure || "").trim();
