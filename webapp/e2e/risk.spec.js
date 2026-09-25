@@ -607,5 +607,356 @@ test.describe('EBIOS RM — local frontend journeys', () => {
         expect(fige, "l'ancien libellé a survécu dans une référence figée")
             .not.toMatch(/MFA généralisée(?!\s+et)/);
         expect(fige).toContain('MFA généralisée et comptes de service');
+
+        // A phase's `action` is the attack step, not the measure action model:
+        // nothing on the way to the plan may strip it.
+        const etapes = await page.evaluate((cle) => {
+            const brut = localStorage.getItem(cle);
+            const d = JSON.parse(brut).data || JSON.parse(brut);
+            return (d.sop_detail || []).map((x) => x.action || '').join(' | ');
+        }, AUTOSAVE_KEY);
+        expect(etapes, 'the attack step of the phase was lost on the way').toContain('Hameçonnage ciblé (T1566)');
+    });
+
+    // ── BUG-34 / BUG-35: the baseline panel, and reuse over creation ───
+    //
+    // The baseline screen carried an AI button with no prompt behind it:
+    // pressing it did nothing at all. And the whole build asked the model not
+    // to duplicate without ever giving it a way to SAY that something already
+    // exists, so every reuse came back as a creation. Asserted here: what the
+    // app SENDS, what it SHOWS before writing, and what it WRITES.
+    test('the baseline panel asks for measures, and an enrichment writes into the existing one', async ({ page }) => {
+        await openApp(page);
+        await seedAnalysis(page);
+        await page.evaluate(() => {
+            localStorage.setItem('ebios_ai_enabled', 'true');
+            localStorage.setItem('ebios_ai_apikey', 'e2e-intercepted');
+        });
+        await page.reload();
+        await page.waitForLoadState('domcontentloaded');
+
+        await page.locator(NAV_ITEMS, { hasText: /Mesures|Measures/i }).first().click();
+        const mesure = await page.evaluate(() => {
+            window.addRow('measures');
+            let champs = document.querySelectorAll('input[data-s="measures"][data-f="mesure"]');
+            const nom = champs[champs.length - 1];
+            nom.value = 'Journalisation centralisée'; window._updateFieldFromEl(nom);
+            const zones = document.querySelectorAll('textarea[data-s="measures"][data-f="details"]');
+            const det = zones[zones.length - 1];
+            det.value = 'Collecte des journaux des serveurs.'; window._updateFieldFromEl(det);
+            champs = document.querySelectorAll('input[data-s="measures"][data-f="mesure"]');
+            const tr = champs[champs.length - 1].closest('tr');
+            const m = tr && tr.textContent.match(/(?:MES|M)-\d+/g);
+            return m ? m[m.length - 1] : null;
+        });
+        expect(mesure, "identifiant de la mesure semée introuvable").toBeTruthy();
+
+        // A baseline requirement with a documented gap: that is the only kind
+        // the prompt carries, so seeding one is what makes the test bite.
+        await page.locator(NAV_ITEMS, { hasText: /Socle|Baseline/i }).first().click();
+        const ref = await page.evaluate(() => {
+            const ecarts = document.querySelectorAll('textarea[data-s="socle_anssi"][data-f="ecart"]');
+            const e = ecarts[0];
+            e.value = 'Journaux non collectés sur les postes.'; window._updateFieldFromEl(e);
+            const curseurs = document.querySelectorAll('input[data-s="socle_anssi"][data-f="conformite"]');
+            const c = curseurs[0];
+            c.value = '40'; window._updateFieldFromEl(c);
+            const tr = e.closest('tr');
+            return tr ? (tr.querySelector('td') || {}).textContent : null;
+        });
+        expect(ref, "aucune exigence de socle à l'écran").toBeTruthy();
+
+        const avant = await page.evaluate(() =>
+            document.querySelectorAll('input[data-s="measures"][data-f="mesure"]').length);
+
+        const prompts = [];
+        await page.route('https://api.anthropic.com/**', async (route) => {
+            prompts.push(JSON.stringify(route.request().postDataJSON()));
+            return route.fulfill({ json: { content: [{ type: 'text', text: JSON.stringify([{
+                // The discriminant the browser build never used to ask for.
+                action: 'enrich',
+                id: mesure,
+                mesure: '',
+                details: 'Étendre la collecte aux postes de travail.',
+                type: 'Prévention',
+                ref_socle: '#' + String(ref).trim(),
+                responsable: 'RSSI',
+            }]) }] } });
+        });
+
+        // BUG-34 — this button used to do nothing: no prompt was defined for
+        // the panel, so `suggestFor` returned before calling anything.
+        await page.locator('#toggles-socle .btn-ai').first().click();
+        await page.locator('[data-click="_aiRunSuggest"]').first().click();
+        await expect.poll(() => prompts.length).toBe(1);
+
+        // The plan travelled, with the description that alone allows judging
+        // an overlap, and with the way to say "this already exists".
+        expect(prompts[0]).toContain('Existing measures (the FULL plan');
+        expect(prompts[0]).toContain('Collecte des journaux des serveurs.');
+        expect(prompts[0]).toContain('new|enrich|complement');
+        expect(prompts[0]).toContain('Journaux non collect');
+
+        // The card must show what accepting will WRITE, before it writes.
+        const carte = page.locator('.ai-card').first();
+        await expect(carte).toContainText(new RegExp(mesure));
+        // Asserted on the .ai-diff block, not on the card text: the generic
+        // field loop already prints `details`, so a card assertion stays green
+        // with the whole preview removed — which is the promise this ticket
+        // exists for. What must be visible is the BEFORE and the ADDITION,
+        // side by side, before anything is written.
+        const apercu = carte.locator('.ai-diff');
+        await expect(apercu).toBeVisible();
+        await expect(apercu).toContainText('Collecte des journaux des serveurs.');
+        await expect(apercu).toContainText('+ Étendre la collecte aux postes de travail.');
+
+        // "Accept all" only creates. A suggestion that writes into an existing
+        // measure is deferred: it is the only control against a measure whose
+        // text was written by a third party steering the model onto another.
+        await page.locator('.ai-btn-all').first().click();
+        // Read on the Measures screen: the baseline screen holds no measure
+        // field, so reading from where the click left us returns nothing and
+        // the assertion below would pass whatever the button did.
+        await page.locator(NAV_ITEMS, { hasText: /Mesures|Measures/i }).first().click();
+        const apresTout = await page.evaluate(() => {
+            const zones = document.querySelectorAll('textarea[data-s="measures"][data-f="details"]');
+            return Array.from(zones).map((z) => z.value).join(' | ');
+        });
+        expect(apresTout, "la description semée est introuvable : le test ne prouve rien")
+            .toContain('Collecte des journaux des serveurs.');
+        expect(apresTout, "« tout accepter » a écrit dans une mesure existante")
+            .not.toContain('Étendre la collecte aux postes de travail.');
+
+        // Accepted one by one, it enriches instead of creating a twin.
+        await page.locator(NAV_ITEMS, { hasText: /Socle|Baseline/i }).first().click();
+        await page.locator('#toggles-socle .btn-ai').first().click();
+        await page.locator('[data-click="_aiRunSuggest"]').first().click();
+        await expect.poll(() => prompts.length).toBe(2);
+        await page.locator('.ai-card').first().locator('.ai-btn-accept').first().click();
+        await page.evaluate(() => window._aiClosePanel && window._aiClosePanel());
+
+        await page.locator(NAV_ITEMS, { hasText: /Mesures|Measures/i }).first().click();
+        const apres = await page.evaluate(() =>
+            document.querySelectorAll('input[data-s="measures"][data-f="mesure"]').length);
+        expect(apres, "une mesure jumelle a été créée malgré l'enrichissement").toBe(avant);
+
+        const details = await page.evaluate(() => {
+            const zones = document.querySelectorAll('textarea[data-s="measures"][data-f="details"]');
+            return Array.from(zones).map((z) => z.value).join(' | ');
+        });
+        expect(details).toContain('Collecte des journaux des serveurs.');
+        expect(details).toContain('Étendre la collecte aux postes de travail.');
+
+        // And the reuse must be VISIBLE where the analyst was working: the
+        // baseline row now references the measure. Read from what is
+        // persisted — an enrichment that links nothing looks like a no-op,
+        // and the measure gets recreated by hand.
+        const rattache = await page.evaluate((cle) => {
+            const brut = localStorage.getItem(cle);
+            if (!brut) return null;
+            const d = JSON.parse(brut).data || JSON.parse(brut);
+            return (d.socle_anssi || []).map((x) => x.mesures_prevues || '').join(' | ');
+        }, AUTOSAVE_KEY);
+        expect(rattache, "rien n'a été persisté : le test ne prouve rien").toBeTruthy();
+        expect(rattache, "l'exigence de socle ne référence pas la mesure réutilisée")
+            .toContain(mesure);
+    });
+
+    // ── BUG-35: the measures panel — "accept all" never overwrites ───────
+    //
+    // The browser build has no server-side `validate_output`: whatever the
+    // model returns reaches the accept handlers as is. An action that is not
+    // exactly "enrich" used to slip past the "accept all" guard and fall into
+    // `_updateIfExists` — a blind overwrite of the measure, with no preview.
+    test('on the measures panel, accept all never overwrites an existing measure', async ({ page }) => {
+        await openApp(page);
+        await seedAnalysis(page);
+        await page.evaluate(() => {
+            localStorage.setItem('ebios_ai_enabled', 'true');
+            localStorage.setItem('ebios_ai_apikey', 'e2e-intercepted');
+        });
+        await page.reload();
+        await page.waitForLoadState('domcontentloaded');
+
+        await page.locator(NAV_ITEMS, { hasText: /Mesures|Measures/i }).first().click();
+        const mesure = await page.evaluate(() => {
+            window.addRow('measures');
+            let champs = document.querySelectorAll('input[data-s="measures"][data-f="mesure"]');
+            const nom = champs[champs.length - 1];
+            nom.value = 'Analyst title'; window._updateFieldFromEl(nom);
+            const zones = document.querySelectorAll('textarea[data-s="measures"][data-f="details"]');
+            const det = zones[zones.length - 1];
+            det.value = 'Analyst original text.'; window._updateFieldFromEl(det);
+            champs = document.querySelectorAll('input[data-s="measures"][data-f="mesure"]');
+            const tr = champs[champs.length - 1].closest('tr');
+            const m = tr && tr.textContent.match(/(?:MES|M)-\d+/g);
+            return m ? m[m.length - 1] : null;
+        });
+        expect(mesure, 'seeded measure id not found').toBeTruthy();
+
+        // Read from the Measures screen, where the panel leaves us: the row
+        // carrying the seeded id, its title, description and kill chain.
+        const lireMesure = () => page.evaluate((id) => {
+            const motif = new RegExp('\\b' + id + '\\b');
+            const noms = document.querySelectorAll('input[data-s="measures"][data-f="mesure"]');
+            for (const nom of noms) {
+                const tr = nom.closest('tr');
+                if (!tr || !motif.test(tr.textContent)) continue;
+                const champ = (f) => { const el = tr.querySelector('[data-s="measures"][data-f="' + f + '"]'); return el ? el.value : null; };
+                return { mesure: nom.value, details: champ('details'), sop: champ('sop') };
+            }
+            return null;
+        }, mesure);
+        const compter = () => page.evaluate(() =>
+            document.querySelectorAll('input[data-s="measures"][data-f="mesure"]').length);
+        const initiale = await lireMesure();
+        expect(initiale, 'seeded measure not on screen: the test proves nothing').toBeTruthy();
+        expect(initiale.details).toBe('Analyst original text.');
+
+        let reponse = null;
+        const prompts = [];
+        await page.route('https://api.anthropic.com/**', async (route) => {
+            prompts.push(1);
+            return route.fulfill({ json: { content: [{ type: 'text', text: JSON.stringify([reponse]) }] } });
+        });
+        const lancer = async () => {
+            const n = prompts.length;
+            await page.locator('#toggles-measures .btn-ai').first().click();
+            await page.locator('[data-click="_aiRunSuggest"]').first().click();
+            await expect.poll(() => prompts.length).toBe(n + 1);
+            await expect(page.locator('.ai-card').first()).toBeVisible();
+        };
+
+        // A case issue, a translated action, no action at all: none of them
+        // may write into the seeded measure through "accept all".
+        for (const action of ['Enrich', 'enrichir', undefined]) {
+            reponse = { id: mesure, mesure: 'OVERWRITTEN TITLE',
+                        details: 'OVERWRITTEN DETAILS', sop: 'SOP-99' };
+            if (action !== undefined) reponse.action = action;
+            await lancer();
+            await page.locator('.ai-btn-all').first().click();
+            expect(await lireMesure(), `accept all overwrote the measure (action=${action})`)
+                .toEqual(initiale);
+        }
+
+        // Not an action at all: accepted on its own, it must not reach the
+        // seeded measure either — its id goes with the invalid action.
+        reponse = { action: 'enrichir', id: mesure, mesure: 'OVERWRITTEN TITLE',
+                    details: 'OVERWRITTEN DETAILS', sop: 'SOP-99' };
+        await lancer();
+        await page.locator('.ai-card').first().locator('.ai-btn-accept').first().click();
+        await page.evaluate(() => window._aiClosePanel && window._aiClosePanel());
+        expect(await lireMesure(), 'a one-by-one accept of an invalid action overwrote the measure')
+            .toEqual(initiale);
+
+        // Same answer through a custom instruction: the other branch of the
+        // suggest flow must clean it just the same.
+        await page.locator('#toggles-measures .btn-ai').first().click();
+        await page.locator('#ai-custom-instruction').fill('Propose one measure.');
+        const n = prompts.length;
+        await page.locator('[data-click="_aiRunSuggest"][data-args*="__custom__"]').first().click();
+        await expect.poll(() => prompts.length).toBe(n + 1);
+        await page.locator('.ai-card').first().locator('.ai-btn-accept').first().click();
+        await page.evaluate(() => window._aiClosePanel && window._aiClosePanel());
+        expect(await lireMesure(), 'a custom-instruction accept of an invalid action overwrote the measure')
+            .toEqual(initiale);
+
+        // "Enrich" is only a case issue: the card shows its before/after.
+        reponse = { action: 'Enrich', id: mesure, mesure: '', details: 'Added by the model.' };
+        await lancer();
+        const apercu = page.locator('.ai-card').first().locator('.ai-diff');
+        await expect(apercu).toBeVisible();
+        await expect(apercu).toContainText('Analyst original text.');
+
+        // Accepted one by one, it extends the description instead of
+        // creating a twin.
+        const avant = await compter();
+        await page.locator('.ai-card').first().locator('.ai-btn-accept').first().click();
+        await page.evaluate(() => window._aiClosePanel && window._aiClosePanel());
+        const apres = await lireMesure();
+        expect(await compter(), 'a twin measure was created').toBe(avant);
+        expect(apres.mesure).toBe('Analyst title');
+        expect(apres.details).toContain('Analyst original text.');
+        expect(apres.details).toContain('Added by the model.');
+    });
+
+    // ── BUG-35: an unchecked card writes nothing, enrichment included ───
+    //
+    // The residual panel is the one place where a card is ticked BY DEFAULT
+    // and accepting is a single click. Its guard — reuse must stay behind the
+    // checkbox test — is what stops unticking from blocking the creation
+    // while letting the write through. Nothing held that guard in place.
+    test('an unchecked residual card writes nothing into the existing measure', async ({ page }) => {
+        await openApp(page);
+        await seedAnalysis(page);
+        await page.evaluate(() => {
+            localStorage.setItem('ebios_ai_enabled', 'true');
+            localStorage.setItem('ebios_ai_apikey', 'e2e-intercepted');
+        });
+        await page.reload();
+        await page.waitForLoadState('domcontentloaded');
+
+        await page.locator(NAV_ITEMS, { hasText: /Mesures|Measures/i }).first().click();
+        const mesure = await page.evaluate(() => {
+            window.addRow('measures');
+            let champs = document.querySelectorAll('input[data-s="measures"][data-f="mesure"]');
+            const nom = champs[champs.length - 1];
+            nom.value = 'Sauvegardes hors ligne'; window._updateFieldFromEl(nom);
+            const zones = document.querySelectorAll('textarea[data-s="measures"][data-f="details"]');
+            const det = zones[zones.length - 1];
+            det.value = 'Copies hebdomadaires sur bande.'; window._updateFieldFromEl(det);
+            champs = document.querySelectorAll('input[data-s="measures"][data-f="mesure"]');
+            const tr = champs[champs.length - 1].closest('tr');
+            const m = tr && tr.textContent.match(/(?:MES|M)-\d+/g);
+            return m ? m[m.length - 1] : null;
+        });
+        expect(mesure, "identifiant de la mesure semée introuvable").toBeTruthy();
+
+        await page.locator(NAV_ITEMS, { hasText: /Scénarios stratégiques|Strategic/i }).first().click();
+        await page.evaluate(() => {
+            window.addRow('ss');
+            const champs = document.querySelectorAll('input[data-s="ss"][data-f="scenario"], textarea[data-s="ss"][data-f="scenario"]');
+            const el = champs[champs.length - 1];
+            el.value = 'Essai résiduel'; window._updateFieldFromEl(el);
+        });
+
+        const avant = await page.evaluate(() =>
+            document.querySelectorAll('input[data-s="measures"][data-f="mesure"]').length);
+
+        await page.route('https://api.anthropic.com/**', async (route) => route.fulfill({
+            json: { content: [{ type: 'text', text: JSON.stringify({
+                selected_measures: [],
+                // An enrichment aimed at the seeded measure. Accepting it would
+                // append to its description; unticking must stop that too.
+                new_measures: [{ action: 'enrich', id: mesure, mesure: '',
+                                 details: 'NE DOIT PAS ETRE ECRIT', type: 'Prévention',
+                                 responsable: 'RSSI' }],
+                v_resid: 2,
+                justification: 'essai',
+            }) }] },
+        }));
+
+        // Opened through the app's own seam, the way the card's data-click does.
+        await page.evaluate(() => window.suggestResidualMeasures(0));
+        const carte = page.locator('.ai-resid-new-check');
+        await expect(carte).toBeVisible();
+        // Ticked by default: that is precisely why the guard matters here.
+        await expect(carte).toBeChecked();
+        await carte.uncheck();
+        await page.locator('[data-click="_aiAcceptResidual"]').first().click();
+
+        await page.locator(NAV_ITEMS, { hasText: /Mesures|Measures/i }).first().click();
+        const details = await page.evaluate(() => {
+            const zones = document.querySelectorAll('textarea[data-s="measures"][data-f="details"]');
+            return Array.from(zones).map((z) => z.value).join(' | ');
+        });
+        expect(details, "la description semée est introuvable : le test ne prouve rien")
+            .toContain('Copies hebdomadaires sur bande.');
+        expect(details, "une carte décochée a écrit dans une mesure existante")
+            .not.toContain('NE DOIT PAS ETRE ECRIT');
+
+        const apres = await page.evaluate(() =>
+            document.querySelectorAll('input[data-s="measures"][data-f="mesure"]').length);
+        expect(apres, "une carte décochée a créé une mesure").toBe(avant);
     });
 });
