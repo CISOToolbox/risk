@@ -64,11 +64,15 @@
             "ai.keep_ignored": "Ne plus proposer ce que j'ai ignoré",
             "ai.keep_ignored_help": "Retient les propositions écartées, écran par écran, et demande au modèle de ne pas y revenir. Décocher vide toute cette mémoire.",
             "ai.measure.completes": "Complète la mesure {id} — {nom}.",
+            "ai.measure.untitled": "Mesure proposée par l'IA",
             "ai.preview.title": "Ce que l'acceptation va écrire",
             "ai.preview.name": "Titre :",
             "ai.preview.name_kept": "Titre inchangé",
             "ai.preview.details": "Description :",
             "ai.preview.no_change": "déjà couvert, rien à ajouter",
+            "ai.preview.update_title": "Ce que la mise à jour remplace",
+            "ai.preview.field.details": "Description",
+            "ai.preview.field.other": "Autres champs",
             "ai.sop.measure_col": "Mesure",
             "ai.sop.adjusted": "ajustée",
             "ai.sop.reused": "réutilisée",
@@ -123,11 +127,15 @@
             "ai.keep_ignored": "Do not propose again what I ignored",
             "ai.keep_ignored_help": "Remembers the proposals set aside, screen by screen, and asks the model not to come back to them. Unchecking empties all of it.",
             "ai.measure.completes": "Complements measure {id} — {nom}.",
+            "ai.measure.untitled": "AI-proposed measure",
             "ai.preview.title": "What accepting will write",
             "ai.preview.name": "Title:",
             "ai.preview.name_kept": "Title unchanged",
             "ai.preview.details": "Description:",
             "ai.preview.no_change": "already covered, nothing to add",
+            "ai.preview.update_title": "What this update replaces",
+            "ai.preview.field.details": "Description",
+            "ai.preview.field.other": "Other fields",
             "ai.sop.measure_col": "Measure",
             "ai.sop.adjusted": "adjusted",
             "ai.sop.reused": "reused",
@@ -295,6 +303,50 @@
         h += '</div>';
         return h;
     }
+    /** Fields an update by id overwrites on the measures panel — shared by the
+     *  preview and the accept handler, so what is shown is what is written. */
+    var MEASURE_UPDATE_FIELDS = ["mesure", "details", "origine", "type", "sop", "phase", "effet", "ref_socle", "responsable"];
+    /** Before/after of an UPDATE by id on the measures panel: a suggestion that
+     *  names an existing measure without being an enrich or a complement is
+     *  applied by `_updateIfExists`, which REPLACES each non-empty field. The
+     *  card used to show only an "update" badge; the analyst now sees what goes. */
+    function _updatePreviewHTML(type, s) {
+        if (type !== "measures" || !s || !s.id)
+            return "";
+        if (s.action === "enrich" || s.action === "complement")
+            return "";
+        var cible = D.measures.find(function (m) { return m.id === s.id; });
+        if (!cible)
+            return "";
+        var change = function (f) {
+            return s[f] !== undefined && s[f] !== "" && String(s[f]) !== String(cible[f] || "");
+        };
+        var h = '<div class="ai-diff ct-mt-2 ct-p-2 ct-r-md ct-bg-alt">';
+        h += '<div class="ct-text-label ct-strong ct-mb-1">' + esc(t("ai.preview.update_title")) + '</div>';
+        if (change("mesure")) {
+            h += '<div class="ct-text-label ct-muted">' + esc(t("ai.preview.name")) + '</div>';
+            h += '<div class="ct-text-label"><s class="ct-muted">' + esc(cible.mesure || "") + '</s></div>';
+            h += '<div class="ct-text-label ct-strong">' + esc(s.mesure) + '</div>';
+        }
+        else {
+            h += '<div class="ct-text-label ct-muted">' + esc(t("ai.preview.name_kept")) + '</div>';
+        }
+        if (change("details")) {
+            h += '<div class="ct-text-label ct-muted ct-mt-2">' + esc(t("ai.preview.field.details")) + '</div>';
+            if (cible.details)
+                h += '<div class="ct-text-label"><s class="ct-muted">' + esc(cible.details) + '</s></div>';
+            h += '<div class="ct-text-label ct-strong">' + esc(s.details) + '</div>';
+        }
+        var autres = MEASURE_UPDATE_FIELDS.filter(function (f) { return f !== "mesure" && f !== "details" && change(f); });
+        if (autres.length) {
+            h += '<div class="ct-text-label ct-muted ct-mt-2">' + esc(t("ai.preview.field.other")) + '</div>';
+            autres.forEach(function (f) {
+                h += '<div class="ct-text-label">' + esc(t("ebios.col.m_" + f)) + ' : <s class="ct-muted">' + esc(cible[f] || "—") + '</s> → <span class="ct-strong">' + esc(s[f]) + '</span></div>';
+            });
+        }
+        h += '</div>';
+        return h;
+    }
     function _renderCards(type, suggestions, acceptFn) {
         var p = _aiEnsurePanel();
         if (!suggestions || suggestions.length === 0) {
@@ -348,6 +400,7 @@
             // an existing measure: the user must see WHAT CHANGES beforehand,
             // not just the proposed fragment.
             h += _enrichPreviewHTML(s);
+            h += _updatePreviewHTML(type, s);
             // Detect if this is an update (existing ID) or a new element
             var isUpdate = s.id && _aiIdExists(type, s.id);
             if (isUpdate) {
@@ -591,7 +644,7 @@
                 // losing the suggestion.
             }
             if (s.action !== "enrich" && s.action !== "complement"
-                && _updateIfExists(D.measures, s, ["mesure", "details", "origine", "type", "sop", "phase", "effet", "ref_socle", "responsable"]))
+                && _updateIfExists(D.measures, s, MEASURE_UPDATE_FIELDS))
                 return s.id + " ✓";
             var id = nextId("measures");
             var details = s.details || "";
@@ -602,7 +655,7 @@
                 if (base)
                     details = t("ai.measure.completes", { id: s.complete_id, nom: base.mesure }) + "\n\n" + details;
             }
-            D.measures.push({ id: id, mesure: s.mesure || "", details: details, origine: s.origine || "Complémentaire", type: s.type || "", sop: s.sop || "", phase: s.phase || "", effet: s.effet || "", ref_socle: s.ref_socle || "", responsable: s.responsable || "", echeance: "", cout: "", statut: "À étudier" });
+            D.measures.push({ id: id, mesure: _creationTitle(s), details: details, origine: s.origine || "Complémentaire", type: s.type || "", sop: s.sop || "", phase: s.phase || "", effet: s.effet || "", ref_socle: s.ref_socle || "", responsable: s.responsable || "", echeance: "", cout: "", statut: "À étudier" });
             return id;
         }
     };
@@ -710,6 +763,14 @@
             // vendor, for instance) can push the model into returning an `enrich`
             // on an unrelated measure.
             if (s && (s.action === "enrich" || s.action === "complement")) {
+                differes++;
+                return;
+            }
+            // On the measures panel, ANY suggestion naming an existing measure is
+            // deferred too, whatever its action: the server keeps the id of a
+            // "new" or action-less suggestion, and the handler then falls into
+            // `_updateIfExists` — an overwrite with no before/after.
+            if (s && type === "measures" && s.id && _aiIdExists(type, s.id)) {
                 differes++;
                 return;
             }
@@ -1190,7 +1251,7 @@
         if (reutilise)
             return reutilise + " ✓";
         var id = nextId("measures");
-        D.measures.push({ id: id, mesure: s.mesure || "", details: _complementPrefix(s) + (s.details || ""), origine: "Écosystème", type: s.type || "",
+        D.measures.push({ id: id, mesure: _creationTitle(s), details: _complementPrefix(s) + (s.details || ""), origine: "Écosystème", type: s.type || "",
             sop: "", phase: "", effet: t("ebios.m.mesure_eco_pour", { pp: ppNom || ppId }),
             ref_socle: "", responsable: s.responsable || "", echeance: "", cout: "", statut: "À étudier" });
         _linkEcoRef(ppId, id, s.mesure);
@@ -1252,6 +1313,37 @@
         var base = D.measures.find(function (m) { return m.id === s.complete_id; });
         return base ? t("ai.measure.completes", { id: s.complete_id, nom: base.mesure }) + "\n\n" : "";
     }
+    /** The title of a measure being CREATED. An `enrich` leaves `mesure` empty on
+     *  purpose (empty = keep the current title); when its target does not exist
+     *  the suggestion falls back to a creation, and would create an untitled
+     *  measure. The title is then taken from the description's first sentence, or
+     *  a neutral label. Written back to `s` so that the references frozen right
+     *  after the creation carry the same label. Never call it on a reuse. */
+    function _creationTitle(s) {
+        var titre = String(s.mesure || "").trim();
+        if (!titre) {
+            var ligne = String(s.details || "").trim().split("\n")[0];
+            var fin = ligne.match(/^.*?[.!?](?=\s|$)/);
+            var phrase = (fin ? fin[0] : ligne).trim();
+            titre = phrase.length > 80 ? phrase.substring(0, 79).trim() + "…" : phrase;
+        }
+        if (!titre)
+            titre = t("ai.measure.untitled");
+        s.mesure = titre;
+        return titre;
+    }
+    /** A baseline reference reduced to its comparable form. The model is asked
+     *  for "#XX" but answers "#01", "01", "ANSSI #1" or "#1 - Title" just as well;
+     *  compared raw, the measure was created but never linked to its row. ANSSI:
+     *  the number without leading zeros. ISO: the first token, upper-cased. */
+    function _normSocleRef(ref, isAnssi) {
+        var r = String(ref == null ? "" : ref).trim();
+        if (isAnssi) {
+            var m = r.match(/(\d+)/);
+            return m ? "#" + String(parseInt(m[1], 10)) : r;
+        }
+        return (r.split(/\s+[-–]\s+|\s+/)[0] || "").toUpperCase();
+    }
     ACCEPT_HANDLERS.socle = function (s) {
         var refSocle = s.ref_socle || "";
         var lier = function (mid, lib) { _linkSocleRef(refSocle, mid, lib); };
@@ -1259,7 +1351,7 @@
         if (reutilise)
             return reutilise + " ✓";
         var id = nextId("measures");
-        D.measures.push({ id: id, mesure: s.mesure || "", details: _complementPrefix(s) + (s.details || ""), origine: "Socle", type: s.type || "Prévention",
+        D.measures.push({ id: id, mesure: _creationTitle(s), details: _complementPrefix(s) + (s.details || ""), origine: "Socle", type: s.type || "Prévention",
             sop: "", phase: "", effet: t("ebios.m.renforcement_socle", { ref: refSocle }),
             ref_socle: refSocle, responsable: s.responsable || "", echeance: "", cout: "", statut: "À étudier" });
         _linkSocleRef(refSocle, id, s.mesure);
@@ -1268,10 +1360,15 @@
     /** Links a measure to the baseline row carrying `refSocle`. */
     function _linkSocleRef(refSocle, mid, libelle) {
         var isAnssi = D.socle_type !== "iso";
+        // An empty reference links nothing: normalized, it would equal the empty
+        // `num` of a template row and attach the measure to the wrong line.
+        var cle = _normSocleRef(refSocle, isAnssi);
+        if (!cle)
+            return;
         var section = isAnssi ? "socle_anssi" : "socle_iso";
         var socle = D[section] || [];
         var idx = socle.findIndex(function (e) {
-            return (isAnssi ? ("#" + e.num) : e.ref) === refSocle;
+            return _normSocleRef(isAnssi ? e.num : e.ref, isAnssi) === cle;
         });
         if (idx >= 0) {
             var cur = socle[idx].mesures_prevues || "";
@@ -1296,7 +1393,7 @@
         var section = isAnssi ? "socle_anssi" : "socle_iso";
         var socle = D[section];
         var refNum = s._ref || "";
-        D.measures.push({ id: id, mesure: s.mesure || "", details: _complementPrefix(s) + (s.details || ""), origine: "Socle", type: s.type || "Prévention",
+        D.measures.push({ id: id, mesure: _creationTitle(s), details: _complementPrefix(s) + (s.details || ""), origine: "Socle", type: s.type || "Prévention",
             sop: "", phase: "", effet: t("ebios.m.renforcement_socle", { ref: refNum }),
             ref_socle: refNum, responsable: s.responsable || "", echeance: "", cout: "", statut: "En cours" });
         // Link to socle entry
@@ -1317,7 +1414,7 @@
         if (reutilise)
             return reutilise + " ✓";
         var id = nextId("measures");
-        D.measures.push({ id: id, mesure: s.mesure || "", details: _complementPrefix(s) + (s.details || ""), origine: "Écosystème", type: s.type || "Prévention",
+        D.measures.push({ id: id, mesure: _creationTitle(s), details: _complementPrefix(s) + (s.details || ""), origine: "Écosystème", type: s.type || "Prévention",
             sop: "", phase: "", effet: t("ebios.m.mesure_eco_pour", { pp: s._ppNom || s._ppId }),
             ref_socle: s.ref_socle || "", responsable: s.responsable || "", echeance: "", cout: "", statut: "À étudier" });
         // Link to eco entry
@@ -1338,7 +1435,7 @@
         if (reutilise)
             return reutilise + " ✓";
         var id = nextId("measures");
-        D.measures.push({ id: id, mesure: s.mesure || "", details: _complementPrefix(s) + (s.details || ""), origine: "SOP", type: s.type || "Prévention",
+        D.measures.push({ id: id, mesure: _creationTitle(s), details: _complementPrefix(s) + (s.details || ""), origine: "SOP", type: s.type || "Prévention",
             sop: s._sop || "", phase: s._phase || "", effet: s.effet || "",
             ref_socle: s.ref_socle || "", responsable: s.responsable || "", echeance: "", cout: "", statut: "À étudier" });
         // Link to SOP phase
@@ -1493,7 +1590,7 @@
                 if (reutilise)
                     return;
                 var id = nextId("measures");
-                D.measures.push({ id: id, mesure: nm.mesure || "", details: _complementPrefix(nm) + (nm.details || ""), origine: "Complémentaire", type: nm.type || "Prévention",
+                D.measures.push({ id: id, mesure: _creationTitle(nm), details: _complementPrefix(nm) + (nm.details || ""), origine: "Complémentaire", type: nm.type || "Prévention",
                     sop: "", phase: "", effet: "", ref_socle: "", responsable: nm.responsable || "", echeance: "", cout: "", statut: "En cours" });
                 // Link to residual
                 if (!D.residuals[ssIdx])

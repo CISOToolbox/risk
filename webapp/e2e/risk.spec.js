@@ -834,6 +834,13 @@ test.describe('EBIOS RM — local frontend journeys', () => {
                         details: 'OVERWRITTEN DETAILS', sop: 'SOP-99' };
             if (action !== undefined) reponse.action = action;
             await lancer();
+            // Whatever reaches the card as an update by id shows what it would
+            // replace ("enrichir" loses its id on the way and is a creation).
+            if (action !== 'enrichir') {
+                const apercu = page.locator('.ai-card').first().locator('.ai-diff');
+                await expect(apercu, `no before/after on the card (action=${action})`).toBeVisible();
+                await expect(apercu).toContainText('Analyst original text.');
+            }
             await page.locator('.ai-btn-all').first().click();
             expect(await lireMesure(), `accept all overwrote the measure (action=${action})`)
                 .toEqual(initiale);
@@ -878,6 +885,130 @@ test.describe('EBIOS RM — local frontend journeys', () => {
         expect(apres.mesure).toBe('Analyst title');
         expect(apres.details).toContain('Analyst original text.');
         expect(apres.details).toContain('Added by the model.');
+    });
+
+    // ── The action model's gaps: untitled creations, unmatched refs ─────
+    //
+    // An enrich leaves `mesure` empty on purpose; aimed at an unknown id it
+    // falls back to a creation, which used to be untitled. And the model
+    // answers "#01" for the baseline row "#1": compared raw, the measure was
+    // created but never linked to its row.
+    test('an enrich on an unknown id is titled, and a "#01" reference links row #1', async ({ page }) => {
+        await openApp(page);
+        await seedAnalysis(page);
+        await page.evaluate(() => {
+            localStorage.setItem('ebios_ai_enabled', 'true');
+            localStorage.setItem('ebios_ai_apikey', 'e2e-intercepted');
+        });
+        await page.reload();
+        await page.waitForLoadState('domcontentloaded');
+
+        await page.locator(NAV_ITEMS, { hasText: /Socle|Baseline/i }).first().click();
+        const ref = await page.evaluate(() => {
+            const e = document.querySelectorAll('textarea[data-s="socle_anssi"][data-f="ecart"]')[0];
+            e.value = 'Journaux non collectés.'; window._updateFieldFromEl(e);
+            const c = document.querySelectorAll('input[data-s="socle_anssi"][data-f="conformite"]')[0];
+            c.value = '40'; window._updateFieldFromEl(c);
+            const tr = document.querySelectorAll('textarea[data-s="socle_anssi"][data-f="ecart"]')[0].closest('tr');
+            return tr ? (tr.querySelector('td') || {}).textContent.trim() : null;
+        });
+        expect(ref, 'no baseline requirement on screen').toMatch(/^\d+$/);
+
+        await page.route('https://api.anthropic.com/**', async (route) => route.fulfill({
+            json: { content: [{ type: 'text', text: JSON.stringify([
+                { action: 'enrich', id: 'M-999', mesure: '',
+                  details: 'Centraliser les journaux des bastions. Conserver un an.',
+                  type: 'Détection', ref_socle: '#0' + ref, responsable: 'RSSI' },
+            ]) }] },
+        }));
+        await page.locator('#toggles-socle .btn-ai').first().click();
+        await page.locator('[data-click="_aiRunSuggest"]').first().click();
+        await page.locator('.ai-card').first().locator('.ai-btn-accept').first().click();
+        await page.evaluate(() => window._aiClosePanel && window._aiClosePanel());
+
+        const etat = await page.evaluate(([cle, num]) => {
+            const brut = localStorage.getItem(cle);
+            if (!brut) return null;
+            const d = JSON.parse(brut).data || JSON.parse(brut);
+            const ligne = (d.socle_anssi || []).find((x) => String(x.num) === num) || {};
+            return { mesures: (d.measures || []).map((m) => ({ id: m.id, mesure: m.mesure })),
+                     prevues: ligne.mesures_prevues || '' };
+        }, [AUTOSAVE_KEY, ref]);
+        expect(etat, 'nothing persisted: the test proves nothing').toBeTruthy();
+        expect(etat.mesures.map((m) => m.mesure), 'an untitled measure was created').not.toContain('');
+        const creee = etat.mesures.find((m) => m.mesure === 'Centraliser les journaux des bastions.');
+        expect(creee, 'the created measure did not take its title from the description').toBeTruthy();
+        expect(etat.prevues, 'the "#01" reference did not link baseline row #' + ref).toContain(creee.id);
+    });
+
+    // ── The cleaning of the inline buttons and of the residual panel ────
+    //
+    // "Enrich" is only a case issue. Uncleaned, these cards would not show
+    // their before/after and would create a twin instead of enriching.
+    test('"Enrich" is cleaned on the inline baseline button and the residual panel', async ({ page }) => {
+        await openApp(page);
+        await seedAnalysis(page);
+        await page.evaluate(() => {
+            localStorage.setItem('ebios_ai_enabled', 'true');
+            localStorage.setItem('ebios_ai_apikey', 'e2e-intercepted');
+        });
+        await page.reload();
+        await page.waitForLoadState('domcontentloaded');
+
+        await page.locator(NAV_ITEMS, { hasText: /Mesures|Measures/i }).first().click();
+        const mesure = await page.evaluate(() => {
+            window.addRow('measures');
+            let champs = document.querySelectorAll('input[data-s="measures"][data-f="mesure"]');
+            const nom = champs[champs.length - 1];
+            nom.value = 'Sauvegardes hors ligne'; window._updateFieldFromEl(nom);
+            const zones = document.querySelectorAll('textarea[data-s="measures"][data-f="details"]');
+            const det = zones[zones.length - 1];
+            det.value = 'Copies hebdomadaires.'; window._updateFieldFromEl(det);
+            champs = document.querySelectorAll('input[data-s="measures"][data-f="mesure"]');
+            const tr = champs[champs.length - 1].closest('tr');
+            const m = tr && tr.textContent.match(/(?:MES|M)-\d+/g);
+            return m ? m[m.length - 1] : null;
+        });
+        expect(mesure, 'seeded measure id not found').toBeTruthy();
+        const enrich = { action: 'Enrich', id: mesure, mesure: '', details: 'Tester la restauration.',
+                         type: 'Prévention', responsable: 'RSSI' };
+
+        let reponse = null;
+        await page.route('https://api.anthropic.com/**', async (route) => route.fulfill({
+            json: { content: [{ type: 'text', text: JSON.stringify(reponse) }] },
+        }));
+
+        // Inline button of a baseline row.
+        reponse = [enrich];
+        await page.locator(NAV_ITEMS, { hasText: /Socle|Baseline/i }).first().click();
+        await page.evaluate(() => window.suggestSocleMeasure(0));
+        await expect(page.locator('.ai-card').first().locator('.ai-diff'),
+            'the inline baseline card shows no before/after: "Enrich" was not cleaned').toBeVisible();
+        // Accepted, the enrich reuses the measure: its empty `mesure` means
+        // "keep the title" — a creation title must never reach a reuse.
+        await page.locator('.ai-card').first().locator('.ai-btn-accept').first().click();
+        await page.evaluate(() => window._aiClosePanel && window._aiClosePanel());
+        const reutilisee = await page.evaluate(([cle, id]) => {
+            const brut = localStorage.getItem(cle);
+            const d = JSON.parse(brut).data || JSON.parse(brut);
+            return { m: (d.measures || []).find((x) => x.id === id) };
+        }, [AUTOSAVE_KEY, mesure]);
+        expect(reutilisee.m.mesure, 'the reused measure was renamed').toBe('Sauvegardes hors ligne');
+        expect(reutilisee.m.details).toContain('Copies hebdomadaires.');
+        expect(reutilisee.m.details).toContain('Tester la restauration.');
+
+        // Residual panel.
+        reponse = { selected_measures: [], new_measures: [enrich], v_resid: 2, justification: 'essai' };
+        await page.locator(NAV_ITEMS, { hasText: /Scénarios stratégiques|Strategic/i }).first().click();
+        await page.evaluate(() => {
+            window.addRow('ss');
+            const champs = document.querySelectorAll('input[data-s="ss"][data-f="scenario"], textarea[data-s="ss"][data-f="scenario"]');
+            const el = champs[champs.length - 1];
+            el.value = 'Essai résiduel'; window._updateFieldFromEl(el);
+        });
+        await page.evaluate(() => window.suggestResidualMeasures(0));
+        await expect(page.locator('.ai-diff').first(),
+            'the residual card shows no before/after: "Enrich" was not cleaned').toBeVisible();
     });
 
     // ── BUG-35: an unchecked card writes nothing, enrichment included ───
