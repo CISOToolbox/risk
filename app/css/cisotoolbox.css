@@ -1325,8 +1325,16 @@ td .ct-ref-select, td .ct-ref-select * { box-shadow: none; }
    Pilot neutralises border/padding inline on its usage — rendering unchanged. */
 .ct-tprm-form { background: var(--ct-surface); padding: 16px; border: 1px solid var(--ct-line); border-radius: 8px; }
 .ct-tprm-form label { display: block; font-size: 0.75em; font-weight: 600; color: var(--ct-ink-2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
-.ct-tprm-form input, .ct-tprm-form select, .ct-tprm-form textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--ct-line); border-radius: 6px; font-size: 0.9em; font-family: inherit; box-sizing: border-box; }
-.ct-tprm-form input:focus, .ct-tprm-form select:focus, .ct-tprm-form textarea:focus { border-color: var(--ct-accent); outline: none; }
+/* A label that WRAPS a checkbox or a radio is the option's text, not a field
+   caption: no uppercase. Access used to say so from its own sheet, keyed on a
+   `style*="inline-flex"` attribute that the markup has since dropped — the
+   rule matched nothing and the labels went back to capitals (BUG-37). Keyed
+   on what the label contains, it cannot go stale that way. */
+.ct-tprm-form label:has(> input[type="checkbox"]), .ct-tprm-form label:has(> input[type="radio"]) { display: inline-flex; align-items: center; font-weight: 500; color: inherit; text-transform: none; letter-spacing: normal; }
+/* Field inputs only: a checkbox or a radio given width:100% and a field's
+   padding took the whole line and pushed its text below (BUG-37). */
+.ct-tprm-form input:not([type="checkbox"]):not([type="radio"]), .ct-tprm-form select, .ct-tprm-form textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--ct-line); border-radius: 6px; font-size: 0.9em; font-family: inherit; box-sizing: border-box; }
+.ct-tprm-form input:not([type="checkbox"]):not([type="radio"]):focus, .ct-tprm-form select:focus, .ct-tprm-form textarea:focus { border-color: var(--ct-accent); outline: none; }
 .ct-form-row { margin-bottom: 10px; }
 .ct-groupe-card { background: var(--ct-surface); border: 1px solid var(--ct-line); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
 .ct-groupe-card:hover { border-color: var(--ct-accent); }
