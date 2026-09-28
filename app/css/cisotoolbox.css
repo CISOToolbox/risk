@@ -1335,6 +1335,16 @@ td .ct-ref-select, td .ct-ref-select * { box-shadow: none; }
    padding took the whole line and pushed its text below (BUG-37). */
 .ct-tprm-form input:not([type="checkbox"]):not([type="radio"]), .ct-tprm-form select, .ct-tprm-form textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--ct-line); border-radius: 6px; font-size: 0.9em; font-family: inherit; box-sizing: border-box; }
 .ct-tprm-form input:not([type="checkbox"]):not([type="radio"]):focus, .ct-tprm-form select:focus, .ct-tprm-form textarea:focus { border-color: var(--ct-accent); outline: none; }
+/* Forms are responsive: every socle form grid is two columns on a wide screen
+   and one below 768 px, where a field spanning the row stops spanning (a span
+   in a one-column grid would open a phantom column and overflow). The
+   breakpoint lives here only — no module or browser build re-declares it
+   (BUG-40). Placed after .ct-tprm-form so the narrower padding wins. */
+@media (max-width: 768px) {
+    .ct-form-grid, .ct-form-2col, .ct-measure-form__row { grid-template-columns: 1fr; }
+    .ct-form-grid > .ct-col-span-2, .ct-form-2col > .ct-col-span-2, .ct-measure-form__row > .ct-col-span-2 { grid-column: auto; }
+    .ct-tprm-form { padding: 12px; }
+}
 .ct-form-row { margin-bottom: 10px; }
 .ct-groupe-card { background: var(--ct-surface); border: 1px solid var(--ct-line); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
 .ct-groupe-card:hover { border-color: var(--ct-accent); }
