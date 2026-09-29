@@ -544,7 +544,7 @@
                 var srLabel = (s.sr_nom || s.sr_id || "?");
                 var ovLabel = (s.ov_nom || s.ov_id || "?");
                 h += '<div class="ai-card-title">' + esc(srLabel + " / " + ovLabel) + '</div>';
-                h += '<div class="ai-card-field" style="display:flex;gap:12px;margin-bottom:6px">';
+                h += '<div class="ai-card-field ct-flex ct-gap-3 ct-mb-1">';
                 h += '<span><strong>M:</strong> ' + (s.motivation || 0) + '/4</span>';
                 h += '<span><strong>R:</strong> ' + (s.ressources || 0) + '/4</span>';
                 h += '<span><strong>A:</strong> ' + (s.activite || 0) + '/4</span>';
@@ -1262,7 +1262,7 @@
                 h += '</div>';
             });
             h += '<div style="margin-top:16px;border-top:1px solid var(--ct-line);padding-top:12px">';
-            h += '<div class="settings-label fs-sm" style="margin-bottom:6px">' + t("ai.custom_instruction_label") + '</div>';
+            h += '<div class="settings-label fs-sm ct-mb-1">' + t("ai.custom_instruction_label") + '</div>';
             h += '<textarea id="ai-custom-instruction" class="w-full" rows="3" style="border:1px solid var(--ct-line);border-radius:6px;padding:8px;font-size:0.85em;resize:vertical" placeholder="' + esc(t("ai.custom_instruction_placeholder")) + '"></textarea>';
             h += '<button class="ct-btn ai-btn-accept ct-journal-body ct-p-2 ct-text-data ct-mt-2 ct-bg-accent" data-variant="primary" data-click="_aiRunSuggest" data-args=\'' + _da(type, "__custom__") + '\'>' + t("ai.send_instruction") + '</button>';
             h += '</div>';
@@ -1278,7 +1278,7 @@
             '<p class="fs-sm" style="margin-bottom:16px;color:var(--ct-ink-2)">' + t("ai.prompt_intro") + '</p>' +
                 _ignoreToggleHTML(type) +
                 '<button class="ct-btn ai-btn-accept ct-w-full ct-p-2 ct-text-data ct-mb-4" data-variant="primary" data-click="_aiRunSuggest" data-args=\'' + _da(type, "") + '\'>' + t("ai.auto_suggest") + '</button>' +
-                '<div class="settings-label fs-sm" style="margin-bottom:6px">' + t("ai.custom_instruction_label") + '</div>' +
+                '<div class="settings-label fs-sm ct-mb-1">' + t("ai.custom_instruction_label") + '</div>' +
                 '<textarea id="ai-custom-instruction" class="w-full" rows="4" style="border:1px solid var(--ct-line);border-radius:6px;padding:8px;font-size:0.85em;resize:vertical" placeholder="' + esc(t("ai.custom_instruction_placeholder")) + '"></textarea>' +
                 '<button class="ct-btn ai-btn-accept ct-journal-body ct-p-2 ct-text-data ct-mt-2 ct-bg-accent" data-variant="primary" data-click="_aiRunSuggest" data-args=\'' + _da(type, "__custom__") + '\'>' + t("ai.send_instruction") + '</button>';
         pp.footer.innerHTML = '<button class="ct-btn ai-btn-close" data-click="_aiClosePanel">' + t("ai.close") + '</button>';
@@ -1372,7 +1372,7 @@
                 // box belongs here, where the scenario is known, not on the selector.
                 _ignoreToggleHTML("sop", ssId) +
                 '<button class="ct-btn ai-btn-accept ct-w-full ct-p-2 ct-text-data ct-mb-4" data-variant="primary" data-click="_aiRunSOP" data-args=\'' + _da(ssId, "") + '\'>' + t("ai.auto_suggest") + '</button>' +
-                '<div class="settings-label fs-sm" style="margin-bottom:6px">' + t("ai.custom_instruction_label") + '</div>' +
+                '<div class="settings-label fs-sm ct-mb-1">' + t("ai.custom_instruction_label") + '</div>' +
                 '<textarea id="ai-custom-instruction" class="w-full" rows="4" style="border:1px solid var(--ct-line);border-radius:6px;padding:8px;font-size:0.85em;resize:vertical" placeholder="' + esc(t("ai.custom_instruction_placeholder")) + '"></textarea>' +
                 '<button class="ct-btn ai-btn-accept ct-journal-body ct-p-2 ct-text-data ct-mt-2 ct-bg-accent" data-variant="primary" data-click="_aiRunSOP" data-args=\'' + _da(ssId, "__custom__") + '\'>' + t("ai.send_instruction") + '</button>';
         p.footer.innerHTML = '<button class="ct-btn ai-btn-close" data-click="_aiClosePanel">' + t("ai.close") + '</button>';
@@ -1426,20 +1426,20 @@
                 h += '<div class="ai-card" id="ai-card-' + i + '">';
                 h += '<div class="ai-card-title">' + esc(sop._title || "SOP") + '</div>';
                 if (sop.phases && sop.phases.length) {
-                    h += '<table style="width:100%;font-size:0.78em;border-collapse:collapse;margin:6px 0">';
-                    h += '<tr style="background:var(--ct-info-tint)"><th style="padding:3px 6px;text-align:left">Phase</th><th style="padding:3px 6px;text-align:left">Action</th><th style="padding:3px 6px;text-align:left">BS</th><th style="padding:3px 6px;text-align:left">Eff.</th><th style="padding:3px 6px;text-align:left">' + t("ai.sop.measure_col") + '</th></tr>';
+                    h += '<table style="width:100%;font-size:var(--ct-text-label);border-collapse:collapse;margin:var(--ct-s1) 0">';
+                    h += '<tr class="ct-bg-info-tint"><th class="ct-py-1 ct-px-1 ct-ta-l">Phase</th><th class="ct-py-1 ct-px-1 ct-ta-l">Action</th><th class="ct-py-1 ct-px-1 ct-ta-l">BS</th><th class="ct-py-1 ct-px-1 ct-ta-l">Eff.</th><th class="ct-py-1 ct-px-1 ct-ta-l">' + t("ai.sop.measure_col") + '</th></tr>';
                     sop.phases.forEach(function (ph) {
                         var effColor = ph.efficacite === "Efficace" ? "#27ae60" : ph.efficacite === "Partiel" ? "#f39c12" : "#e74c3c";
                         h += '<tr style="border-bottom:1px solid var(--ct-line)">';
-                        h += '<td style="padding:3px 6px;white-space:nowrap">' + esc(_attackLabel(ph.phase) || "") + '</td>';
-                        h += '<td style="padding:3px 6px">' + esc(ph.action || "") + '</td>';
-                        h += '<td style="padding:3px 6px;white-space:nowrap">' + esc((ph.bs || "").split(" - ")[0]) + '</td>';
+                        h += '<td class="ct-py-1 ct-px-1 ct-nowrap">' + esc(_attackLabel(ph.phase) || "") + '</td>';
+                        h += '<td class="ct-p-1">' + esc(ph.action || "") + '</td>';
+                        h += '<td class="ct-py-1 ct-px-1 ct-nowrap">' + esc((ph.bs || "").split(" - ")[0]) + '</td>';
                         h += '<td style="padding:3px 6px;color:' + effColor + ';font-weight:600">' + esc(ph.efficacite || "Absent") + '</td>';
                         // BUG-33 — without this column, reusing an existing measure
                         // and inventing one looked exactly the same: the anti-
                         // duplicate was invisible, and so was the write that an
                         // adjustment makes into a measure already written.
-                        h += '<td style="padding:3px 6px">' + _sopMesureCelluleHTML(ph) + '</td>';
+                        h += '<td class="ct-py-1 ct-px-1">' + _sopMesureCelluleHTML(ph) + '</td>';
                         h += '</tr>';
                     });
                     h += '</table>';
@@ -1753,26 +1753,26 @@
             var h = '';
             // Selected existing measures (with checkboxes)
             if (result.selected_measures && result.selected_measures.length > 0) {
-                h += '<div class="settings-label" style="margin-bottom:6px">' + t("ai.residual.selected") + '</div>';
+                h += '<div class="settings-label ct-mb-1">' + t("ai.residual.selected") + '</div>';
                 result.selected_measures.forEach(function (mId, i) {
                     var m = D.measures.find(function (x) { return x.id === mId; });
                     if (m) {
-                        h += '<label style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--ct-line);cursor:pointer">';
-                        h += '<input type="checkbox" checked class="ai-resid-check" data-mid="' + esc(mId) + '" style="margin-top:3px">';
+                        h += '<label class="ct-flex ct-items-start ct-gap-2 ct-py-1 ct-px-0 ct-border-bottom ct-clickable">';
+                        h += '<input class="ai-resid-check ct-mt-1" type="checkbox" checked data-mid="' + esc(mId) + '">';
                         h += '<div><strong>' + esc(mId) + '</strong> — ' + esc(m.mesure);
                         if (m.details)
-                            h += '<div class="fs-xs text-muted" style="margin-top:2px">' + esc(m.details).substring(0, 120) + '</div>';
+                            h += '<div class="fs-xs text-muted ct-mt-1">' + esc(m.details).substring(0, 120) + '</div>';
                         h += '</div></label>';
                     }
                 });
             }
             // New measures to create (with checkboxes)
             if (result.new_measures && result.new_measures.length > 0) {
-                h += '<div class="settings-label" style="margin-top:12px;margin-bottom:6px">' + t("ai.residual.new_measures") + '</div>';
+                h += '<div class="settings-label ct-mt-3 ct-mb-1">' + t("ai.residual.new_measures") + '</div>';
                 result.new_measures.forEach(function (m, i) {
                     h += '<div class="ai-card" id="ai-residual-new-' + i + '">';
                     h += '<label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer">';
-                    h += '<input type="checkbox" checked class="ai-resid-new-check" data-idx="' + i + '" style="margin-top:3px">';
+                    h += '<input class="ai-resid-new-check ct-mt-1" type="checkbox" checked data-idx="' + i + '">';
                     h += '<div><div class="ai-card-title" style="margin-bottom:4px">' + esc(m.mesure) + '</div>';
                     if (m.details)
                         h += '<div class="ai-card-details">' + esc(m.details) + '</div>';
@@ -1792,7 +1792,7 @@
             if (result.v_resid) {
                 var proposedRisk = riskLevel(gNum, result.v_resid);
                 var proposedColor = riskColor(proposedRisk);
-                h += '<div class="settings-label" style="margin-top:12px;margin-bottom:6px">' + t("ai.residual.proposed_v") + '</div>';
+                h += '<div class="settings-label ct-mt-3 ct-mb-1">' + t("ai.residual.proposed_v") + '</div>';
                 h += '<div class="ai-card"><div style="display:flex;align-items:center;gap:12px">';
                 h += '<span style="font-size:1.2em;font-weight:700">V' + result.v_resid + '</span>';
                 h += badge(proposedRisk, proposedColor);
