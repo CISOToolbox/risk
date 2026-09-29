@@ -120,7 +120,8 @@ footer { display: none; text-align: center; padding: 20px; color: var(--ct-ink-2
 .flex-row { display: flex; gap: 8px; }
 .flex-row-center { display: flex; gap: 8px; align-items: center; }
 
-.grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+/* The grid is the socle's (.ct-form-grid); only the spacing below is the module's. */
+.grid-2col { margin-bottom: 16px; }
 
 .table-fixed { table-layout: fixed; }
 .label-bold-sm { font-size: 0.9em; font-weight: 600; }

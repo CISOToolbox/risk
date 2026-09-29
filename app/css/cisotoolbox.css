@@ -379,13 +379,12 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
    value, never two adding up. */
 .ct-form { display: flex; flex-direction: column; gap: 14px; }
 .ct-form .ct-field + .ct-field { margin-top: 0; }
-/* Two declarations of .ct-form-grid coexisted, here and in the block hoisted
-   from the modules further down; the later one won, so the responsive
-   auto-fit above it had been dead since that hoist. The EFFECTIVE values are
-   kept, which leaves every screen exactly as it renders today — whether forms
-   should go back to being responsive is a design question (BUG-40), not a
-   cleanup. */
+/* The socle form grid: two equal columns on a wide screen, one below 768 px
+   (see the breakpoint further down). data-cols="3" gives three equal columns,
+   data-cols="2-1" a wide field beside a narrow one (host and port). */
 .ct-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ct-form-grid[data-cols="3"] { grid-template-columns: repeat(3, 1fr); }
+.ct-form-grid[data-cols="2-1"] { grid-template-columns: 2fr 1fr; }
 .ct-form-grid .ct-field + .ct-field { margin-top: 0; }
 /* Hoisted from access.css and Pilot.css, where it was declared identically. */
 .ct-form-grid > .ct-form-row { margin-bottom: 0; }
@@ -1341,7 +1340,7 @@ td .ct-ref-select, td .ct-ref-select * { box-shadow: none; }
    breakpoint lives here only — no module or browser build re-declares it
    (BUG-40). Placed after .ct-tprm-form so the narrower padding wins. */
 @media (max-width: 768px) {
-    .ct-form-grid, .ct-form-2col, .ct-measure-form__row { grid-template-columns: 1fr; }
+    .ct-form-grid, .ct-form-grid[data-cols], .ct-form-2col, .ct-measure-form__row { grid-template-columns: 1fr; }
     .ct-form-grid > .ct-col-span-2, .ct-form-2col > .ct-col-span-2, .ct-measure-form__row > .ct-col-span-2 { grid-column: auto; }
     .ct-tprm-form { padding: 12px; }
 }
