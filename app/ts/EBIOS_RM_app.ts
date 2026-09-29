@@ -855,7 +855,7 @@ function renderContext() {
         [t("ebios.col.analyste"), "analyste"],
         [t("ebios.col.date_precedente"), "date_precedente"],
     ];
-    let h = '<div class="grid-2col">';
+    let h = '<div class="grid-2col ct-form-grid">';
     for (const [label, key] of shortFields) {
         h += `<div class="ct-meta-item"><div class="label">${label}</div><div class="value">
             <input type="text" value="${esc(c[key])}" class="w-full" data-change="_setContextField" data-args='${_da(key)}' data-pass-value />
