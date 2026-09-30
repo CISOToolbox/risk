@@ -2,20 +2,20 @@
 
 /* ── Analysis Catalog — rendered in .ct-rail-foot (light rail) ──── */
 .catalog-actions-bar { display: flex; gap: 4px; padding: 4px 4px 6px; }
-.catalog-search { background: var(--ct-surface); border: 1px solid var(--ct-line); color: var(--ct-text-body); font-size: 0.72em; padding: 3px 8px; border-radius: var(--ct-r-sm); width: 100%; transition: border-color 0.2s; }
+.catalog-search { background: var(--ct-surface); border: 1px solid var(--ct-line); color: var(--ct-ink); font-size: 0.72em; padding: 3px 8px; border-radius: var(--ct-r-sm); width: 100%; transition: border-color 0.2s; }
 .catalog-search:focus { outline: none; border-color: var(--ct-accent); }
 .catalog-card { padding: 6px 8px; cursor: pointer; border-left: 3px solid transparent; border-radius: var(--ct-r-sm); transition: background 0.15s, border-color 0.15s; }
 .catalog-card:hover { background: var(--ct-neutral-tint); }
 .catalog-card.catalog-active { border-left-color: var(--ct-accent); background: var(--ct-neutral-tint); }
-.catalog-card-name { font-size: 0.82em; font-weight: 600; color: var(--ct-text-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.catalog-card-meta { font-size: 0.7em; color: var(--ct-text-meta); display: flex; gap: 8px; margin-top: 1px; }
+.catalog-card-name { font-size: 0.82em; font-weight: 600; color: var(--ct-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.catalog-card-meta { font-size: 0.7em; color: var(--ct-ink-1); display: flex; gap: 8px; margin-top: 1px; }
 .catalog-card-actions { display: none; gap: 2px; margin-top: 2px; }
 .catalog-card:hover .catalog-card-actions { display: flex; }
 .catalog-btn-sm { background: none; border: none; color: var(--ct-ink-2); cursor: pointer; font-size: 0.8em; padding: 1px 4px; transition: color 0.15s; position: relative; }
 .catalog-btn-sm:hover { color: var(--ct-ink); }
 .catalog-btn-sm:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--ct-accent); color: var(--ct-onaccent); padding: 3px 8px; border-radius: 4px; font-size: 0.85em; white-space: nowrap; pointer-events: none; z-index: 100; }
 .catalog-btn-del:hover { color: var(--ct-critical); }
-.catalog-empty { padding: 8px; font-size: 0.78em; color: var(--ct-text-meta); font-style: italic; }
+.catalog-empty { padding: 8px; font-size: 0.78em; color: var(--ct-ink-2); font-style: italic; }
 
 /* 44px = 22px icon button + the 2x10px of cell padding. At 35px the button
    overflowed the right edge since the move to data-icon. */
