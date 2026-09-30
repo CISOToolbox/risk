@@ -50,6 +50,10 @@ declare function badgeTone(text: string | null | undefined, tone: string, opts?:
 }): string;
 declare var CT_ICONS: Record<string, string>;
 declare function _icon(name: string, size?: number, extraClass?: string): string;
+declare function _userPillHTML(user: {
+    name?: string;
+    email?: string;
+}, extraHtml?: string): string;
 declare var CT_COLORS: {
     green: {
         bg: string;

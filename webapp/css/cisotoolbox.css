@@ -1073,6 +1073,10 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .toolbar button:hover { opacity: 0.85; }
 .toolbar .status { color: rgba(255,255,255,0.7); font-size: 0.8em; margin-left: 8px; }
 .ct-toolbar-right { display: flex; align-items: center; gap: 8px; margin-left: 8px; }
+/* The signed-in user block a module mounts before #toolbar-right
+   (_userPillHTML): pushed to the right at every width. */
+.ct-toolbar-user { display: flex; align-items: center; gap: var(--ct-s1); margin-left: auto; flex-shrink: 0; }
+.ct-toolbar-user-name { color: var(--ct-ink-1); font-size: var(--ct-text-label); margin: 0 var(--ct-s1); }
 
 .btn-settings {
     display: flex; align-items: center; justify-content: center;

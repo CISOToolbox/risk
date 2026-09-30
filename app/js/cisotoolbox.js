@@ -70,6 +70,8 @@ var CT_ICONS = {
     "minus": '<line x1="5" y1="12" x2="19" y2="12"/>',
     "check": '<polyline points="20 6 9 17 4 12"/>',
     "x": '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+    "image": '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',
+    "log-out": '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
     "upload": '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>',
     "download": '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
     "clipboard": '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>',
@@ -98,6 +100,15 @@ function _icon(name, size, extraClass) {
     var s = size ? ('width="' + size + '" height="' + size + '"') : 'width="1em" height="1em"';
     var cls = 'ct-icon' + (extraClass ? ' ' + extraClass : '');
     return '<svg class="' + cls + '" ' + s + ' viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + '</svg>';
+}
+// The signed-in user at the right of the toolbar: name, then `extraHtml` (a
+// module's own buttons, e.g. Pilot's notifications), then sign-out. Every
+// module mounts it; mounting and the role fetch stay module-side.
+function _userPillHTML(user, extraHtml) {
+    var label = t("btn_sign_out");
+    return '<span class="ct-toolbar-user-name">' + esc(user.name || user.email || "") + '</span>'
+        + (extraHtml || "")
+        + '<button class="ct-text-label ct-muted ct-bg-none ct-no-border ct-clickable ct-py-1 ct-px-2" data-click="_logout" title="' + esc(label) + '" aria-label="' + esc(label) + '">' + _icon("log-out", 15) + '</button>';
 }
 // ═══════════════════════════════════════════════════════════════════════
 // CT_COLORS — Centralized color palette for all apps
@@ -596,7 +607,7 @@ function toggleGroup(el) {
     }
     else {
         // Open group and select first panel WITHOUT closing the mobile sidebar
-        var sidebar = document.querySelector(".sidebar");
+        var sidebar = document.querySelector(".ct-rail, .sidebar");
         var wasOpen = sidebar && sidebar.classList.contains("open");
         var panels = (group.getAttribute("data-panels") || "").split(",");
         if (panels[0] && typeof selectPanel === "function")
