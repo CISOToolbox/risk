@@ -66,7 +66,10 @@ anyio==4.14.2                   # via httpx/starlette — GHSA-82r6-8w77-94w6
 
 # ── Shared by a subset of modules ────────────────────────────────────────────
 cryptography==50.0.0            # access, appsec, surface, watch
-boto3==1.43.57                  # access, asset, pilot (+ add-on aws_iam)
+boto3==1.43.96                  # access, asset, pilot (+ add-on aws_iam)
+botocore==1.43.96               # via boto3 — pinned with it, else the image takes the newest release
+s3transfer==0.19.2              # via boto3
+jmespath==1.1.0                 # via boto3/botocore
 urllib3==2.8.0                  # via boto3/botocore — DEP-04, 6 HIGH fixed in 2.7.0, 2 HIGH fixed in 2.8.0
 setuptools==83.0.0              # appsec, watch
 ldap3==2.9.1                    # add-ons ldap_ad, ldap_generic
@@ -76,12 +79,12 @@ openpyxl==3.1.5                 # vendor (dora_export), add-on acme
 # Listed so a second consumer starts from the same version instead of
 # introducing a new generation of pins. Harmless as constraints: an entry for
 # a package that is not installed is simply ignored by pip.
-semgrep==1.171.0                # appsec
+semgrep==1.177.0                # appsec
 dnspython==2.7.0                # surface
 dnstwist==20250130              # surface
 feedparser==6.0.11              # watch
 beautifulsoup4==4.13.3          # watch
-python-dateutil==2.9.0.post0    # watch
+python-dateutil==2.9.0.post0    # watch; via botocore (access, asset, pilot)
 packaging==25.0                 # watch
 
 # ── Add-on pins ──────────────────────────────────────────────────────────────
