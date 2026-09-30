@@ -383,12 +383,12 @@ def make_ai_router(generic_complete: bool = True) -> APIRouter:
     `*_suggest_*` endpoints to the returned router.
 
     ``generic_complete=False`` — for modules whose prompts are ALL composed
-    server-side (FEAT-41: risk, compliance, vendor). There the generic proxy
+    server-side (FEAT-41: risk, compliance, vendor, audit). There the generic proxy
     would relay an arbitrary client string under the organization's keys,
     bypassing every guarantee of the business endpoints (measure context read
     from the DB, output validation, caps). It answers 410 with the
     replacement path, rather than a silent 404.
-    Non-migrated modules (asset, access, audit, appsec, watch) keep it:
+    Non-migrated modules (asset, access, appsec, watch) keep it:
     their frontend still composes — each migration must cut this path.
     """
     router = APIRouter(prefix="/api/ai", tags=["ai"])

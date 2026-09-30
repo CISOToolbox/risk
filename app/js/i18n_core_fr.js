@@ -114,6 +114,7 @@ _registerTranslations("fr", {
     "btn_validate": "Valider",
     "btn_save": "Enregistrer",
     "btn_close": "Fermer",
+    "btn_sign_out": "Se déconnecter",
     "btn_delete": "Supprimer",
     "btn_edit": "Editer",
     "btn_add": "Ajouter",

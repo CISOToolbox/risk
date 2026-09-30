@@ -280,12 +280,9 @@ function _initAuth() {
             window._currentUser = user;
             var right = document.getElementById("toolbar-right");
             if (!right) return;
-            var h = "";
-            h += '<span style="color:var(--ct-ink-1);font-size:var(--ct-text-label);margin:0 var(--ct-s1)">' + esc(user.name || user.email) + '</span>';
-            h += '<button class="ct-text-label ct-muted ct-bg-none ct-no-border ct-clickable ct-py-1 ct-px-2" data-click="_logout" title="Sign out">&#x23FB;</button>';
+            var h = _userPillHTML(user);
             var container = document.createElement("span");
-            container.className = "ct-toolbar-right";
-            container.style.cssText = "display:flex;align-items:center;gap:4px;margin-left:auto";
+            container.className = "ct-toolbar-user";
             container.innerHTML = h;
             right.parentNode!.insertBefore(container, right);
             fetch("auth/role", { credentials: "same-origin" }).then(function(rr) {
