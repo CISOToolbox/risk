@@ -55,7 +55,7 @@ alembic==1.18.4
 
 # ── Auth — all 9 modules ─────────────────────────────────────────────────────
 authlib==1.6.12
-PyJWT==2.14.0                   # DEP-03 — GHSA-xgmm-8j9v-c9wx, GHSA-ffc3-869f-jxw9 and five more (HIGH); pins carry [crypto]
+PyJWT==2.15.0                   # DEP-03 — GHSA-xgmm-8j9v-c9wx, GHSA-ffc3-869f-jxw9 and five more (HIGH), GHSA-42vr-xj54-vc7v (moderate); pins carry [crypto]
 
 # ── Transitive pins forced for security — all 9 modules ──────────────────────
 # Kept explicit so the resolver cannot drift back to a vulnerable release.
@@ -67,7 +67,7 @@ anyio==4.14.2                   # via httpx/starlette — GHSA-82r6-8w77-94w6
 # ── Shared by a subset of modules ────────────────────────────────────────────
 cryptography==50.0.0            # access, appsec, surface, watch
 boto3==1.43.57                  # access, asset, pilot (+ add-on aws_iam)
-urllib3==2.7.0                  # via boto3/botocore — DEP-04, 6 HIGH fixed in 2.x
+urllib3==2.8.0                  # via boto3/botocore — DEP-04, 6 HIGH fixed in 2.7.0, 2 HIGH fixed in 2.8.0
 setuptools==83.0.0              # appsec, watch
 ldap3==2.9.1                    # add-ons ldap_ad, ldap_generic
 openpyxl==3.1.5                 # vendor (dora_export), add-on acme
