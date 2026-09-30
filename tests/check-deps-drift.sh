@@ -95,6 +95,15 @@ if not req_files:
     print("ERROR: no requirements*.txt found", file=sys.stderr)
     sys.exit(2)
 
+# A tool installed in its OWN virtual environment may hold one package at a
+# version the application must not use: semgrep pins pyjwt ~=2.13 while the
+# modules run the fixed release. Named path, named package — nothing else.
+# (The bare file name is that same file at the root of the AppSec repository.)
+SEPARATE_ENV = {
+    "appsec/requirements-semgrep.txt": {"pyjwt"},
+    "requirements-semgrep.txt": {"pyjwt"},
+}
+
 drift, loose, unpinned = [], [], []
 seen = defaultdict(list)          # canonical name -> [(relpath, version)]
 
@@ -107,6 +116,8 @@ for path in req_files:
             continue
         seen[key].append((str(rel), version))
         expected = constraints.get(key)
+        if key in SEPARATE_ENV.get(str(rel), set()):
+            continue
         if expected is not None and expected != version:
             drift.append(
                 f"{rel}:{lineno}: {name} pinned to {version}, "
