@@ -38,9 +38,14 @@
   --ct-line-field:   #8b909b;
   --ct-ink:          #12151c;
   --ct-ink-1:        #3c4453;
-  --ct-ink-2:        #6b7488;
+  /* Muted text. #6b7488 cleared 4.5:1 on the white surface only: it fell to
+     4.37 on the page canvas, 4.23 on active or hovered rows (-neutral-tint),
+     4.03 on selected ones (-accent-tint) and 4.00 on critical-tinted rows.
+     Same hue, one step darker: 4.5:1 or more on the surfaces, the page,
+     active and selected rows and the tone tints (lowest 4.55, critical). */
+  --ct-ink-2:        #636b7e;
   /* NON-TEXT. At 3.09:1 it cannot carry text, and any value that
-     reached 4.5:1 would blur into --ct-ink-2 (4.69:1): three text grays
+     reached 4.5:1 would blur into --ct-ink-2 (5.34:1): three text grays
      don't fit in the scale. We keep two, and ink-3 becomes the gray of
      decorative elements — 3:1 threshold, WCAG 1.4.11. The only remaining
      use is the empty-state icon; all text that used it moved to ink-2. */
