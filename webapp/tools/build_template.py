@@ -12,7 +12,7 @@ from docx.enum.table import WD_ALIGN_VERTICAL
 from docx.oxml.ns import qn, nsdecls
 from docx.oxml import OxmlElement, parse_xml
 
-TPL_DIR = os.path.join(os.path.dirname(__file__), "..", "app", "templates")
+TPL_DIR = os.path.join(os.path.dirname(__file__), "..", "templates")
 NAVY = RGBColor(0x1E, 0x3A, 0x5F); GREY = RGBColor(0x55, 0x60, 0x70); WHITE = RGBColor(0xFF, 0xFF, 0xFF)
 
 
@@ -569,7 +569,7 @@ def build(LANG):
 
     out = os.path.join(TPL_DIR, "ebios-report-%s.docx" % LANG)
     doc.save(out)
-    print("template écrit:", os.path.basename(out), round(os.path.getsize(out) / 1024, 1), "Ko")
+    print("template written:", os.path.basename(out), round(os.path.getsize(out) / 1024, 1), "KB")
 
 
 for _lang in ("fr", "en"):

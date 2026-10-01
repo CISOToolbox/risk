@@ -148,10 +148,6 @@ js/
   ct_refselect.js                Widget de multi-sélection de références
   ct_settings.js                 Panneau des Réglages (langue, assistant IA, réglages du module)
   ai_common.js                   Module IA partagé (fournisseurs, appels API, UI du panneau)
-  ct_bulkbar.js                  Fichier partagé, non chargé par index.html
-  ct_measure_modal.js            Fichier partagé, non chargé par index.html
-  ct_modal.js                    Fichier partagé, non chargé par index.html
-  ct_table.js                    Fichier partagé, non chargé par index.html
   EBIOS_RM_data.js               Données initiales (analyse vide, socles ANSSI et ISO pré-remplis)
   EBIOS_RM_i18n_fr.js            Traductions FR (chargées au démarrage)
   EBIOS_RM_i18n_en.js            Traductions EN (chargées au démarrage)

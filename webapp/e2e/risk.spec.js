@@ -270,6 +270,30 @@ test.describe('EBIOS RM — local frontend journeys', () => {
         expect(await page.locator('#table-vm input[data-s="vm"][data-f="nom"]').count()).toBe(2);
     });
 
+    // A file saved when this app still offered complementary frameworks keeps
+    // them in `referentiels_actifs`. The app no longer ships that catalog: the
+    // file must still open, not throw on the missing framework registry.
+    test('a file with the former complementary frameworks still opens', async ({ page }) => {
+        const errors = trackErrors(page);
+        // A failed open is caught and reported in an alert, not as a page error.
+        const dialogs = [];
+        page.on('dialog', (d) => { dialogs.push(d.message()); d.dismiss(); });
+        await openApp(page);
+        const analysis = {
+            context: { societe: 'E2E Legacy Frameworks Co' },
+            vm: [{ id: 'VM-01', nom: 'Donnees patients' }],
+            bs: [], er: [], pp: [], ss: [], sop_summary: [], sop_detail: [], measures: [],
+            referentiels_actifs: ['dora', 'hds'],
+        };
+        await page.locator('#file-input').setInputFiles({
+            name: 'e2e-legacy.json', mimeType: 'application/json',
+            buffer: Buffer.from(JSON.stringify(analysis)),
+        });
+        await expect(page.locator('#header-subtitle')).toHaveText('E2E Legacy Frameworks Co', { timeout: 5000 });
+        expect(errors, `uncaught page errors: ${errors.join(' | ')}`).toEqual([]);
+        expect(dialogs, `alerts: ${dialogs.join(' | ')}`).toEqual([]);
+    });
+
     // ── Issue #2: an encrypted multi-export must be readable ───────────
     // catalogExportAll offers a .enc holding an ARRAY of analyses. The hook's
     // multi-detection only saw plaintext: the file fell through to the

@@ -52,7 +52,6 @@ Files marked *shared* are identical across the CISO Toolbox apps: they carry a "
 | `ct_refselect.js` | *Shared.* Multi-select dropdown with tags, search, deferred re-render |
 | `ct_settings.js` | *Shared.* Settings drawer (language, AI assistant, module-specific settings) |
 | `ai_common.js` | *Shared.* AI provider abstraction (API calls, key validation, suggestion panel UI) |
-| `ct_bulkbar.js`, `ct_measure_modal.js`, `ct_modal.js`, `ct_table.js` | *Shared.* Present in the folder but not loaded by `index.html` |
 | `EBIOS_RM_data.js` | `EBIOS_INIT_DATA` -- empty analysis template with the 42 ANSSI measures and the ISO 27001 rows (clauses 4-10 + 93 Annex A controls) pre-filled |
 | `EBIOS_RM_i18n_fr.js` | French translations (loaded at startup) |
 | `EBIOS_RM_i18n_en.js` | English translations (loaded at startup) |
