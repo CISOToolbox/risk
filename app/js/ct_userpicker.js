@@ -13,8 +13,9 @@
  *   ct_userpicker.mount(opts)           → Promise<handle>
  *     Smart mount: detects Pilot reachability via opts.sourceUrl, then
  *     replaces opts.slotId with either a full picker (Pilot mode) or a
- *     plain text input (local mode). Returns a handle exposing a uniform
- *     getValue()/setValue() regardless of which branch was chosen.
+ *     plain text input (local mode). The browser-only edition (no backend)
+ *     always gets the plain input, without any request. Returns a handle
+ *     exposing a uniform getValue()/setValue() regardless of the branch.
  *
  *   ct_userpicker.render(opts)          → HTML string
  *     Low-level: emit the picker HTML + register the instance. Prefer
@@ -33,7 +34,8 @@
  *   slotId          — id of a <div> placeholder to be replaced (required)
  *   pickerId        — unique id for the picker instance (required in Pilot mode)
  *   value           — initial selected label
- *   placeholder     — input placeholder
+ *   placeholder     — the picker's search-box placeholder (the plain field,
+ *                     free text, has none)
  *   directoryUrl    — GET endpoint returning the user list (default "api/directory")
  *   sourceUrl       — GET endpoint returning {source, pilot_available}
  *                     (default "api/settings/directory-source"). Pass
@@ -321,12 +323,16 @@
         var inputId = (opts.pickerId || "ct-userpicker") + "-plain";
         slot.outerHTML = '<input type="text" id="' + esc(inputId) + '"'
             + ' autocomplete="off" class="ct-userpicker-plain"'
-            + ' value="' + esc(opts.value || "") + '"'
-            + ' placeholder="' + esc(opts.placeholder || "") + '">';
+            + ' value="' + esc(opts.value || "") + '">';
         return _plainHandle(inputId);
     }
     function mount(opts) {
         opts = opts || {};
+        // The browser-only edition has no backend, hence no directory: a free
+        // text field, without asking a server that does not exist.
+        if (((window.CT_CONFIG || {}).edition || "opensource") === "opensource") {
+            return Promise.resolve(_mountPlain(opts));
+        }
         var directoryUrl = opts.directoryUrl || "api/directory";
         var sourceUrl = opts.sourceUrl === null
             ? null
