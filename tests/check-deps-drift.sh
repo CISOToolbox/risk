@@ -17,8 +17,18 @@
 #  Checks performed on every requirements*.txt in the repo (modules + add-ons):
 #    1. DRIFT    — a pin contradicts constraints.txt                    (fails)
 #    2. UNPINNED — a shared package is missing from constraints.txt     (fails)
-#    3. LOOSE    — a pin is not an exact `==`                        (warning)
-#    4. STALE    — a constraints entry no longer used anywhere       (warning)
+#    3. LOCK     — a module's requirements-lock.txt (what its image installs)
+#                  was resolved from inputs that changed since (its header
+#                  records each input's sha256 — any edit, extras included),
+#                  lacks a pin of them or holds another version, or is missing
+#                  while the Dockerfile installs it: the lock is stale   (fails)
+#    4. LOOSE    — a pin is not an exact `==`                        (warning)
+#    5. STALE    — a constraints entry no longer used anywhere       (warning)
+#    6. LOCK DIVERGENCE — two locks hold a transitive at different
+#                  versions                                          (warning)
+#
+#  A lock carries every transitive: those are not required in constraints.txt
+#  (check 2 skips lock files), but they must still agree with it (check 1).
 #
 #  LOOSE and STALE are warnings, not failures: `pilot/requirements-test.txt`
 #  deliberately uses `>=` for test-only tooling, and those packages never ship
@@ -104,8 +114,11 @@ SEPARATE_ENV = {
     "requirements-semgrep.txt": {"pyjwt"},
 }
 
+LOCK_NAME = "requirements-lock.txt"
+
 drift, loose, unpinned = [], [], []
-seen = defaultdict(list)          # canonical name -> [(relpath, version)]
+seen = defaultdict(list)          # canonical name -> [(relpath, version)], lock files aside
+locked = defaultdict(set)         # canonical name -> {(version, lock relpath)}
 
 for path in req_files:
     rel = path.relative_to(repo)
@@ -114,7 +127,10 @@ for path in req_files:
         if op != "==":
             loose.append(f"{rel}:{lineno}: {name}{extras}{op}{version}")
             continue
-        seen[key].append((str(rel), version))
+        if path.name == LOCK_NAME:
+            locked[key].add((version, str(rel)))
+        else:
+            seen[key].append((str(rel), version))
         expected = constraints.get(key)
         if key in SEPARATE_ENV.get(str(rel), set()):
             continue
@@ -137,7 +153,42 @@ for key, uses in sorted(seen.items()):
             f"as {', '.join(versions)} but absent from constraints.txt"
         )
 
-stale = sorted(set(constraints) - set(seen))
+stale = sorted(set(constraints) - set(seen) - set(locked))
+
+# A lock is stale when it no longer holds what its module asks for: the
+# module's requirements.txt and the add-ons its image bakes in
+# (addons/core, addons/generic — addons/custom is layered per client).
+import hashlib
+
+stale_lock = []
+for dockerfile in sorted(repo.rglob("Dockerfile")):
+    if ".git" in dockerfile.parts:
+        continue
+    if LOCK_NAME in dockerfile.read_text(errors="replace") and not (dockerfile.parent / LOCK_NAME).exists():
+        stale_lock.append(f"{dockerfile.relative_to(repo)} installs {LOCK_NAME}, which is missing")
+INPUT = re.compile(r"^# input: (\S+) sha256:([0-9a-f]{64})$")
+for lock in (p for p in req_files if p.name == LOCK_NAME):
+    base = lock.parent
+    in_lock = {canon(n): v for _l, n, _e, op, v in parse(lock) if op == "=="}
+    inputs = [base / "requirements.txt"] + sorted(
+        q for tier in ("core", "generic") for q in (base / "addons" / tier).rglob("requirements.txt"))
+    recorded = {m.group(1): m.group(2) for l in lock.read_text().splitlines() if (m := INPUT.match(l))}
+    actual = {str(q.relative_to(base)): hashlib.sha256(q.read_bytes()).hexdigest() for q in inputs if q.exists()}
+    for name in sorted(set(recorded) | set(actual)):
+        if recorded.get(name) != actual.get(name):
+            what = ("is not an input any more" if name not in actual else
+                    "is a new input" if name not in recorded else "changed since the lock was resolved")
+            stale_lock.append(f"{lock.relative_to(repo)}: {name} {what}")
+    for req in (q for q in inputs if q.exists()):
+        for lineno, name, _e, op, version in parse(req):
+            key = canon(name)
+            if key not in in_lock:
+                stale_lock.append(f"{lock.relative_to(repo)}: {name} ({req.relative_to(repo)}:{lineno}) is missing")
+            elif op == "==" and in_lock[key] != version:
+                stale_lock.append(f"{lock.relative_to(repo)}: {name} is {in_lock[key]}, "
+                                  f"{req.relative_to(repo)}:{lineno} asks for {version}")
+divergent = sorted(f"{key}: " + ", ".join(f"{v} ({f})" for v, f in sorted(vs))
+                   for key, vs in locked.items() if len({v for v, _ in vs}) > 1)
 
 # ── report ───────────────────────────────────────────────────────────────────
 if not quiet:
@@ -149,7 +200,8 @@ if not quiet:
 
 failed = False
 
-for label, items in (("DRIFT", drift), ("UNPINNED SHARED PACKAGE", unpinned)):
+for label, items in (("DRIFT", drift), ("UNPINNED SHARED PACKAGE", unpinned),
+                     ("STALE LOCK — regenerate requirements-lock.txt", stale_lock)):
     if items:
         failed = True
         print(f"-- {label} ({len(items)}) --")
@@ -167,6 +219,12 @@ if stale and not quiet:
     print(f"-- STALE constraints entries ({len(stale)}) — warning only --")
     for key in stale:
         print(f"  warn  {key}=={constraints[key]} is no longer used by any requirements file")
+    print()
+
+if divergent and not quiet:
+    print(f"-- LOCK DIVERGENCE ({len(divergent)}) — warning only --")
+    for item in divergent:
+        print(f"  warn  {item}")
     print()
 
 if failed:
