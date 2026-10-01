@@ -6,8 +6,12 @@
 FROM python:3.13-slim@sha256:6771159cd4fa5d9bba1258caf0b82e6b73458c694d178ad97c5e925c2d0e1a91 AS builder
 
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+# requirements-lock.txt holds every package the image installs, transitives
+# included, each at one version with its hashes: the build installs exactly
+# what was resolved, never a newer release (requirements.txt lists what the
+# module asks for; the lock is regenerated from it).
+COPY requirements-lock.txt .
+RUN pip install --no-cache-dir --prefix=/install --require-hashes -r requirements-lock.txt
 
 FROM python:3.13-slim@sha256:6771159cd4fa5d9bba1258caf0b82e6b73458c694d178ad97c5e925c2d0e1a91
 
