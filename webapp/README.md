@@ -137,7 +137,7 @@ sent to a server — there is no server.
 css/                  # 2 files
 e2e/                  # 5 files
 fonts/                # 6 files (embedded, no external font request)
-js/                   # 25 files
+js/                   # 21 files
 templates/            # 2 files
 tools/                # 1 file
 ts/                   # 20 files

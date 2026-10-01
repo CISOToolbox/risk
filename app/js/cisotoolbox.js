@@ -1074,6 +1074,12 @@ function _ensureDescriptions(cb) {
     });
 }
 function _ensureFramework(fwId, cb) {
+    // An app without a framework registry (Risk dropped its complementary
+    // frameworks) still opens files saved when it had one: nothing to load.
+    if (typeof REFERENTIELS_META === "undefined") {
+        cb();
+        return;
+    }
     if (REFERENTIELS_META[fwId] && REFERENTIELS_META[fwId].measures) {
         cb();
         return;
