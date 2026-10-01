@@ -53,9 +53,9 @@ Cette application a été conçue autour de deux principes simples :
 4. **Scénarios opérationnels** -- Kill chain détaillée, contrôles existants, efficacité, vraisemblance opérationnelle
 5. **Traitement du risque** -- Plan de traitement, mesures de sécurité, risques résiduels
 
-### Référentiels complémentaires (chargés à la demande)
+### Socle de sécurité
 
-GAMP 5, LPM, Loi 05-20 (Maroc), DORA, HDS, SecNumCloud, NIS 2, Cyber Resilience Act, SOC 2
+Deux référentiels de socle intégrés à l'application : guide d'hygiène ANSSI (42 mesures) ou ISO 27001 Annexe A (93 mesures), au choix dans l'atelier 1.
 
 ### Tableaux de synthèse
 
@@ -63,11 +63,11 @@ Cartographies des risques initiaux/résiduels, distribution, évolution, conform
 
 ### Interface bilingue (FR/EN)
 
-L'application détecte automatiquement la langue du navigateur et peut être basculée entre français et anglais via les Réglages (roue crantée dans la barre d'outils). Le contenu réglementaire (ANSSI, ISO, DORA, NIS 2, etc.) est disponible dans les deux langues avec les textes officiels anglais quand ils existent.
+L'application détecte automatiquement la langue du navigateur et peut être basculée entre français et anglais via les Réglages (roue crantée dans la barre d'outils). Les mesures des socles ANSSI et ISO 27001 sont disponibles dans les deux langues.
 
 ### Assistant IA (optionnel)
 
-Un assistant IA peut être activé dans les Réglages pour générer des suggestions contextualisées sur chaque atelier (valeurs métier, biens supports, scénarios, mesures, etc.). Il supporte les fournisseurs **Anthropic (Claude)** et **OpenAI (GPT)**. Voir la section [Assistant IA](#assistant-ia) pour les détails.
+Un assistant IA peut être activé dans les Réglages pour générer des suggestions contextualisées sur chaque atelier (valeurs métier, biens supports, scénarios, mesures, etc.). Il supporte les fournisseurs **Anthropic (Claude)**, **OpenAI (GPT)**, **Google (Gemini)** et **AWS Bedrock**. Voir la section [Assistant IA](#assistant-ia) pour les détails.
 
 ---
 
@@ -75,18 +75,25 @@ Un assistant IA peut être activé dans les Réglages pour générer des suggest
 
 ### Démo en ligne
 
-L'application est accessible en ligne : **https://ebiosrm.cisotoolbox.org/**
+L'application est accessible en ligne : **https://risk.cisotoolbox.org/**
 
 ### Fichier de démonstration
 
-Aucun jeu de données de démonstration n'est fourni avec le dépôt pour le
-moment : les fichiers `demo-*.json` ont été retirés et de nouveaux jeux seront
-générés ultérieurement. L'option **Réglages > Charger la démonstration** reste
-présente mais affiche une erreur tant qu'aucun jeu n'est livré.
+Le dépôt fournit un jeu de démonstration décrivant la société fictive
+**MedSecure** : `demo-fr.json` et `demo-en.json`. Il se charge via
+**Réglages > Charger la démonstration** (le fichier correspondant à la langue
+courante). Le chargement passe par `fetch()` : servir l'application via un
+serveur statique, pas en `file://`.
 
 ### Démarrage rapide
 
-1. Ouvrir l'application dans un navigateur
+```bash
+git clone https://github.com/CISOToolbox/risk.git
+cd risk/webapp
+python3 -m http.server 8080      # n'importe quel serveur statique convient
+```
+
+1. Ouvrir http://127.0.0.1:8080/ dans un navigateur
 2. Renseigner le contexte de l'étude (atelier 1)
 3. Parcourir les 5 ateliers via la barre latérale
 4. Enregistrer via **Fichier > Enregistrer** — tout reste en local
@@ -101,10 +108,13 @@ L'application n'enferme pas les données. Tout peut être importé et exporté d
 | **JSON** | Ouvrir | Enregistrer (sauvegarde rapide du fichier ouvert) / Enregistrer sous | Format natif, sauvegarde complète. Enregistrer écrase le fichier courant sans chiffrement. |
 | **JSON chiffré** | Ouvrir (mot de passe) | Enregistrer sous (mot de passe) | Sauvegarde sécurisée (AES-256-GCM, PBKDF2 250k itérations). Utiliser Enregistrer sous pour activer le chiffrement. |
 | **Excel (.xlsx)** | Import | Export | Interopérabilité -- continuer l'analyse dans un tableur |
+| **Vendor (TPRM) JSON** | Import | -- | Import des parties prenantes depuis l'application Vendor |
+| **PowerPoint (.pptx)** | -- | Synthèse managériale | Présentation de synthèse |
+| **Word (.docx)** | -- | Export rapport | Rapport EBIOS RM à partir des modèles `templates/ebios-report-{fr,en}.docx` |
 
 Le fichier Excel généré contient un onglet par atelier avec des formules automatiques (criticité, pertinence, vraisemblance, risque résiduel) qui permettent d'utiliser le fichier Excel de façon totalement autonome. **L'analyse reste exploitable sans l'application.**
 
-> **Note :** l'import/export Excel utilise la bibliothèque [ExcelJS](https://github.com/exceljs/exceljs), livrée avec l'application sous `js/vendor/` et chargée à la demande depuis la même origine. Aucune connexion Internet n'est requise : l'application fonctionne intégralement hors-ligne.
+> **Note :** l'import/export Excel utilise la bibliothèque [ExcelJS](https://github.com/exceljs/exceljs), l'export PowerPoint PptxGenJS et l'export Word PizZip + docxtemplater. Ces bibliothèques sont livrées avec l'application sous `js/vendor/` et chargées à la demande depuis la même origine. Aucune connexion Internet n'est requise : hors assistant IA, l'application fonctionne intégralement hors-ligne.
 
 ---
 
@@ -116,9 +126,9 @@ Le fichier Excel généré contient un onglet par atelier avec des formules auto
 |----------|--------|
 | 100% client-side | Pas de backend, pas de base de données, pas de comptes utilisateurs |
 | Souveraineté des données | Toutes les données restent dans le navigateur (localStorage + fichiers) |
-| Pas d'étape de build | JavaScript vanilla, pas de framework, pas de transpileur |
-| Bibliothèque partagée | Code commun (`cisotoolbox.js`, `i18n.js`, `ai_common.js`) partagé entre les apps CISO Toolbox |
-| Chargement à la demande | Assets lourds (descriptions, référentiels, template Excel) chargés à la demande |
+| Rien à compiler pour lancer l'app | Pas de framework ; le code propre au module est écrit en TypeScript (`ts/`) et le JS compilé (`js/`) est commité : il n'y a rien à compiler pour lancer l'app |
+| Bibliothèque partagée | Code commun (`cisotoolbox.js`, `cisotoolbox_local.js`, `i18n.js`, `ai_common.js`, `ct_*.js`) identique entre les apps CISO Toolbox |
+| Chargement à la demande | Assets lourds (descriptions des mesures, template Excel, bibliothèques de `js/vendor/`) chargés à la demande |
 | Conforme CSP | Pas de script inline, pas de `eval`, pas de `unsafe-inline` pour le JS |
 
 ### Structure des fichiers
@@ -126,29 +136,33 @@ Le fichier Excel généré contient un onglet par atelier avec des formules auto
 ```
 index.html                    Point d'entrée
 css/
-  cisotoolbox.css                Styles partagés (toolbar, sidebar, tableaux, dialogues)
+  cisotoolbox.css                Styles partagés (toolbar, rail de navigation, tableaux, dialogues)
   EBIOS_RM.css                   Styles spécifiques à l'application
 js/
   i18n.js                        Moteur i18n (t(), switchLang, attributs data-i18n)
-  cisotoolbox.js                 Bibliothèque partagée (événements, fichiers, chiffrement, undo, snapshots)
-  referentiels_catalog.js        Catalogue partagé des référentiels (9 référentiels FR/EN)
-  ai_common.js                   Module IA partagé (fournisseurs, réglages, appels API, UI du panneau)
-  EBIOS_RM_data.js               Données initiales (analyse vide)
+  i18n_core_en.js                Traductions partagées EN
+  i18n_core_fr.js                Traductions partagées FR
+  cisotoolbox.js                 Bibliothèque partagée (événements, chiffrement, undo, matrices, chargement d'assets)
+  ct_schema.js                   Versionnement du schéma et migrations au chargement
+  cisotoolbox_local.js           Persistance locale (auto-save, ouverture/enregistrement, snapshots, démo)
+  ct_refselect.js                Widget de multi-sélection de références
+  ct_settings.js                 Panneau des Réglages (langue, assistant IA, réglages du module)
+  ai_common.js                   Module IA partagé (fournisseurs, appels API, UI du panneau)
+  ct_bulkbar.js                  Fichier partagé, non chargé par index.html
+  ct_measure_modal.js            Fichier partagé, non chargé par index.html
+  ct_modal.js                    Fichier partagé, non chargé par index.html
+  ct_table.js                    Fichier partagé, non chargé par index.html
+  EBIOS_RM_data.js               Données initiales (analyse vide, socles ANSSI et ISO pré-remplis)
   EBIOS_RM_i18n_fr.js            Traductions FR (chargées au démarrage)
-  EBIOS_RM_i18n_en.js            Traductions EN (chargées à la demande)
-  EBIOS_RM_app.js                Logique applicative principale (~3000 lignes)
+  EBIOS_RM_i18n_en.js            Traductions EN (chargées au démarrage)
+  EBIOS_RM_app.js                Logique applicative principale (~3700 lignes)
+  EBIOS_RM_catalog.js            Catalogue multi-analyses (IndexedDB)
   EBIOS_RM_ai_assistant.js       Suggestions IA pour chaque atelier
   EBIOS_RM_descriptions.js       Descriptions ANSSI/ISO (chargement différé)
   EBIOS_RM_template.js           Template Excel (chargement différé, base64)
-  EBIOS_RM_ref_cra.js            Mesures Cyber Resilience Act (chargement différé)
-  EBIOS_RM_ref_dora.js           Mesures DORA (chargement différé)
-  EBIOS_RM_ref_gamp.js           Mesures GAMP 5 (chargement différé)
-  EBIOS_RM_ref_hds.js            Mesures HDS (chargement différé)
-  EBIOS_RM_ref_loi0520.js        Mesures Loi 05-20 (chargement différé)
-  EBIOS_RM_ref_lpm.js            Mesures LPM (chargement différé)
-  EBIOS_RM_ref_nis2.js           Mesures NIS 2 (chargement différé)
-  EBIOS_RM_ref_secnumcloud.js    Mesures SecNumCloud (chargement différé)
-  EBIOS_RM_ref_soc2.js           Mesures SOC 2 (chargement différé)
+  vendor/                        ExcelJS, PptxGenJS, PizZip, docxtemplater (chargement différé)
+ts/                              Sources TypeScript du code propre au module (+ ts/types/)
+templates/                       Modèles Word du rapport (FR, EN)
 ```
 
 ### Ordre de chargement des scripts
@@ -156,32 +170,39 @@ js/
 Les scripts sont chargés de manière synchrone dans un ordre strict en bas de `index.html`. L'ordre est important car chaque script dépend de globales définies par les précédents :
 
 ```
-1. i18n.js                  Le moteur i18n doit être disponible avant tout appel à t()
-2. cisotoolbox.js            Bibliothèque partagée, utilise t() pour les chaînes UI
-3. referentiels_catalog.js   Définit window._REFERENTIELS_CATALOG
-4. EBIOS_RM_data.js          Définit D par défaut (objet analyse vide)
-5. EBIOS_RM_i18n_fr.js       Enregistre les clés de traduction FR (EN chargé à la demande)
-6. EBIOS_RM_app.js           App principale -- lit CT_CONFIG, D, REFERENTIELS_META
-7. ai_common.js              Lit AI_APP_CONFIG, fournit les fonctions IA partagées
-8. EBIOS_RM_ai_assistant.js  Enveloppe les fonctions de rendu avec les hooks IA
+ 1. i18n.js                  Le moteur i18n doit être disponible avant tout appel à t()
+ 2. i18n_core_en.js          Traductions partagées EN
+ 3. i18n_core_fr.js          Traductions partagées FR
+ 4. cisotoolbox.js           Bibliothèque partagée, utilise t() pour les chaînes UI
+ 5. ct_schema.js             Versionnement du schéma (migrations au chargement)
+ 6. cisotoolbox_local.js     Persistance locale
+ 7. EBIOS_RM_data.js         Définit EBIOS_INIT_DATA (objet analyse vide)
+ 8. EBIOS_RM_i18n_fr.js      Enregistre les clés de traduction FR
+ 9. EBIOS_RM_i18n_en.js      Enregistre les clés de traduction EN
+10. ct_refselect.js          Widget de sélection de références
+11. EBIOS_RM_app.js          App principale -- déclare CT_CONFIG et D
+12. EBIOS_RM_catalog.js      Catalogue multi-analyses (IndexedDB)
+13. ai_common.js             Fournit les fonctions IA partagées
+14. ct_settings.js           Panneau des Réglages
+15. EBIOS_RM_ai_assistant.js Enveloppe les fonctions de rendu avec les hooks IA
 ```
 
 Charger un script dans le mauvais ordre provoquera des erreurs de référence (`t()` non défini, `D` indéfini, `CT_CONFIG` manquant).
 
 ### Patterns clés
 
-**CT_CONFIG** -- Chaque application déclare un objet de configuration avant que `cisotoolbox.js` ne s'exécute :
+**CT_CONFIG** -- Chaque application déclare un objet de configuration lu par `cisotoolbox.js` (ici en tête de `EBIOS_RM_app.js`) :
 
 ```javascript
 window.CT_CONFIG = {
-    autosaveKey: "ebios_autosave",    // clé localStorage pour l'auto-save
-    initDataVar: "EBIOS_INIT_DATA",   // nom de la globale contenant les données initiales
-    refNamespace: "EBIOS_REF",        // namespace pour les fichiers référentiels lazy
+    autosaveKey: "ebios_rm_autosave",  // clé localStorage pour l'auto-save
+    initDataVar: "EBIOS_INIT_DATA",    // nom de la globale contenant les données initiales
     descNamespace: "EBIOS_DESCRIPTIONS", // namespace pour les descriptions
-    label: "analyse",                 // label pour les messages UI ("Nouvelle analyse")
-    filePrefix: "EBIOS_RM",           // préfixe par défaut du nom de fichier
-    getSociete: function() { ... },   // retourne le nom de l'entreprise depuis D
-    getDate: function() { ... }       // retourne la date de l'analyse depuis D
+    labelKey: "ebios.label",           // clé i18n du libellé ("analyse")
+    filePrefix: "EBIOS_RM",            // préfixe par défaut du nom de fichier
+    getSociete: function (d) { ... },  // retourne le nom de l'entreprise depuis D
+    getDate: function (d) { ... },     // retourne la date de l'analyse depuis D
+    getScope: function (d) { ... }     // retourne "EBIOS_RM"
 };
 ```
 
@@ -189,13 +210,11 @@ window.CT_CONFIG = {
 
 **Délégation d'événements** -- Aucun gestionnaire d'événement inline (`onclick`, `onchange`). Toutes les interactions utilisent les attributs `data-click`, `data-change` et `data-input` dispatchés par `_safeDispatch()`. Ceci est conforme CSP et évite `unsafe-inline`.
 
-**Chargement à la demande** -- `_loadAsset(namespace, path, callback)` charge dynamiquement les fichiers JS (descriptions, mesures de référentiels, template Excel) uniquement quand nécessaire, évitant un payload initial trop lourd.
+**Chargement à la demande** -- `_loadAsset(filename, cb)` charge dynamiquement un fichier JS (descriptions, template Excel) et `_loadScript(url)` une bibliothèque de `js/vendor/`, uniquement quand nécessaire, évitant un payload initial trop lourd.
 
-**Ref select** -- Widget multi-sélection avec recherche pour les références croisées entre référentiels. Chaque bien support peut référencer des mesures de n'importe quel référentiel chargé.
+**Ref select** -- Widget multi-sélection avec recherche (`ct_refselect.js`) pour les références croisées entre éléments de l'analyse (valeurs métier, biens supports, parties prenantes, mesures, mesures du socle...).
 
-**_rt()** -- Helper bilingue pour les données de référence. Retourne `field_en` quand la locale est EN, `field` sinon. Utilisé pour les descriptions de référentiels qui existent dans les deux langues.
-
-**_REFERENTIELS_CATALOG / REFERENTIELS_META** -- Le catalogue (`referentiels_catalog.js`) fournit les métadonnées des 9 référentiels. Il est copié dans `REFERENTIELS_META` à l'initialisation, puis enrichi avec les mesures effectives quand un référentiel est chargé à la demande.
+**_rt()** -- Helper bilingue pour les données de référence. Retourne `field_en` quand la locale est EN, `field` sinon. Utilisé pour les mesures des socles ANSSI et ISO qui existent dans les deux langues.
 
 ### Flux de données
 
@@ -222,7 +241,10 @@ Enregistrer --> _serializeForSave() --> JSON ou blob chiffré --> File System Ac
 **Flux IA :**
 
 ```
-openSettings() --> l'utilisateur configure le prompt
+openSettings() --> l'utilisateur configure fournisseur, clé API et modèle
+    |
+    v
+Panneau IA     --> prompt automatique ou instruction personnalisée
     |
     v
 _aiCallAPI()   --> envoie contexte + prompt à l'API du fournisseur
@@ -242,17 +264,17 @@ L'utilisateur accepte --> ACCEPT_HANDLERS --> écrit dans D
 
 ### Architecture de la bibliothèque partagée
 
-Cinq fichiers sont partagés entre l'application et les autres applications de la suite cisotoolbox.org :
+Les fichiers partagés, identiques entre les applications CISO Toolbox, portent un en-tête "Generated file - do not edit" et sont réécrits à chaque release :
 
 | Fichier | Rôle |
 |---------|------|
-| `cisotoolbox.js` | Délégation d'événements, I/O fichiers, chiffrement, undo/redo, auto-save, snapshots, toolbar, sidebar |
-| `i18n.js` | Moteur de traduction : `t(clé)`, `switchLang()`, scan des attributs `data-i18n` |
-| `ai_common.js` | Configuration des fournisseurs IA, wrapper d'appel API, panneau de réglages, UI des suggestions, injection CSS |
-| `referentiels_catalog.js` | Métadonnées des 9 référentiels complémentaires (id, label, description, nombre de mesures) en FR et EN |
-| `cisotoolbox.css` | Styles partagés pour toolbar, sidebar, tableaux, dialogues, formulaires, widget ct-ref-select |
-
-Chaque application vit dans son propre dépôt git. Les fichiers partagés sont maintenus à l'identique entre les deux applications.
+| `cisotoolbox.js` | Délégation d'événements, chiffrement, undo/redo, toolbar, rail de navigation, matrices, chargement d'assets |
+| `cisotoolbox_local.js` | Persistance locale : auto-save, ouverture/enregistrement de fichiers, snapshots, chargement de la démo |
+| `i18n.js`, `i18n_core_*.js` | Moteur de traduction : `t(clé)`, `switchLang()`, scan des attributs `data-i18n`, traductions communes |
+| `ai_common.js` | Configuration des fournisseurs IA, wrapper d'appel API, UI des suggestions |
+| `ct_settings.js` | Panneau des Réglages (langue, assistant IA, réglages propres au module) |
+| `ct_refselect.js`, `ct_schema.js` | Widget de sélection de références ; versionnement du schéma de données |
+| `cisotoolbox.css` | Styles partagés pour toolbar, rail, tableaux, dialogues, formulaires |
 
 ---
 
@@ -287,23 +309,25 @@ Deux modes de prompt sont disponibles :
 
 ### Fournisseurs supportés
 
-| Fournisseur | Modèles | Endpoint API |
-|-------------|---------|-------------|
-| Anthropic | Claude (Sonnet, Haiku) | `https://api.anthropic.com` |
-| OpenAI | GPT-4o, GPT-4o-mini | `https://api.openai.com` |
+| Fournisseur | Endpoint API |
+|-------------|-------------|
+| Anthropic (Claude) | `https://api.anthropic.com` |
+| OpenAI (GPT) | `https://api.openai.com` |
+| Google (Gemini) | `https://generativelanguage.googleapis.com` |
+| AWS Bedrock | `https://bedrock-runtime.eu-west-3.amazonaws.com` (par défaut) |
 
-Il est possible d'ajouter très facilement d'autres fournisseurs comme Gemini mais nous cherchons des utilisateurs de ces solutions pour les tester avant de publier. N'hésitez pas à nous contacter si vous souhaitez tester.
+Le modèle se choisit dans les Réglages parmi la liste proposée pour chaque fournisseur ; un endpoint personnalisé peut aussi y être saisi (optionnel).
 
 ### Configuration
 
 1. Cliquer sur la roue crantée dans la barre d'outils
 2. Saisir une clé API du fournisseur choisi
 3. Activer le toggle "Assistant IA"
-4. Un avertissement détaillé de sécurité est affiché (voir ci-dessous)
+4. Un avertissement de confidentialité et de sécurité est affiché et doit être accepté (voir ci-dessous)
 
 ### Fichier d'instructions méthodologiques
 
-Un fichier Markdown peut être chargé dans les Réglages pour guider les suggestions de l'IA (référentiel interne, consignes de rédaction, vocabulaire sectoriel). Le contenu du fichier est ajouté en tête de chaque prompt.
+Un fichier Markdown ou texte (`.md`, `.txt`, `.markdown`) peut être chargé dans les Réglages pour guider les suggestions de l'IA (référentiel interne, consignes de rédaction, vocabulaire sectoriel). Le contenu du fichier est ajouté au prompt système de chaque appel.
 
 ### Mode mise à jour
 
@@ -311,7 +335,7 @@ Quand l'analyse contient déjà des éléments (ex. : valeurs métier), l'assist
 
 ### Avertissements de confidentialité et de sécurité
 
-> En activant l'assistant IA, vous acceptez les points suivants :
+> L'avertissement affiché à l'activation couvre le partage de données, l'exposition de la clé API et le réseau. Points à connaître :
 >
 > 1. **Partage de données** -- Les données de votre analyse (contexte de l'organisation, exigences, mesures, scénarios) sont envoyées au fournisseur IA sélectionné pour générer des suggestions. Assurez-vous que votre politique de confidentialité et vos engagements contractuels (clauses de sous-traitance, RGPD, NDA) autorisent ce partage avec un service tiers.
 >
@@ -324,7 +348,7 @@ Quand l'analyse contient déjà des éléments (ex. : valeurs métier), l'assist
 >
 > 3. **Stockage de la clé** -- La clé API est stockée dans le `localStorage` du navigateur. Elle n'est jamais incluse dans les fichiers JSON sauvegardés. Toute personne ayant accès au navigateur (même session, même profil) peut la lire via les DevTools.
 >
-> 4. **Aucune garantie sur les réponses** -- Les suggestions générées par l'IA sont des propositions à valider par l'analyste. Elles ne se substituent pas à l'expertise humaine.
+> 4. **Validation des réponses** -- Les suggestions générées par l'IA sont des propositions présentées sous forme de cartes ; rien n'est écrit dans l'analyse sans acceptation de l'analyste.
 
 ---
 
@@ -335,21 +359,20 @@ L'application est un ensemble de fichiers statiques. Aucun serveur applicatif n'
 ### Options d'hébergement
 
 - **Serveur web** (Apache, Nginx, hébergement statique) -- déposer les fichiers
-- **Poste local** -- ouvrir `index.html` dans un navigateur (les assets JS doivent être dans la même arborescence)
+- **Poste local** -- servir le dossier avec un serveur statique (`python3 -m http.server`) ; en `file://`, le navigateur bloque `fetch()` : la démo et l'export Word ne fonctionnent pas
 - **Intranet** -- aucune connexion Internet requise après le chargement initial
 
 ### Fonctionnement hors-ligne
 
-L'application fonctionne hors-ligne une fois chargée, avec deux exceptions :
+L'application fonctionne hors-ligne une fois chargée, à une exception près : l'**assistant IA** nécessite une connexion Internet pour communiquer avec l'API du fournisseur.
 
-- **Import/export Excel** charge ExcelJS depuis `js/vendor/` lors de la première utilisation (aucun accès réseau)
-- **Assistant IA** nécessite une connexion Internet pour communiquer avec l'API du fournisseur
+L'import/export Excel et les exports PowerPoint et Word chargent leurs bibliothèques depuis `js/vendor/` lors de la première utilisation (même origine, aucun accès Internet).
 
 ### Instances en ligne
 
 | Environnement | URL |
 |----------------|-----|
-| Production | https://ebiosrm.cisotoolbox.org |
+| Production | https://risk.cisotoolbox.org |
 
 ---
 

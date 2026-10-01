@@ -2,12 +2,12 @@
 
 Playwright tests for the CISO Toolbox **EBIOS RM** module. They run against a
 **local static server that Playwright starts itself** (`python3 -m http.server`
-on the repository root) — nothing is deployed and no external site is
-contacted.
+serving the `webapp/` folder, the parent of `e2e/`) — nothing is deployed and no
+external site is contacted.
 
 ## Requirements
 
-- Node.js 20+
+- Node.js and npm
 - Python 3 (used as the static file server)
 
 ## Install
@@ -52,10 +52,11 @@ E2E_PORT=9090 npm test
 | * | No backend call | In **every** journey, no request to the app's own origin reaches an `/api/` path — the check above only sees other origins |
 | + | Module-specific | See the last test(s) of the spec file |
 
-> The repository ships **no dataset**: the `demo-*.json` files were removed and
-> new ones will be generated later. Every journey that needs data builds it
-> through the application UI, which is what a self-contained e2e suite should
-> do anyway.
+> The repository ships a fictional demo dataset (`demo-fr.json` /
+> `demo-en.json`, company MedSecure), but the suite does not use it: every
+> journey that needs data builds it through the application UI or opens a small
+> JSON written by the test itself, which is what a self-contained e2e suite
+> should do anyway.
 
 These are deliberately **smoke-level journeys for a local frontend app**: they
 check that the page boots, that navigation and the shared UI shell work, that

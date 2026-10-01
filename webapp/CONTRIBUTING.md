@@ -1,35 +1,39 @@
 # Contributing to EBIOS RM
 
 Thanks for taking the time to contribute. This repository is one module of the
-[CISO Toolbox](https://www.cisotoolbox.org) suite. It is a **frontend-only** application: vanilla
-JavaScript, no framework, no bundler, no `node_modules` needed to run it.
+[CISO Toolbox](https://www.cisotoolbox.org) suite. It is a **frontend-only** application: no
+framework, no bundler, no `node_modules` needed to run it. The module-specific
+code is written in TypeScript (`ts/`) and the compiled JavaScript (`js/`) is
+committed: there is nothing to compile to run the app.
 
 ## Running it
 
 ```bash
-git clone <this repo>
-cd risk
+git clone https://github.com/CISOToolbox/risk.git
+cd risk/webapp
 python3 -m http.server 8080     # any static server works
 # then open http://127.0.0.1:8080/
 ```
 
 Opening `index.html` straight from the filesystem (`file://`) mostly works, but
-`fetch()`-based features (loading `demo-*.json`, lazy-loaded frameworks) are
-blocked by the browser's origin rules. Use a static server.
+`fetch()`-based features (loading `demo-*.json`, the Word report templates under
+`templates/`) are blocked by the browser's origin rules. Use a static server.
 
 ## Generated files
 
 > **Read this before editing anything under `js/`, `css/` or `ts/types/`.**
 
 Part of this repository is **generated** — the design system and the
-cross-module libraries that all CISO Toolbox modules have in common. Those
-files carry this banner:
+cross-module libraries that all CISO Toolbox modules have in common. These
+shared files, identical across the CISO Toolbox apps, carry a "Generated file -
+do not edit" header and are rewritten at every release:
 
 ```
-// ─────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // Generated file - do not edit.
 // It is overwritten at every release; a change made here is lost.
-// ─────────────────────────────────────────────────────────────
+// See CONTRIBUTING.md.
+// -----------------------------------------------------------------------------
 ```
 
 **A pull request that modifies one of them cannot be merged**: the next
@@ -39,23 +43,25 @@ it is applied at the source and reaches every module in the next release.
 
 ## TypeScript sources
 
-`ts/` holds the TypeScript sources for the module-specific code; `js/` holds the
-compiled output that the browser actually loads. Both are committed, because the
-app must run with no build step. If you change a `.ts` file, regenerate the
-matching `.js` (`tsc -p .`) and commit both, keeping them consistent.
+The module-specific code is written in TypeScript (`ts/`); `js/` holds the
+compiled JavaScript that the browser actually loads. Both are committed: there
+is nothing to compile to run the app. If you change a `.ts` file, regenerate the
+matching `.js` (`tsc -p .`, see `tsconfig.json`) and commit both, keeping them
+consistent.
 
 ## Coding conventions
 
-- Vanilla ES5-compatible JavaScript, no framework, no external runtime
-  dependency (the few bundled libraries under `js/vendor/` are third-party and
-  are not modified here).
+- TypeScript compiled to ES2021 JavaScript (`tsconfig.json`), no framework, no
+  external runtime dependency (the few bundled libraries under `js/vendor/` are
+  third-party and are not modified here).
 - **No inline event handlers.** The app is written to run under
   `script-src 'self'`; wire events with `data-click` / `data-change` /
   `data-input` attributes handled by the shared delegation layer.
 - **Always escape** anything that comes from user or imported data with the
   shared `esc()` helper before injecting it into HTML.
 - Every user-visible string goes through the i18n layer (`data-i18n` attribute
-  or `t("key")`), with an entry in both `*_i18n_fr.js` and `*_i18n_en.js`.
+  or `t("key")`), with an entry in both `ts/EBIOS_RM_i18n_fr.ts` and
+  `ts/EBIOS_RM_i18n_en.ts` (then recompile).
 - Keep it accessible: real `<button>` elements, `aria-label` on icon-only
   controls, visible focus.
 
@@ -67,11 +73,11 @@ behaviour change should come with, or update, a test.
 
 ## Demo data
 
-The repository currently ships **no demo dataset** — the previous
-`demo-*.json` files were removed and new ones will be generated later. Until
-then, build the data you need from the application itself.
+The repository ships a demo dataset, `demo-fr.json` and `demo-en.json`, which
+describes the fictional company MedSecure. It can be loaded from
+*Settings → Load demonstration* (the file matching the current language).
 
-When demo datasets come back, they must describe a **fictional** company.
+Demo datasets must describe a **fictional** company.
 Never add real organisation data — no real company, person, email address or
 site. Pull requests containing real assessment data will be closed.
 
