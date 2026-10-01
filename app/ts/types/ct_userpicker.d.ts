@@ -13,8 +13,9 @@
  *   ct_userpicker.mount(opts)           → Promise<handle>
  *     Smart mount: detects Pilot reachability via opts.sourceUrl, then
  *     replaces opts.slotId with either a full picker (Pilot mode) or a
- *     plain text input (local mode). Returns a handle exposing a uniform
- *     getValue()/setValue() regardless of which branch was chosen.
+ *     plain text input (local mode). The browser-only edition (no backend)
+ *     always gets the plain input, without any request. Returns a handle
+ *     exposing a uniform getValue()/setValue() regardless of the branch.
  *
  *   ct_userpicker.render(opts)          → HTML string
  *     Low-level: emit the picker HTML + register the instance. Prefer
@@ -33,7 +34,8 @@
  *   slotId          — id of a <div> placeholder to be replaced (required)
  *   pickerId        — unique id for the picker instance (required in Pilot mode)
  *   value           — initial selected label
- *   placeholder     — input placeholder
+ *   placeholder     — the picker's search-box placeholder (the plain field,
+ *                     free text, has none)
  *   directoryUrl    — GET endpoint returning the user list (default "api/directory")
  *   sourceUrl       — GET endpoint returning {source, pilot_available}
  *                     (default "api/settings/directory-source"). Pass
