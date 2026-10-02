@@ -19,7 +19,9 @@
 #    2. UNPINNED — a shared package is missing from constraints.txt     (fails)
 #    3. LOCK     — a module's requirements-lock.txt (what its image installs)
 #                  or requirements-build-lock.txt (what builds its source-only
-#                  packages, from requirements-build.txt)
+#                  packages, from requirements-build.txt) or
+#                  requirements-test-lock.txt (the unit tests: the image lock
+#                  plus requirements-test.txt)
 #                  was resolved from inputs that changed since (its header
 #                  records each input's sha256 — any edit, extras included),
 #                  lacks a pin of them or holds another version, or is missing
@@ -32,9 +34,8 @@
 #  A lock carries every transitive: those are not required in constraints.txt
 #  (check 2 skips lock files), but they must still agree with it (check 1).
 #
-#  LOOSE and STALE are warnings, not failures: `pilot/requirements-test.txt`
-#  deliberately uses `>=` for test-only tooling, and those packages never ship
-#  in an image. Only genuine cross-module divergence — the thing DEP-06 is
+#  LOOSE and STALE are warnings, not failures: a loose pin is resolved
+#  exactly in its lock anyway. Only genuine cross-module divergence — the thing DEP-06 is
 #  about — breaks the build.
 #
 #  Usage:
@@ -116,10 +117,12 @@ SEPARATE_ENV = {
     "requirements-semgrep.txt": {"pyjwt"},
 }
 
-# The image lock, and the lock of the tools that build its source-only packages.
+# The image lock, the lock of the tools that build its source-only packages,
+# and the unit tests' lock.
 LOCK_NAME = "requirements-lock.txt"
 BUILD_LOCK_NAME = "requirements-build-lock.txt"
-LOCK_NAMES = (LOCK_NAME, BUILD_LOCK_NAME)
+TEST_LOCK_NAME = "requirements-test-lock.txt"
+LOCK_NAMES = (LOCK_NAME, BUILD_LOCK_NAME, TEST_LOCK_NAME)
 
 drift, loose, unpinned = [], [], []
 seen = defaultdict(list)          # canonical name -> [(relpath, version)], lock files aside
@@ -179,6 +182,8 @@ for lock in (p for p in req_files if p.name in LOCK_NAMES):
     in_lock = {canon(n): v for _l, n, _e, op, v in parse(lock) if op == "=="}
     if lock.name == BUILD_LOCK_NAME:
         inputs = [base / "requirements-build.txt"]
+    elif lock.name == TEST_LOCK_NAME:
+        inputs = [base / LOCK_NAME, base / "requirements-test.txt"]
     else:
         inputs = [base / "requirements.txt"] + sorted(
             q for tier in ("core", "generic") for q in (base / "addons" / tier).rglob("requirements.txt"))
