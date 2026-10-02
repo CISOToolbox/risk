@@ -16,7 +16,7 @@
 # injects computed colours as inline styles; everything else is locked down.
 
 # 'always' so the headers are sent on error responses (4xx/5xx) too.
-add_header Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';" always;
+add_header Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' https://api.anthropic.com https://api.openai.com; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';" always;
 add_header X-Frame-Options "DENY" always;
 add_header X-Content-Type-Options "nosniff" always;
 add_header Referrer-Policy "strict-origin-when-cross-origin" always;
