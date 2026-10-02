@@ -91,4 +91,7 @@ packaging==25.0                 # watch
 playwright==1.51.0              # screenshot
 
 # ── Test-only ────────────────────────────────────────────────────────────────
-pygments==2.20.0                # pilot/requirements-test.txt — via pytest
+pytest==9.1.1                   # <module>/requirements-test.txt (unit tests)
+pytest-asyncio==1.4.0           # idem
+aiosqlite==0.22.1               # idem — SQLite stands in for PostgreSQL
+pygments==2.20.0                # <module>/requirements-test.txt — via pytest

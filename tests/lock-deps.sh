@@ -17,6 +17,10 @@
 #  requirements-build-lock.txt is installed first, so pip builds with
 #  --no-build-isolation instead of fetching unpinned build tools.
 #
+#  A module with unit tests has a requirements-test.txt (the test tools): its
+#  requirements-test-lock.txt is resolved from requirements-lock.txt plus that
+#  file, so the tests run on the image's packages at the image's versions.
+#
 #  A client add-on layered by Dockerfile.addons is locked with BASE_LOCK set
 #  to the lock of the image it extends: the packages already in the image keep
 #  their version, and Dockerfile.addons installs the add-on's lock with hashes.
@@ -114,5 +118,9 @@ for d in "$@"; do
     # build would fetch it unpinned): installed first, from its own lock.
     if [ -f "$dir/requirements-build.txt" ]; then
         lock "$dir" requirements-build-lock.txt "the image's build tools" requirements-build.txt
+    fi
+    # The unit tests' environment: the image lock itself, plus the test tools.
+    if [ -f "$dir/requirements-test.txt" ]; then
+        lock "$dir" requirements-test-lock.txt "the unit tests" requirements-lock.txt requirements-test.txt
     fi
 done

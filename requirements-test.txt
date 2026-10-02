@@ -1,0 +1,13 @@
+# Unit-test tools, installed on top of the image's packages: lock-deps.sh
+# resolves requirements-lock.txt + this file into requirements-test-lock.txt,
+# which the CI installs (--require-hashes).
+# aiosqlite: the unit tests substitute SQLite for PostgreSQL — a test
+# dependency, deliberately absent from the image.
+# -r requirements.txt: a scanner reading this file alone sees the module's
+# pins, not the oldest versions it would otherwise assume.
+-r requirements.txt
+pytest==9.1.1
+pytest-asyncio==1.4.0
+aiosqlite==0.22.1
+# pygments: transitive of pytest — 4 MODERATE fixed in 2.20.0
+pygments==2.20.0
