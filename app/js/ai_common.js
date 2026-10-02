@@ -77,6 +77,17 @@
             endpoint: "https://bedrock-runtime.eu-west-3.amazonaws.com"
         }
     };
+    // The browser-only edition calls the provider straight from the page, so it
+    // offers only the hosts its shipped CSP allows (connect-src): Anthropic and
+    // OpenAI, at their own endpoints. Gemini, Bedrock and a custom endpoint stay
+    // with the suite, which reaches them through its server.
+    var _browserOnly = ((window.CT_CONFIG || {}).edition || "opensource") === "opensource";
+    if (_browserOnly) {
+        delete AI_PROVIDERS.gemini;
+        delete AI_PROVIDERS.bedrock;
+        window._AI_PROVIDER_ALLOWLIST = ["anthropic", "openai"];
+    }
+    window._aiBrowserOnly = _browserOnly;
     // Exposed for ct_settings.js (the settings drawer lives there now).
     window._AI_PROVIDERS = AI_PROVIDERS;
     // ── AWS SigV4 signing (minimal, for Bedrock) ─────────────────────
@@ -122,9 +133,14 @@
     var _aiGetApiKey = window._aiGetApiKey = function () { return localStorage.getItem(_k("apikey")) || ""; };
     window._aiSetApiKey = function (key) { localStorage.setItem(_k("apikey"), key); };
     var _aiClearApiKey = window._aiClearApiKey = function () { localStorage.removeItem(_k("apikey")); };
-    var _aiGetProvider = window._aiGetProvider = function () { return localStorage.getItem(_k("provider")) || "anthropic"; };
+    // A provider this edition no longer offers (saved before it was dropped)
+    // falls back to the default rather than to a half-configured call.
+    var _aiGetProvider = window._aiGetProvider = function () {
+        var p = localStorage.getItem(_k("provider")) || "anthropic";
+        return ((p === "custom" && !_browserOnly) || AI_PROVIDERS[p]) ? p : "anthropic";
+    };
     window._aiSetProvider = function (p) { localStorage.setItem(_k("provider"), p); };
-    var _aiGetEndpoint = window._aiGetEndpoint = function () { return localStorage.getItem(_k("endpoint")) || ""; };
+    var _aiGetEndpoint = window._aiGetEndpoint = function () { return _browserOnly ? "" : (localStorage.getItem(_k("endpoint")) || ""); };
     window._aiSetEndpoint = function (url) { if (url)
         localStorage.setItem(_k("endpoint"), url);
     else
@@ -148,9 +164,11 @@
     }
     var _aiGetModel = window._aiGetModel = function () {
         var stored = localStorage.getItem(_k("model"));
-        if (stored)
-            return stored;
         var p = AI_PROVIDERS[_aiGetProvider()];
+        // A model saved for a provider this edition no longer offers belongs to
+        // that provider: use the default of the provider in effect instead.
+        if (stored && !(_browserOnly && p && !p.models.some(function (m) { return m.id === stored; })))
+            return stored;
         return p ? p.defaultModel : "claude-sonnet-4-6";
     };
     window._aiSetModel = function (m) { localStorage.setItem(_k("model"), m); };
@@ -545,12 +563,12 @@
         ".ai-card-details { font-size:0.82em; color:var(--ct-ink); line-height:1.5; margin-bottom:6px; }",
         ".ai-card-meta { font-size:0.75em; color:var(--ct-ink-2); margin-bottom:8px; }",
         ".ai-card-actions { display:flex; gap:6px; }",
-        ".ai-btn-accept { padding:4px 12px; border:none; border-radius:4px; background:var(--ct-accent); color:var(--ai-on-accent,white); font-size:0.8em; font-weight:600; cursor:pointer; }",
+        ".ai-btn-accept { padding:4px 12px; border:none; border-radius:4px; background:var(--ct-accent); color:var(--ct-onaccent); font-size:0.8em; font-weight:600; cursor:pointer; }",
         ".ai-btn-accept:hover { opacity:0.85; }",
         ".ai-btn-accept:disabled { opacity:0.5; cursor:default; }",
         ".ai-btn-ignore { padding:4px 12px; border:1px solid var(--ct-line); border-radius:4px; background:var(--ct-surface); color:var(--ct-ink-2); font-size:0.8em; cursor:pointer; }",
         ".ai-btn-ignore:hover { background:var(--ct-canvas); }",
-        ".ai-btn-accept-all, .ai-btn-all { padding:6px 16px; border:none; border-radius:4px; background:var(--ct-accent); color:var(--ai-on-accent,white); font-weight:600; font-size:0.85em; cursor:pointer; }",
+        ".ai-btn-accept-all, .ai-btn-all { padding:6px 16px; border:none; border-radius:4px; background:var(--ct-accent); color:var(--ct-onaccent); font-weight:600; font-size:0.85em; cursor:pointer; }",
         ".ai-btn-accept-all:hover, .ai-btn-all:hover { opacity:0.85; }",
         ".ai-btn-close { padding:6px 16px; border:1px solid var(--ct-line); border-radius:4px; background:var(--ct-surface); color:var(--ct-ink); font-size:0.85em; cursor:pointer; }",
         ".ai-btn-close:hover { background:var(--ct-canvas); }",

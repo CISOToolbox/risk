@@ -468,7 +468,7 @@ def make_ai_router(generic_complete: bool = True) -> APIRouter:
 
         async def _upsert(key: str, value: str) -> None:
             # A stolen pg_dump used to yield live provider keys in cleartext —
-            # and shared/db-snapshot.sh makes dumps routine. Encrypt at rest
+            # and routine database dumps make that likely. Encrypt at rest
             # for the keys that are credentials; provider/model/region stay
             # readable, they are configuration.
             if is_secret_key(key):

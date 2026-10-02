@@ -48,8 +48,8 @@
         var key = _hasAI ? window._aiGetApiKey() : "";
         var curProvider = _hasAI ? window._aiGetProvider() : "";
         var aiEnabled = localStorage.getItem(_k("enabled")) === "true";
-        // Optional provider allowlist — set by ai_backend.js on backend
-        // deployments (e.g. ["anthropic","openai"]); absent on opensource.
+        // Optional provider allowlist — set by ai_common.js in the browser-only
+        // edition (the providers its CSP allows); absent in the suite.
         var _allow = (window._AI_PROVIDER_ALLOWLIST instanceof Array && window._AI_PROVIDER_ALLOWLIST.length)
             ? window._AI_PROVIDER_ALLOWLIST : null;
         if (_allow && _allow.indexOf(curProvider) < 0)
@@ -116,7 +116,9 @@
                 h += '<input type="url" class="settings-input" id="settings-endpoint" value="' + esc(window._aiGetEndpoint()) + '" placeholder="https://my-llm.example.com/v1/chat/completions" style="width:100%">';
                 h += '<p class="fs-xs text-muted" style="margin-top:4px">' + (t("settings.custom_endpoint_note") || "URL complète du endpoint compatible OpenAI (POST, JSON, messages[]).") + '</p>';
             }
-            else {
+            else if (!window._aiBrowserOnly) {
+                // The browser-only edition calls each provider at its own
+                // endpoint only (CSP connect-src): no override there.
                 h += '<div class="settings-label fs-sm" style="margin-top:12px;margin-bottom:4px">' + t("settings.endpoint") + ' <span class="text-muted">(optionnel)</span></div>';
                 h += '<input type="url" class="settings-input" id="settings-endpoint" value="' + esc(window._aiGetEndpoint()) + '" placeholder="' + esc((pConf.endpoint || "")) + '" style="width:100%">';
                 h += '<p class="fs-xs text-muted" style="margin-top:4px">' + t("settings.endpoint_note") + '</p>';
@@ -393,7 +395,7 @@
         ".settings-toggle { position:relative; display:inline-block; width:40px; height:22px; }",
         ".settings-toggle input { opacity:0; width:0; height:0; }",
         ".settings-toggle-slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:var(--ct-line-strong); transition:.3s; border-radius:22px; }",
-        ".settings-toggle-slider:before { content:''; position:absolute; height:16px; width:16px; left:3px; bottom:3px; background:white; transition:.3s; border-radius:50%; }",
+        ".settings-toggle-slider:before { content:''; position:absolute; height:16px; width:16px; left:3px; bottom:3px; background:var(--ct-onaccent); transition:.3s; border-radius:50%; }",
         ".settings-toggle input:checked + .settings-toggle-slider { background:var(--ct-accent); }",
         ".settings-toggle input:checked + .settings-toggle-slider:before { transform:translateX(18px); }"
     ].join("\n");

@@ -43,6 +43,9 @@ interface Window {
     _aiSetApiKey?: (key: string) => void;
     _aiClearApiKey?: () => void;
     _aiGetProvider?: () => string;
+    /** True in the browser-only edition: providers limited to what the CSP allows. */
+    _aiBrowserOnly?: boolean;
+    _AI_PROVIDER_ALLOWLIST?: string[];
     _aiSetProvider?: (p: string) => void;
     _aiGetEndpoint?: () => string;
     _aiSetEndpoint?: (url: string) => void;

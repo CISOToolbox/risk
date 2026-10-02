@@ -21,7 +21,7 @@
 - Import from Vendor (TPRM) with measures and threat levels
 - Excel import/export with standalone formulas
 - Managerial synthesis export (PowerPoint) and EBIOS RM report export (Word)
-- AI assistant (Anthropic Claude, OpenAI GPT, Google Gemini or AWS Bedrock) with auto and custom prompts
+- AI assistant (Anthropic Claude or OpenAI GPT, called straight from the browser) with auto and custom prompts
 - AES-256-GCM encrypted snapshots (PBKDF2 250k iterations)
 - Bilingual FR/EN (both dictionaries loaded at startup)
 

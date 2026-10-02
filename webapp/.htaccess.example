@@ -1,7 +1,7 @@
 # ── Content Security Policy ──────────────────────────────────────────────
 # script-src : pas de 'unsafe-inline' — tout le JS est dans des fichiers externes.
 # style-src  : 'unsafe-inline' encore nécessaire pour les styles dynamiques du JS (couleurs calculées).
-Header set Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';"
+Header set Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' https://api.anthropic.com https://api.openai.com; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';"
 
 # ── Headers de sécurité ─────────────────────────────────────────────────
 # Clickjacking : interdit l'intégration en iframe (doublon CSP frame-ancestors pour navigateurs anciens)

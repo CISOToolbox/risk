@@ -67,7 +67,7 @@ L'application détecte automatiquement la langue du navigateur et peut être bas
 
 ### Assistant IA (optionnel)
 
-Un assistant IA peut être activé dans les Réglages pour générer des suggestions contextualisées sur chaque atelier (valeurs métier, biens supports, scénarios, mesures, etc.). Il supporte les fournisseurs **Anthropic (Claude)**, **OpenAI (GPT)**, **Google (Gemini)** et **AWS Bedrock**. Voir la section [Assistant IA](#assistant-ia) pour les détails.
+Un assistant IA peut être activé dans les Réglages pour générer des suggestions contextualisées sur chaque atelier (valeurs métier, biens supports, scénarios, mesures, etc.). Il supporte les fournisseurs **Anthropic (Claude)** et **OpenAI (GPT)**, appelés directement depuis le navigateur. Voir la section [Assistant IA](#assistant-ia) pour les détails.
 
 ---
 
@@ -309,10 +309,8 @@ Deux modes de prompt sont disponibles :
 |-------------|-------------|
 | Anthropic (Claude) | `https://api.anthropic.com` |
 | OpenAI (GPT) | `https://api.openai.com` |
-| Google (Gemini) | `https://generativelanguage.googleapis.com` |
-| AWS Bedrock | `https://bedrock-runtime.eu-west-3.amazonaws.com` (par défaut) |
 
-Le modèle se choisit dans les Réglages parmi la liste proposée pour chaque fournisseur ; un endpoint personnalisé peut aussi y être saisi (optionnel).
+Le modèle se choisit dans les Réglages parmi la liste proposée pour chaque fournisseur. L'application appelle chaque fournisseur à son propre endpoint, le seul que sa CSP (`connect-src`) autorise.
 
 ### Configuration
 
