@@ -18,6 +18,8 @@
 #    1. DRIFT    — a pin contradicts constraints.txt                    (fails)
 #    2. UNPINNED — a shared package is missing from constraints.txt     (fails)
 #    3. LOCK     — a module's requirements-lock.txt (what its image installs)
+#                  or requirements-build-lock.txt (what builds its source-only
+#                  packages, from requirements-build.txt)
 #                  was resolved from inputs that changed since (its header
 #                  records each input's sha256 — any edit, extras included),
 #                  lacks a pin of them or holds another version, or is missing
@@ -114,7 +116,10 @@ SEPARATE_ENV = {
     "requirements-semgrep.txt": {"pyjwt"},
 }
 
+# The image lock, and the lock of the tools that build its source-only packages.
 LOCK_NAME = "requirements-lock.txt"
+BUILD_LOCK_NAME = "requirements-build-lock.txt"
+LOCK_NAMES = (LOCK_NAME, BUILD_LOCK_NAME)
 
 drift, loose, unpinned = [], [], []
 seen = defaultdict(list)          # canonical name -> [(relpath, version)], lock files aside
@@ -127,7 +132,7 @@ for path in req_files:
         if op != "==":
             loose.append(f"{rel}:{lineno}: {name}{extras}{op}{version}")
             continue
-        if path.name == LOCK_NAME:
+        if path.name in LOCK_NAMES:
             locked[key].add((version, str(rel)))
         else:
             seen[key].append((str(rel), version))
@@ -164,14 +169,19 @@ stale_lock = []
 for dockerfile in sorted(repo.rglob("Dockerfile")):
     if ".git" in dockerfile.parts:
         continue
-    if LOCK_NAME in dockerfile.read_text(errors="replace") and not (dockerfile.parent / LOCK_NAME).exists():
-        stale_lock.append(f"{dockerfile.relative_to(repo)} installs {LOCK_NAME}, which is missing")
+    text = dockerfile.read_text(errors="replace")
+    for name in LOCK_NAMES:
+        if name in text and not (dockerfile.parent / name).exists():
+            stale_lock.append(f"{dockerfile.relative_to(repo)} installs {name}, which is missing")
 INPUT = re.compile(r"^# input: (\S+) sha256:([0-9a-f]{64})$")
-for lock in (p for p in req_files if p.name == LOCK_NAME):
+for lock in (p for p in req_files if p.name in LOCK_NAMES):
     base = lock.parent
     in_lock = {canon(n): v for _l, n, _e, op, v in parse(lock) if op == "=="}
-    inputs = [base / "requirements.txt"] + sorted(
-        q for tier in ("core", "generic") for q in (base / "addons" / tier).rglob("requirements.txt"))
+    if lock.name == BUILD_LOCK_NAME:
+        inputs = [base / "requirements-build.txt"]
+    else:
+        inputs = [base / "requirements.txt"] + sorted(
+            q for tier in ("core", "generic") for q in (base / "addons" / tier).rglob("requirements.txt"))
     recorded = {m.group(1): m.group(2) for l in lock.read_text().splitlines() if (m := INPUT.match(l))}
     actual = {str(q.relative_to(base)): hashlib.sha256(q.read_bytes()).hexdigest() for q in inputs if q.exists()}
     for name in sorted(set(recorded) | set(actual)):
