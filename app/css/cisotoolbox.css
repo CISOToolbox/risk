@@ -231,8 +231,8 @@
 }
 
 /* ═══════════════════ 3. @font-face (deferred) ═══════════════════
-   woff2 files not shipped yet — the stack falls back to system-ui until
-   they land in shared/fonts/. Drop the files and typography activates.  */
+   woff2 files ship in ../fonts/, next to this stylesheet; while they load,
+   or if they are absent, the stack falls back to system-ui.  */
 @font-face { font-family:'IBM Plex Sans'; font-weight:400; font-display:swap; src:url('../fonts/IBMPlexSans-Regular.woff2') format('woff2'); }
 @font-face { font-family:'IBM Plex Sans'; font-weight:500; font-display:swap; src:url('../fonts/IBMPlexSans-Medium.woff2') format('woff2'); }
 @font-face { font-family:'IBM Plex Sans'; font-weight:600; font-display:swap; src:url('../fonts/IBMPlexSans-SemiBold.woff2') format('woff2'); }
@@ -1124,7 +1124,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 /* ── Responsive breakpoints (shared convention) ──────────────────
    Desktop-first approach (max-width). One single set, to be respected in ALL
    modules — an @media outside this set breaks consistency
-   (check-breakpoints.py):
+   (checked before every release):
      480px  — small mobile
      768px  — mobile / portrait tablet   (main breakpoint)
      1024px — landscape tablet / small desktop

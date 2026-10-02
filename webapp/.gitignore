@@ -8,8 +8,7 @@
 credentials*.json
 
 # ── Deployment / hosting specifics (kept out of the public repo) ────────
-deploy.sh
-deploy-staging.sh
+deploy*.sh
 .htaccess
 
 # ── Real assessment data — never commit anything but demo-*.json ────────
