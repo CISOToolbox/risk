@@ -5,9 +5,8 @@
 // -----------------------------------------------------------------------------
 /**
  * ct-core.d.ts — CISO Toolbox cross-cutting types, copied into every app
- * (app/ts/types/). Complements the PER-FILE declarations generated in
- * shared/types/gen/*.d.ts (one per shared lib, copied according to the
- * <script src> tags of the app's index.html).
+ * (app/ts/types/). Complements the per-file declarations of the shared
+ * libraries the app loads (one .d.ts per <script src> of its index.html).
  *
  * Does NOT declare the globals provided by the app itself: each app
  * declares/defines its own `D` (typed), `REFERENTIELS_META`,
