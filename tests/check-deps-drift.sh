@@ -109,13 +109,9 @@ if not req_files:
     sys.exit(2)
 
 # A tool installed in its OWN virtual environment may hold one package at a
-# version the application must not use: semgrep pins pyjwt ~=2.13 while the
-# modules run the fixed release. Named path, named package — nothing else.
-# (The bare file name is that same file at the root of the AppSec repository.)
-SEPARATE_ENV = {
-    "appsec/requirements-semgrep.txt": {"pyjwt"},
-    "requirements-semgrep.txt": {"pyjwt"},
-}
+# version the application must not use. Named path → named packages, nothing
+# else; none today (semgrep 1.179.0 accepts the PyJWT the modules run).
+SEPARATE_ENV: dict[str, set[str]] = {}
 
 # The image lock, the lock of the tools that build its source-only packages,
 # and the unit tests' lock.
