@@ -79,7 +79,6 @@ openpyxl==3.1.5                 # vendor (dora_export), add-on acme
 # Listed so a second consumer starts from the same version instead of
 # introducing a new generation of pins. Harmless as constraints: an entry for
 # a package that is not installed is simply ignored by pip.
-semgrep==1.179.0                # appsec
 dnspython==2.7.0                # surface
 dnstwist==20250130              # surface
 feedparser==6.0.11              # watch

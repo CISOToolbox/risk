@@ -110,7 +110,7 @@ if not req_files:
 
 # A tool installed in its OWN virtual environment may hold one package at a
 # version the application must not use. Named path → named packages, nothing
-# else; none today (semgrep 1.179.0 accepts the PyJWT the modules run).
+# else; none today.
 SEPARATE_ENV: dict[str, set[str]] = {}
 
 # The image lock, the lock of the tools that build its source-only packages,
