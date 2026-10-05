@@ -3,6 +3,12 @@
 Every release has its section here, written at release time from the
 changes since the previous one and published as the GitHub release notes.
 
+## 1.1.2 — 2026-10-05
+
+### Maintenance
+
+- `constraints.txt` no longer pins semgrep (dropped with the AppSec Opengrep migration); the image content is unchanged.
+
 ## 1.1.1 — 2026-10-03
 
 ### Maintenance
