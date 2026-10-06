@@ -172,14 +172,14 @@ def test_a_custom_instruction_keeps_the_data_and_the_schema():
 def test_a_custom_instruction_replaces_the_automatic_one():
     """That is the semantics of the custom mode: replace, not append."""
     perso = build_prompt("vm", D, "fr", custom_instruction="Cible le SIH")
-    assert "Propose 3-5 additional business assets" not in perso
+    assert "A VM is a critical business PROCESS or INFORMATION" not in perso
 
 
 def test_an_extra_instruction_adds_without_replacing():
     """The "refine" box has the OPPOSITE semantics. Confusing them would break
     one of the two behaviours with no visible error."""
     plus = build_prompt("vm", D, "fr", extra_instruction="Sois plus strict")
-    assert "Propose 3-5 additional business assets" in plus, "l'instruction auto a été perdue"
+    assert "A VM is a critical business PROCESS or INFORMATION" in plus, "l'instruction auto a été perdue"
     assert "Additional user instruction: Sois plus strict" in plus
 
 
@@ -230,8 +230,8 @@ def test_the_supporting_assets_prompt_asks_for_location_and_owner():
     an instruction, and the model left them empty."""
     prompt = _build("bs")
     assert "localisation" in prompt and "proprietaire" in prompt
-    assert "where it" in prompt, "l'emplacement n'est pas demandé, seulement déclaré"
-    assert "accountable for it" in prompt, "le propriétaire n'est pas demandé"
+    assert "localisation (site, datacentre" in prompt, "l'emplacement n'est pas demandé, seulement déclaré"
+    assert "the internal team or role that owns it" in prompt, "le propriétaire n'est pas demandé"
 
 
 def test_the_stakeholders_prompt_separates_the_category_from_the_type():

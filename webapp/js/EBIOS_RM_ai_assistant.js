@@ -152,32 +152,73 @@
     // ═══════════════════════════════════════════════════════════════════════
     // SYSTEM PROMPT (condensed EBIOS RM methodology)
     // ═══════════════════════════════════════════════════════════════════════
-    var SYSTEM_PROMPT = [
-        "You are an EBIOS Risk Manager (EBIOS RM) specialist following the ANSSI methodology.",
-        "You assist in completing risk analyses structured in 5 workshops.",
-        "",
-        "EBIOS RM structure:",
-        "- Workshop 1: Scope & security baseline — Business assets (VM), Supporting assets (BS), Feared events (ER), Security baseline (ANSSI 42 or ISO 27001 Annex A)",
-        "- Workshop 2: Risk origins — Risk origins (RO/SR) and Target objectives (TO/OV), assessed as RO/TO pairs with Motivation/Resources/Activity scores (0-4)",
-        "- Workshop 3: Strategic scenarios — Stakeholders (PP) with threat assessment (Dependency/Penetration/Maturity/Trust), Strategic scenarios (SS) linking RO/TO → PP → BS → ER",
-        "- Workshop 4: Operational scenarios — Kill chains (SOP) using step-by-step method (proche en proche), MITRE ATT&CK techniques, controls assessment (Effective/Partial/Absent)",
-        "- Workshop 5: Risk treatment — Security measures registry, residual risk assessment, treatment decisions",
-        "",
-        "Rules:",
-        "- Business assets (VM): critical processes or information, assessed on DICT (Availability, Integrity, Confidentiality, Traceability)",
-        "- Supporting assets (BS): IT components supporting VMs (servers, apps, networks, data)",
-        "- Feared events (ER): business impact per VM, severity 1-4",
-        "- Stakeholders (PP): external actors only (suppliers, partners, clients). Internal employees are NOT stakeholders if the study scope is the entire organization",
-        "- RO/TO pairs: Relevance = (Motivation + Resources + Activity) / 12. Priority: P1 (>7), P2 (5-7), Not retained (3-4), Excluded (≤2)",
-        "- Strategic scenarios (SS): WHO (RO) attacks WHY (TO) THROUGH WHOM (PP) targeting WHAT (BS) causing WHICH impact (ER). Severity = MAX of linked ER severities",
-        "- Kill chains (SOP): step-by-step from entry point (exposed BS) through lateral movement to final target (BS carrying VM). Each phase = elementary action with MITRE ATT&CK technique",
-        "- Security measures: prioritize baseline measures first, then ecosystem, then complementary",
-        "",
-        "IMPORTANT: Always respond in the language specified in the user prompt (French or English).",
+    // The system prompt is composed PER WORKSHOP, mirroring the suite module's
+    // build_system_prompt (risk/src/routes/ai.py): when the analyst works on one
+    // step, only that workshop's structure and rules are sent — the others are
+    // noise that dilutes the model's focus. An unknown or absent panel falls back
+    // to all five workshops.
+    var _SYS_INTRO = "You are an EBIOS Risk Manager (EBIOS RM) specialist following the ANSSI methodology. You help an analyst complete a risk study structured in 5 workshops; right now you assist with {ws}.";
+    var _SYS_WS_LABEL = {
+        1: "Workshop 1 — scope & security baseline",
+        2: "Workshop 2 — risk origins",
+        3: "Workshop 3 — strategic scenarios",
+        4: "Workshop 4 — operational scenarios",
+        5: "Workshop 5 — risk treatment"
+    };
+    var _SYS_STRUCTURE = {
+        1: "- Workshop 1: Scope & security baseline — Business assets (VM), Supporting assets (BS), Feared events (ER), Security baseline (ANSSI 42 or ISO 27001 Annex A)",
+        2: "- Workshop 2: Risk origins — Risk origins (RO/SR) and Target objectives (TO/OV), assessed as RO/TO pairs with Motivation/Resources/Activity scores (0-4)",
+        3: "- Workshop 3: Strategic scenarios — Stakeholders (PP) with threat assessment (Dependency/Penetration/Maturity/Trust), Strategic scenarios (SS) linking RO/TO → PP → BS → ER",
+        4: "- Workshop 4: Operational scenarios — Kill chains (SOP) using step-by-step method (proche en proche), MITRE ATT&CK techniques, controls assessment (Effective/Partial/Absent)",
+        5: "- Workshop 5: Risk treatment — Security measures registry, residual risk assessment, treatment decisions"
+    };
+    var _SYS_RULES = {
+        1: [
+            "- Business assets (VM): critical processes or information, assessed on DICT (Availability, Integrity, Confidentiality, Traceability)",
+            "- Supporting assets (BS): IT components supporting VMs (servers, apps, networks, data)",
+            "- Feared events (ER): business impact per VM, severity 1-4"
+        ],
+        2: [
+            "- RO/TO pairs: Relevance = Motivation + Resources + Activity (the sum, 0-12; shown as sum/12). Priority from the sum: P1 (8-12), P2 (5-7), Not retained (3-4), Excluded (0-2)"
+        ],
+        3: [
+            "- Stakeholders (PP): external actors only (suppliers, partners, clients). Internal employees are NOT stakeholders if the study scope is the entire organization",
+            "- Strategic scenarios (SS): WHO (RO) attacks WHY (TO) THROUGH WHOM (PP) targeting WHAT (BS) causing WHICH impact (ER). Severity = MAX of linked ER severities"
+        ],
+        4: [
+            "- Kill chains (SOP): step-by-step from entry point (exposed BS) through lateral movement to final target (BS carrying VM). Each phase = elementary action with MITRE ATT&CK technique"
+        ],
+        5: [
+            "- Security measures: prioritize baseline measures first, then ecosystem, then complementary"
+        ]
+    };
+    // Each AI panel belongs to one workshop; the system prompt carries only that
+    // one. An unknown panel falls back to all five.
+    var _PANEL_WORKSHOP = {
+        vm: 1, bs: 1, er: 1, socle: 1, socle_row: 1,
+        srov: 2,
+        pp: 3, ss: 3,
+        sop: 4, sop_row: 4,
+        eco: 5, eco_row: 5, measures: 5, residuals: 5, residual_ss: 5
+    };
+    var _SYS_TRANSVERSE = [
+        "IMPORTANT: Write the ENTIRE response in the language specified in the user prompt (French or English) — EVERY field, including the short name/title fields (nom, evenement, scenario, mesure…), not only the long descriptions. Never leave a name in another language.",
         "IMPORTANT: Always respond with valid JSON matching the requested schema. No markdown, no explanation — JSON only.",
         "IMPORTANT: NEVER propose elements that already exist in the analysis. The user prompt includes existing elements — check them carefully and only suggest NEW, DIFFERENT items. Avoid duplicates or near-duplicates (same concept with slightly different wording).",
-        "IMPORTANT: When proposing more than 2 items, keep each suggestion concise: short names (max 10 words) and brief details (max 2 sentences). When proposing 1-2 items, you may provide more detailed descriptions."
-    ].join("\n");
+        "IMPORTANT: When proposing more than 2 items, keep each suggestion concise: short names (max 10 words) and brief details (max 2 sentences). When proposing 1-2 items, you may provide more detailed descriptions.",
+        "IMPORTANT: If the user instruction is off-topic, hostile, asks for something outside EBIOS RM, or you cannot fulfil it as suggestions, respond with JSON {\"error\": \"brief explanation in the user's language\"} instead of fabricated content. NEVER smuggle refusals into suggestion fields."
+    ];
+    function buildSystemPrompt(panel) {
+        var ws = panel ? _PANEL_WORKSHOP[panel] : undefined;
+        var workshops = ws ? [ws] : [1, 2, 3, 4, 5];
+        var lines = [_SYS_INTRO.replace("{ws}", ws ? _SYS_WS_LABEL[ws] : "the whole study"), "", "EBIOS RM structure:"];
+        workshops.forEach(function (n) { lines.push(_SYS_STRUCTURE[n]); });
+        lines.push("", "Rules:");
+        workshops.forEach(function (n) { _SYS_RULES[n].forEach(function (r) { lines.push(r); }); });
+        lines.push("");
+        _SYS_TRANSVERSE.forEach(function (r) { lines.push(r); });
+        return lines.join("\n");
+    }
     // ═══════════════════════════════════════════════════════════════════════
     // PROMPT BUILDERS (one per panel type)
     // ═══════════════════════════════════════════════════════════════════════
@@ -281,20 +322,48 @@
     var PROMPTS = {
         vm: function () {
             var lang = typeof _locale !== "undefined" ? _locale : "fr";
+            // Build the inventory to ~10 fast, then one at a time (the model counts
+            // badly, so the quota is decided here — mirrors the suite _vm builder).
+            var n = D.vm.length;
+            var howmany = n >= 10
+                ? "Propose exactly ONE more business asset (VM) — the single most relevant one still missing."
+                : "Propose " + Math.min(6, 10 - n) + " NEW business assets (VM), the most relevant still missing, to build the inventory toward about 10 in total.";
             return {
-                user: "Context: " + JSON.stringify(D.context) + "\n\nExisting business assets (VM): " + JSON.stringify(D.vm.map(function (v) { return { id: v.id, nom: v.nom, nature: v.nature }; })) +
-                    "\n\nPropose 3-5 additional business assets (VM) that are missing for this organization. Consider the sector, activities, and regulatory context. You may also suggest updates to existing VMs by including their id." +
+                user: "Context: " + JSON.stringify(D.context) + "\n\nExisting business assets (VM): " + JSON.stringify(D.vm.map(function (v) { return { id: v.id, nom: v.nom, nature: v.nature, description: v.description }; })) +
+                    "\n\n" + howmany +
+                    " Ground your suggestions in the context above (sector, activities, regulatory framework, analyst notes). A VM is a critical business PROCESS or INFORMATION — never an IT component (a server, application, database or network is a supporting asset / BS). Keep the granularity at the business level, not a single tool or document. You may also suggest updates to existing VMs by including their id." +
                     "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
                     '\n\nJSON schema: [{"id":"VM-XX (only if updating existing)","nom":"...","nature":"Information|Processus","description":"...","responsable":"..."}]'
             };
         },
         bs: function () {
             var lang = typeof _locale !== "undefined" ? _locale : "fr";
+            var vms = D.vm;
+            var bss = D.bs;
+            // A VM is covered when its id appears in some BS's vm field. Cover the
+            // uncovered ones first; the model counts badly, so the quota is set
+            // here. Whole-id match, not substring — VM-100 must not count as
+            // covered by a BS linked to VM-1000 (mirrors the suite _bs builder).
+            var linked = {};
+            bss.forEach(function (b) {
+                String(b.vm || "").replace(/,/g, " ").split(/\s+/).forEach(function (t) { if (t)
+                    linked[t] = true; });
+            });
+            var uncovered = vms.filter(function (v) { return v.id && !linked[v.id]; })
+                .map(function (v) { return v.id + " - " + (v.nom || ""); });
+            var gap = uncovered.length > 0 || bss.length < 6;
+            var howmany = gap
+                ? "Propose several NEW supporting assets (BS), up to 6"
+                : "Propose ONE or two more supporting assets (BS) — the most relevant still missing";
+            var covering = uncovered.length
+                ? "First cover the business assets that have NO supporting asset yet: " + JSON.stringify(uncovered) + ". "
+                : "Every business asset already has at least one supporting asset. ";
             return {
                 user: "Context: " + JSON.stringify(D.context) +
-                    "\n\nBusiness assets: " + JSON.stringify(D.vm.map(function (v) { return { id: v.id, nom: v.nom }; })) +
-                    "\n\nExisting supporting assets: " + JSON.stringify(D.bs.map(function (b) { return { id: b.id, nom: b.nom, type: b.type, vm: b.vm }; })) +
-                    "\n\nPropose 3-5 additional supporting assets (BS) missing to support these business assets. For each one give its type, the business assets it supports (use VM IDs), where it runs or is held (localisation: site, datacentre, cloud region, provider) and who is accountable for it (proprietaire: the internal team or role that owns it). You may also suggest updates to existing BSs by including their id." +
+                    "\n\nBusiness assets: " + JSON.stringify(vms.map(function (v) { return { id: v.id, nom: v.nom }; })) +
+                    "\n\nExisting supporting assets: " + JSON.stringify(bss.map(function (b) { return { id: b.id, nom: b.nom, type: b.type, vm: b.vm }; })) +
+                    "\n\n" + howmany + ". " + covering +
+                    "Also add the cross-cutting supporting assets common to the whole information system that are still missing (identity directory, authentication/SSO, office & collaboration suite, network, backup, workstations, supervision…) — they support the business assets indirectly; for these list every VM they serve, or all of them. For each BS give: its type — one of Hardware, Software/Application, Network, Data, Cloud/external service, Site/premises, People/organisation (in the analysis language); the business assets it supports (VM IDs); localisation (site, datacentre, cloud region, provider); and proprietaire (the internal team or role that owns it). You may also suggest updates to existing BSs by including their id." +
                     "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
                     '\n\nJSON schema: [{"id":"BS-XX (only if updating existing)","nom":"...","type":"...","vm":"VM-01 - Name, VM-02 - Name","localisation":"...","proprietaire":"..."}]'
             };
@@ -316,8 +385,12 @@
                         '\n\nJSON schema: [{"id":"ER-XX (only if updating existing)","evenement":"...","vm":"VM-01 - Name","dict":"D|I|C|T","impacts":"...","gravite_cat":{"financier":1-' + maxG + ',"reputation":1-' + maxG + ',"reglementaire":1-' + maxG + ',"donnees_perso":1-' + maxG + ',"operationnel":1-' + maxG + '}}]'
                 };
             }
+            // Single-scale config: pass the scale WITH the meaning of each level,
+            // like the per-category branch — otherwise the model rates blindly.
+            var singleScale = D.gravity_scale.map(function (g) { return { niveau: g.niveau, label: g.label, description: g.description || "" }; });
             return { user: base +
-                    "\n\nGravity scale: 1 (low) to " + maxG + " (critical). Specify a single severity." + common +
+                    "\n\nSeverity is a SINGLE overall level from 1 to " + maxG + ". Severity scale (level, label, meaning): " + JSON.stringify(singleScale) +
+                    "\n\nFor each feared event, give one severity (gravite) using this scale." + common +
                     '\n\nJSON schema: [{"id":"ER-XX (only if updating existing)","evenement":"...","vm":"VM-01 - Name","dict":"D|I|C|T","impacts":"...","gravite":1-' + maxG + '}]'
             };
         },
@@ -342,7 +415,7 @@
                 user: "Context: " + JSON.stringify(D.context) +
                     "\n\nSupporting assets: " + JSON.stringify(D.bs.map(function (b) { return { id: b.id, nom: b.nom, type: b.type }; })) +
                     "\n\nExisting stakeholders: " + JSON.stringify(D.pp.map(function (p) { return { id: p.id, nom: p.nom, type: p.type }; })) +
-                    "\n\nPropose 3-5 additional stakeholders (PP) in the ecosystem. Only EXTERNAL actors (suppliers, partners, clients). Assess Dependency/Penetration/Maturity/Trust from 1 to 4. Link to relevant BS (using ID - Name format). Give BOTH fields the screen holds: `categorie` is a closed list — exactly one of Client, Partenaire, Prestataire — and `type` is free text naming what the stakeholder does for the organisation (hosting provider, software vendor, biomedical maintainer...). Never put the category in the type." +
+                    "\n\nPropose 3-5 additional stakeholders (PP) in the ecosystem. Only EXTERNAL actors (suppliers, partners, clients). Assess four threat criteria, each from 1 (low) to 4 (high), describing the stakeholder itself: dependance = how much the organisation depends on it for its activities (1 negligible, 4 critical); penetration = how deep its access/privileges into the information system are (1 none or minimal, 4 broad/privileged); maturite = its own cybersecurity maturity (1 very weak, 4 excellent); confiance = the level of trust in it (1 very low, 4 full). The threat a stakeholder carries rises with dependance and penetration, and falls with maturite and confiance. Link to relevant BS (using ID - Name format). Give BOTH fields the screen holds: `categorie` is a closed list — exactly one of Client, Partenaire, Prestataire — and `type` is free text naming what the stakeholder does for the organisation (hosting provider, software vendor, biomedical maintainer...). Never put the category in the type." +
                     "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
                     '\n\nJSON schema: [{"id":"PP-XX (only if updating existing)","nom":"...","categorie":"Client|Partenaire|Prestataire","type":"free text: its role","dependance":1-4,"penetration":1-4,"maturite":1-4,"confiance":1-4,"bs":"BS-01 - Name"}]'
             };
@@ -358,7 +431,7 @@
                     "\n\nExisting strategic scenarios: " + JSON.stringify(D.ss.map(function (s) { return { id: s.id, scenario: s.scenario }; })) +
                     "\n\nPropose 2-4 additional strategic scenarios (SS) linking: WHO (RO/TO pair) → THROUGH WHOM (PP, when a stakeholder is on the path) → targeting WHAT (BS) → causing WHICH feared event (ER). Use existing element IDs. A path is rarely walked by one origin only: list in `couple_id` EVERY RO/TO pair the scenario serves, comma separated, not just the first that comes to mind. The same route through the same stakeholder to the same feared event serves every origin that would take it. What a path CAUSES is plural in the same way: a path general enough reaches several feared events, so list in `er` EVERY feared event this same path makes possible, comma separated. Only those it actually reaches — a feared event that needs another stakeholder or another business asset is a different scenario, not an extra entry here. The severity follows on its own: the screen takes the highest of them." +
                     "\n\nA strategic scenario is read at the level of the ECOSYSTEM. Write ONE sentence of business language, of this shape and no longer: <risk origin> exploits <what opens the path> to reach <business asset>, causing <feared event(s)>. What opens the path is said at the level of the ecosystem: the position of a stakeholder, an exposure of the organisation, an internal error, an access obtained. At most ONE intermediary, and only if there is one. It is NOT a kill chain: no technical step, no lateral movement, no workstation, hypervisor, snapshot, log or credential, no tool and no ATT&CK tactic. That detail belongs to workshop 4 and is proposed on the operational scenario screen, where it is expected. If your sentence says HOW the attacker proceeds inside the information system, you have left workshop 3." +
-                    "\n\nNaming the NATURE of what opens the path is expected — an exploited vulnerability on an exposed service, a configuration error, an access obtained from a provider, the trust granted to a partner. What does not belong is the SEQUEL: what the attacker alters next, which component, product or module he goes through, in what order. No vendor product name, no connector, interface, role, policy or named account. A sentence that chains two mechanisms — `then`, `in order to`, `by ...ing`, `through the ... exposed to ...` — is an operational scenario, whatever its vocabulary." +
+                    "\n\nNaming the NATURE of what opens the path is expected — an exploited vulnerability on an exposed service, a configuration error, an access obtained from a provider, the trust granted to a partner. What does not belong is the SEQUEL: what the attacker alters next, which component, product or module he goes through, in what order. No vendor product name, no connector, interface, role, policy or named account. A sentence that chains two mechanisms — `then`, `in order to`, `by ...ing`, `through the ... exposed to ...` — is an operational scenario, whatever its vocabulary. The forbidden direction is DOWNWARD — below the business asset into the infrastructure that merely hosts it (a virtualization platform, a server, the enterprise network), a technical step, or a product/technology name: 'A cybercriminal exploits a vulnerability on the identity-federation service to reach the virtualization platform hosting the whole IAM' drills too low on both counts; say instead 'A cybercriminal exploits an exposure of the identity system to cause a mass takeover of digital identities', and reach 'the identity directory', never 'Active Directory'. Staying BROAD is, on the contrary, welcome: a scenario may group several origins ('a cybercriminal or a nation-state exploits a supply-chain exposure to steal data') and may name its target generally — a class of data, a service — without pinning one business asset. That generality is the point of workshop 3; workshop 4 specialises it. Fill `couple_id`, `bs` and `er` with what the scenario does reach, and leave `bs`/`er` broad or empty when it is deliberately general." +
                     "\n\nA path does NOT have to go through a stakeholder. Workshop 3 covers direct paths too — the origin reaches the asset without a third party, through an exposure or a weakness of the organisation itself. For such a scenario, say so and leave `pp` empty. Vary your proposals: a set where every scenario starts with the same formula, or rests on the same kind of entry, is a template and not an analysis. Across the proposals, alternate what opens the path — the position of a stakeholder, an exposure, an internal error, an access obtained — and never repeat the same opening words twice." +
                     "\n\nTest each sentence before proposing it: SEVERAL different technical paths must fit under it, because workshop 4 details them one by one as operational scenarios, on their own screen. If only one path fits your sentence, you have written that path instead of the scenario — make it general again." +
                     "\n\nToo operational: `An attacker compromises the vendor support to alter the access policies and roles defined in the identity governance product, causing a massive leak of personal data through the provisioning connectors exposed to the business applications.` The same scenario at the right level: `A cybercriminal exploits the access held by the identity management provider (PP-03) to reach the identity system (BS-07) and cause the mass leak of the personal data it holds (ER-02).` A direct path, just as valid: `A cybercriminal exploits a vulnerability exposed on the online booking portal (BS-02) to reach the patient records it serves and cause their mass leak (ER-01)` — no stakeholder in that one, and `pp` stays empty." +
@@ -379,8 +452,8 @@
                     "\n\nExisting SOP for this SS: " + JSON.stringify(D.sop_detail.filter(function (d) { return d.ss === ssId; }).map(function (d) { return { phase: d.phase, phase_label: _attackLabel(d.phase), action: d.action, bs: d.bs }; })) +
                     _blocMesures() +
                     "\n\nWhen a weak phase is ALREADY covered by an existing measure above, set `mesure_existante_id` to its id instead of inventing a new label in `mesure_proposee`. Creating a near-duplicate for every scenario is how the plan doubles in size without covering more.\nTwo ways to reuse, and they are not the same:\n- the measure covers the phase AS-IS: set `mesure_existante_id` only;\n- it covers it PARTIALLY: set `mesure_existante_id` AND put in `mesure_ajustement` ONLY what must be added to that measure for this phase — not a rewrite of its description. If widening it makes the existing title inaccurate, and only then, put a corrected title in `mesure_titre`, close to the original." +
-                    "\n\nPropose a kill chain (SOP) for this strategic scenario. Use the step-by-step method (proche en proche): entry point → lateral movement → target. Keep it concise: 4-6 key phases maximum. Set each phase to the MITRE ATT&CK tactic id that best matches it, following the canonical order: TA0043 Reconnaissance, TA0042 Resource Development, TA0001 Initial Access, TA0002 Execution, TA0003 Persistence, TA0004 Privilege Escalation, TA0005 Defense Evasion, TA0006 Credential Access, TA0007 Discovery, TA0008 Lateral Movement, TA0009 Collection, TA0011 Command and Control, TA0010 Exfiltration, TA0040 Impact. Put the specific ATT&CK technique id (TXXXX) in the action description." +
-                    "\n\nRead the existing control of a phase from the baseline assessment above, not from imagination. A requirement assessed as `applied` means its measures ARE in place: put its reference in `ref`, what it requires in `controle`, and set `efficacite` to Efficace. A requirement assessed as `partial` gives Partiel. When no assessed requirement counters the phase, or the one that would is `not applied`, set Absent and leave `controle` empty — never credit a control the baseline does not carry. For phases with Absent or Partiel effectiveness, also propose a security measure (mesure_proposee)." +
+                    "\n\nPropose a kill chain (SOP) for this strategic scenario. Use the step-by-step method (proche en proche): entry point → lateral movement → target. Keep it concise: 4-6 key phases maximum. Set each phase to the MITRE ATT&CK tactic id that best matches it, following the canonical order: TA0043 Reconnaissance, TA0042 Resource Development, TA0001 Initial Access, TA0002 Execution, TA0003 Persistence, TA0004 Privilege Escalation, TA0005 Defense Evasion, TA0006 Credential Access, TA0007 Discovery, TA0008 Lateral Movement, TA0009 Collection, TA0011 Command and Control, TA0010 Exfiltration, TA0040 Impact. Put the specific ATT&CK technique id (TXXXX) in the action description. Each phase is ONE elementary action with EXACTLY ONE ATT&CK technique — never chain two techniques in the same phase, and never offer alternative actions joined by 'or' ('deposit a trojanised patch or exploit an exposed admin endpoint' is two phases, not one). If several routes are plausible, keep the single most likely one, or split them into separate phases. The action is one concrete step, stated plainly." +
+                    "\n\nRead the existing control of a phase from the baseline assessment above, not from imagination. A requirement assessed as `applied` means its measures ARE in place: put its reference in `ref`, what it requires in `controle`, and set `efficacite` to Efficace. A requirement assessed as `partial` gives Partiel. When no assessed requirement counters the phase, or the one that would is `not applied`, set Absent and leave `controle` empty — never credit a control the baseline does not carry. For phases with Absent or Partiel effectiveness, also propose a security measure (mesure_proposee). It must be CONCRETE and specific to THIS phase and its ATT&CK technique — a precise operational, technical or detection control (a named mechanism, a configuration, a monitoring/alerting rule, a segmentation), not a restatement of a baseline requirement. The baseline already states what must broadly be in place; here add the measure that would actually block or detect THIS step of the kill chain against this supporting asset." +
                     "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
                     '\n\nJSON schema: {"ss":"' + ssId + '","phases":[{"phase":"TA00XX (ATT&CK tactic id from the list above)","action":"Short description (TXXXX)","bs":"BS-XX - Name","controle":"existing control or empty","ref":"baseline ref or empty","efficacite":"Absent|Partiel|Efficace","mesure_existante_id":"M-XX if an existing measure already covers this phase, else empty","mesure_ajustement":"what must be ADDED to that existing measure for this phase, or empty if it covers the phase as-is","mesure_titre":"corrected title for that measure, ONLY if the widened scope makes the current one inaccurate","mesure_proposee":"NEW security measure to create, or empty if mesure_existante_id is set"}]}'
             };
@@ -429,7 +502,7 @@
                 user: "Context: " + JSON.stringify(D.context) +
                     "\n\nWeak phases (Absent/Partial controls): " + JSON.stringify(weakPhases.map(function (s) { return { sop: s.sop, ss: s.ss, phase: _attackLabel(s.phase), action: s.action, bs: s.bs, efficacite: s.efficacite }; })) +
                     _blocMesures() +
-                    "\n\nPropose 3-5 security measures to address the weak phases. Prioritize baseline reinforcement, then ecosystem measures, then new complementary measures. Specify type (Prévention/Détection/Réaction), which SOP/phase it addresses, and baseline reference if applicable. Each measure must have a short name (mesure) and a detailed implementation description (details) — do not put the whole description in the mesure field." +
+                    "\n\nPropose 3-5 security measures to address the weak phases. Prioritize baseline reinforcement, then ecosystem measures, then new complementary measures. Specify type (Prévention/Détection/Réaction), which SOP/phase it addresses, and baseline reference if applicable. Each measure must have a short name (mesure) and a detailed implementation description (details) — do not put the whole description in the mesure field. Each measure must be CONCRETE and specific to the weak phase it addresses — a precise operational, technical or detection control, not a generic restatement of a baseline requirement." +
                     "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
                     '\n\nJSON schema: [{' + ACTION_SCHEMA + '"mesure":"short name","details":"detailed description of the measure","origine":"Socle|Écosystème|SOP|Complémentaire","type":"Prévention|Détection|Réaction","sop":"SOP-XX","phase":"Phase name","effet":"...","ref_socle":"#XX or A.X.X","responsable":"..."}]'
             };
@@ -452,17 +525,26 @@
     // ═══════════════════════════════════════════════════════════════════════
     // API CALL (wrapper using shared _aiCallAPI)
     // ═══════════════════════════════════════════════════════════════════════
-    async function _callAI(promptObj) {
+    async function _callAI(promptObj, panel) {
         if (!_aiIsEnabled()) {
             openSettings();
             return null;
         }
         var userContent = promptObj.user + (_extraContext ? "\n\nAdditional user instruction: " + _extraContext : "");
         _extraContext = ""; // reset after use
-        var text = await _aiCallAPI(SYSTEM_PROMPT, userContent);
+        var text = await _aiCallAPI(buildSystemPrompt(panel), userContent);
         if (!text)
             return null;
-        return _aiParseJSON(text);
+        var parsed = _aiParseJSON(text);
+        // Twin of the suite's _parse_lax_or_refuse (ai.py): the system prompt lets
+        // the model answer {"error": "..."} on an off-topic or impossible request.
+        // Surface it as an error so the caller's catch renders t("ai.error", …),
+        // instead of letting a refusal fall through as a parasitic suggestion card.
+        // SROV/SOP payloads legitimately carry pairs/phases, so they pass through.
+        if (parsed && typeof parsed === "object" && parsed.error && !parsed.pairs && !parsed.phases) {
+            throw new Error(String(parsed.error));
+        }
+        return parsed;
     }
     /** BUG-35 — the browser twin of the module's server-side `validate_output`
      *  for the action model. "Enrich" is only a case issue and is lowered; any
@@ -1328,7 +1410,7 @@
                     + _ignoredBlock(_ignoreKeyFor(type))
             };
             try {
-                var result = await _callAI(customPrompt);
+                var result = await _callAI(customPrompt, type);
                 var suggestions = _suggestionsDe(type, result);
                 _renderCards(type, suggestions, ACCEPT_HANDLERS[type]);
             }
@@ -1347,7 +1429,7 @@
             var promptObj = promptBuilder();
             if (promptObj)
                 promptObj.user += _ignoredBlock(_ignoreKeyFor(type));
-            var result = await _callAI(promptObj);
+            var result = await _callAI(promptObj, type);
             var suggestions = _suggestionsDe(type, result);
             _renderCards(type, suggestions, ACCEPT_HANDLERS[type]);
         }
@@ -1407,7 +1489,7 @@
                     (schema ? "\n\nRespond with valid JSON matching this schema: " + schema : "");
             }
             promptObj.user += _ignoredBlock(_ignoreKeyFor("sop", ssId));
-            var result = await _callAI(promptObj);
+            var result = await _callAI(promptObj, "sop");
             // Render as a single SOP card with phases listed
             var suggestions;
             if (result.phases) {
@@ -1483,7 +1565,7 @@
                     "\n\nPropose 2-3 concrete security measures to close this gap. Each measure should be actionable and specific to this control." +
                     "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
                     '\n\nJSON schema: [{' + ACTION_SCHEMA + '"mesure":"short name","details":"detailed description","type":"Prévention|Détection|Réaction","ref_socle":"baseline reference (#XX for ANSSI or A.X.X for ISO) or empty","responsable":"suggested owner role"}]'
-            });
+            }, "socle_row");
             var suggestions = Array.isArray(result) ? result : [result];
             _assainirActions(suggestions);
             // Add context for accept handler
@@ -1523,7 +1605,7 @@
                     "\n\nPropose 2-3 security measures to reduce the threat level of this stakeholder. Consider contractual, technical, organizational and monitoring measures. Each measure must have a short name (mesure) and a detailed implementation description (details)." +
                     "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
                     '\n\nJSON schema: [{' + ACTION_SCHEMA + '"mesure":"short name","details":"detailed implementation description (2-3 sentences)","type":"Contractuelle|Technique|Organisationnelle|Surveillance","ref_socle":"baseline reference (#XX for ANSSI or A.X.X for ISO) or empty","responsable":"suggested owner role"}]'
-            });
+            }, "eco_row");
             var suggestions = Array.isArray(result) ? result : [result];
             _assainirActions(suggestions);
             suggestions.forEach(function (s) {
@@ -1559,7 +1641,7 @@
                     "\n\nPropose 2-3 security measures to address this attack phase. Reference MITRE ATT&CK mitigations when relevant." +
                     "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
                     '\n\nJSON schema: [{' + ACTION_SCHEMA + '"mesure":"short name","details":"detailed description","type":"Prévention|Détection|Réaction","ref_socle":"baseline reference (#XX for ANSSI or A.X.X for ISO) or empty","responsable":"suggested owner role","effet":"expected effect"}]'
-            });
+            }, "sop_row");
             var suggestions = Array.isArray(result) ? result : [result];
             _assainirActions(suggestions);
             suggestions.forEach(function (s) {
@@ -1743,7 +1825,7 @@
                     "\n3. An estimated residual likelihood (v_resid) from 1 to " + (vInit || 4) + " after applying these measures, with justification" +
                     "\n\nRespond in " + (lang === "fr" ? "French" : "English") + "." +
                     '\n\nJSON schema: {"selected_measures":["M-XX","M-YY"],"new_measures":[{' + ACTION_SCHEMA + '"mesure":"short name","details":"description","type":"Prévention|Détection|Réaction","responsable":"..."}],"v_resid":1-' + (vInit || 4) + ',"justification":"why this residual likelihood"}'
-            });
+            }, "residual_ss");
             if (result)
                 _assainirActions(result.new_measures);
             // Normalize field names
