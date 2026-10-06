@@ -46,6 +46,7 @@ declare var _ctRefRegistry: Record<string, CtRefConfig>;
 declare function _ctRefTagContent(uid: string, id: string, display: string, cfg: CtRefConfig | undefined, tagClick: boolean): string;
 declare function ctRefSelect(uid: string | null | undefined, value: string | null | undefined, options: CtRefOption[], opts?: CtRefSelectOpts): string;
 declare function ctRefOpen(uid: string): void;
+declare function _ctRefPosition(uid: string, dd: HTMLElement): void;
 declare function ctRefFilter(uid: string, query: string): void;
 declare function ctRefToggle(uid: string, el: HTMLInputElement): void;
 declare function ctRefRemove(uid: string, optionId: string): void;

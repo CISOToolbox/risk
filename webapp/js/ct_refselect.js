@@ -67,12 +67,32 @@ function ctRefOpen(uid) {
         _ctRefFlush(dd);
     }
     else if (dd.classList.contains("open")) {
+        _ctRefPosition(uid, dd);
         var search = dd.querySelector(".ct-ref-search");
         if (search) {
             search.value = "";
             ctRefFilter(uid, "");
             search.focus();
         }
+    }
+}
+// The dropdown is position:fixed (so it is never clipped by a scrollable modal
+// body); place it under the field, matching its width, and flip it above when
+// there is no room below. Coordinates are computed geometry, hence inline.
+function _ctRefPosition(uid, dd) {
+    var field = document.getElementById(uid);
+    if (!field)
+        return;
+    var anchor = field.querySelector(".ct-ref-tags") || field;
+    var r = anchor.getBoundingClientRect();
+    dd.style.left = Math.round(r.left) + "px";
+    dd.style.width = Math.round(r.width) + "px";
+    var h = Math.min(dd.scrollHeight || 220, 220);
+    if (window.innerHeight - r.bottom < h + 8 && r.top > h + 8) {
+        dd.style.top = Math.round(r.top - h) + "px"; // flip up: no room below
+    }
+    else {
+        dd.style.top = Math.round(r.bottom) + "px"; // open below
     }
 }
 function ctRefFilter(uid, query) {

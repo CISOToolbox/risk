@@ -1376,7 +1376,11 @@ td .ct-ref-select, td .ct-ref-select * { box-shadow: none; }
 .ct-ref-tags:hover { border-color: var(--ct-accent); }
 .ct-ref-tag { display: inline-flex; align-items: center; gap: 3px; background: var(--ct-neutral-tint); padding: 1px 6px; border-radius: 3px; font-size: 0.85em; }
 .ct-ref-tag-x { cursor: pointer; color: var(--ct-critical); font-weight: bold; margin-left: 2px; }
-.ct-ref-dropdown { display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 200; background: var(--ct-surface); border: 1px solid var(--ct-accent); border-radius: 0 0 6px 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-height: 220px; overflow-y: auto; }
+/* Fixed, not absolute: the dropdown must escape a scrollable ancestor (e.g.
+   a modal body with overflow-y:auto) and sit above the modal overlay
+   (z-index 1000). ctRefOpen computes left/top/width on open and flips it up
+   when there isn't room below. */
+.ct-ref-dropdown { display: none; position: fixed; z-index: 1100; background: var(--ct-surface); border: 1px solid var(--ct-accent); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-height: 220px; overflow-y: auto; }
 .ct-ref-dropdown.open { display: block; }
 .ct-ref-search { width: 100%; padding: 6px 8px; border: none; border-bottom: 1px solid var(--ct-line); font-size: 0.85em; outline: none; box-sizing: border-box; }
 .ct-ref-options { max-height: 160px; overflow-y: auto; }
@@ -1532,6 +1536,19 @@ td .ct-ref-select, td .ct-ref-select * { box-shadow: none; }
 /* ── ct_measure editor (legacy) ── */
 .ct-measure-form { display:flex; flex-direction:column; gap:10px; }
 .ct-measure-form label { display:flex; flex-direction:column; gap:4px; font-size:0.82em; font-weight:600; color:var(--ct-ink-2); }
+/* A refselect extra field: label on top, the socle ref-select below — same
+   shape as the modal's other labelled fields. */
+.ct-measure-ref-field { display:flex; flex-direction:column; gap:4px; }
+.ct-measure-ref-label { font-size:0.82em; font-weight:600; color:var(--ct-ink-2); }
+/* Filterable search-select used for a refselect extra field: a plain input
+   that filters a (fixed, so never clipped) dropdown of options. */
+.ctm-ss { position:relative; }
+.ctm-ss-input { width:100%; padding:6px 10px; border:1px solid var(--ct-line); border-radius:6px; font-size:0.9em; font-family:inherit; box-sizing:border-box; }
+.ctm-ss-input:focus { outline:none; border-color:var(--ct-accent); box-shadow:var(--ct-focus-soft); }
+.ctm-ss-drop { display:none; position:fixed; z-index:1100; background:var(--ct-surface); border:1px solid var(--ct-accent); border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,0.15); max-height:220px; overflow-y:auto; }
+.ctm-ss-drop.open { display:block; }
+.ctm-ss-opt { padding:6px 10px; cursor:pointer; font-size:0.85em; }
+.ctm-ss-opt:hover { background:var(--ct-accent-tint); }
 .ct-measure-form input, .ct-measure-form select, .ct-measure-form textarea { padding:6px 10px; border:1px solid var(--ct-line); border-radius:6px; font-size:0.9em; font-family:inherit; }
 .ct-measure-form textarea { resize:vertical; min-height:60px; }
 
