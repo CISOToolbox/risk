@@ -54,7 +54,11 @@ async def test_stats_counts_distribution_posture_preserved():
                 AnalysisMeasure(analysis_id=aid, id="M2", statut="En cours"),
                 AnalysisMeasure(analysis_id=aid, id="M3", statut="A faire"),
                 AnalysisMeasure(analysis_id=aid, id="M4", statut="A faire", echeance="2020-01-01"),
-                AnalysisMeasure(analysis_id=aid, id="M5", statut="A etudier"),  # excluded by filter
+                # Backlog counts as remaining work (planned), in both spellings
+                # — a prior filter used the unaccented "A etudier" and missed
+                # the accented stored value (BUG-81).
+                AnalysisMeasure(analysis_id=aid, id="M5", statut="A etudier"),
+                AnalysisMeasure(analysis_id=aid, id="M6", statut="À étudier"),
             ])
             db.add_all([
                 AnalysisResidual(analysis_id=aid, sort_order=0, risk_level="Critique", decision=""),
@@ -68,7 +72,7 @@ async def test_stats_counts_distribution_posture_preserved():
         assert out["entity_count"] == 2
         assert out["criticals"] == 1                         # 1 Critique residual (+ 0 Élevé)
         m = out["measures"]
-        assert (m["total"], m["completed"], m["in_progress"], m["planned"]) == (4, 1, 1, 2)
+        assert (m["total"], m["completed"], m["in_progress"], m["planned"]) == (6, 1, 1, 4)
         assert m["overdue"] == 1                             # M4: past echeance, not completed
         # posture = 100 - round(critical_high / total_residuals * 100) = 100 - 50
         assert out["posture"]["score"] == 50
