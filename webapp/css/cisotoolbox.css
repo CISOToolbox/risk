@@ -83,6 +83,9 @@
      -tint for a badge · -fill for a solid area (matrix cell, score
      chip) · base (solid) for an edge strip, a gauge or a destructive hover. */
   --ct-critical:      #b3261e;  --ct-critical-tint: #fbe9e7;  --ct-critical-fill: #e7bcb9;  --ct-critical-ink: #8c1d18;
+  /* A deeper red than --ct-critical for the most-severe level of a scale, so a
+     "critical" segment stays distinct from an "elevated" one on charts. */
+  --ct-critical-strong: #7a0f16;
   --ct-high:          #c2410c;  --ct-high-tint:     #fdeee3;  --ct-high-fill:     #eecabb;  --ct-high-ink:     #8f3009;
   --ct-medium:        #a16207;  --ct-medium-tint:   #fdf4dc;  --ct-medium-fill:   #e8d8c1;  --ct-medium-ink:   #7c4a05;
   --ct-low:           #15803d;  --ct-low-tint:      #e7f4ec;  --ct-low-fill:      #c4dfce;  --ct-low-ink:      #116233;
@@ -186,6 +189,9 @@
   --ct-accent-ink:   #b9aefb;
 
   --ct-critical: #e8695f;  --ct-critical-tint: #3a1e1b;  --ct-critical-fill: #613333;  --ct-critical-ink: #f0a49c;
+  /* Deeper/more saturated than --ct-critical so the most-severe level stays
+     readable and distinct on a dark background. */
+  --ct-critical-strong: #c62828;
   --ct-high:     #e08542;  --ct-high-tint:     #3a2415;  --ct-high-fill:     #5a3b27;  --ct-high-ink:     #efab77;
   --ct-medium:   #d9a23c;  --ct-medium-tint:   #332a12;  --ct-medium-fill:   #584625;  --ct-medium-ink:   #e2c069;
   --ct-low:      #4caf6d;  --ct-low-tint:      #16301f;  --ct-low-fill:      #244936;  --ct-low-ink:      #7ecb96;

@@ -230,7 +230,9 @@ function _svgEsc(v) { return String(v == null ? "" : v).replace(/&/g, "&amp;").r
 // the active theme. Exotic names (teal, purple…) keep their vivid hex so
 // multi-series breakdowns stay distinguishable.
 var _SVG_VAR_COLORS = {
-    red: "var(--ct-critical)", redDark: "var(--ct-critical)", redMax: "var(--ct-critical)",
+    // redMax is the most-severe level (e.g. Critique vs Élevé on the residual
+    // risk donut) — a deeper red so it stays distinct from red (--ct-critical).
+    red: "var(--ct-critical)", redDark: "var(--ct-critical)", redMax: "var(--ct-critical-strong)",
     orange: "var(--ct-high)", yellow: "var(--ct-medium)", green: "var(--ct-low)",
     blue: "var(--ct-accent)", gray: "var(--ct-neutral)", dark: "var(--ct-ink-1)",
     // Identity hues resolve to the categorical tokens, so a multi-series
