@@ -36,33 +36,88 @@ from src.routes.analyses import _can, _reconstruct_data
 router = make_ai_router(generic_complete=False)
 
 
-RISK_SYSTEM_PROMPT = "\n".join([
-    "You are an EBIOS Risk Manager (EBIOS RM) specialist following the ANSSI methodology.",
-    "You assist in completing risk analyses structured in 5 workshops.",
-    "",
-    "EBIOS RM structure:",
-    "- Workshop 1: Scope & security baseline — Business assets (VM), Supporting assets (BS), Feared events (ER), Security baseline (ANSSI 42 or ISO 27001 Annex A)",
-    "- Workshop 2: Risk origins — Risk origins (RO/SR) and Target objectives (TO/OV), assessed as RO/TO pairs with Motivation/Resources/Activity scores (0-4)",
-    "- Workshop 3: Strategic scenarios — Stakeholders (PP) with threat assessment (Dependency/Penetration/Maturity/Trust), Strategic scenarios (SS) linking RO/TO → PP → BS → ER",
-    "- Workshop 4: Operational scenarios — Kill chains (SOP) using step-by-step method (proche en proche), MITRE ATT&CK techniques, controls assessment (Effective/Partial/Absent)",
-    "- Workshop 5: Risk treatment — Security measures registry, residual risk assessment, treatment decisions",
-    "",
-    "Rules:",
-    "- Business assets (VM): critical processes or information, assessed on DICT (Availability, Integrity, Confidentiality, Traceability)",
-    "- Supporting assets (BS): IT components supporting VMs (servers, apps, networks, data)",
-    "- Feared events (ER): business impact per VM, severity 1-4",
-    "- Stakeholders (PP): external actors only (suppliers, partners, clients). Internal employees are NOT stakeholders if the study scope is the entire organization",
-    "- RO/TO pairs: Relevance = (Motivation + Resources + Activity) / 12. Priority: P1 (>7), P2 (5-7), Not retained (3-4), Excluded (≤2)",
-    "- Strategic scenarios (SS): WHO (RO) attacks WHY (TO) THROUGH WHOM (PP) targeting WHAT (BS) causing WHICH impact (ER). Severity = MAX of linked ER severities",
-    "- Kill chains (SOP): step-by-step from entry point (exposed BS) through lateral movement to final target (BS carrying VM). Each phase = elementary action with MITRE ATT&CK technique",
-    "- Security measures: prioritize baseline measures first, then ecosystem, then complementary",
-    "",
-    "IMPORTANT: Always respond in the language specified in the user prompt (French or English).",
+# The system prompt is composed PER WORKSHOP. When the analyst works on one
+# step, only that workshop's structure and rules are sent — the other
+# workshops are noise that dilutes the model's focus (reviewed 2026-10).
+_SYS_INTRO = (
+    "You are an EBIOS Risk Manager (EBIOS RM) specialist following the ANSSI "
+    "methodology. You help an analyst complete a risk study structured in 5 "
+    "workshops; right now you assist with {ws}."
+)
+
+_SYS_WS_LABEL = {
+    1: "Workshop 1 — scope & security baseline",
+    2: "Workshop 2 — risk origins",
+    3: "Workshop 3 — strategic scenarios",
+    4: "Workshop 4 — operational scenarios",
+    5: "Workshop 5 — risk treatment",
+}
+
+_SYS_STRUCTURE = {
+    1: "- Workshop 1: Scope & security baseline — Business assets (VM), Supporting assets (BS), Feared events (ER), Security baseline (ANSSI 42 or ISO 27001 Annex A)",
+    2: "- Workshop 2: Risk origins — Risk origins (RO/SR) and Target objectives (TO/OV), assessed as RO/TO pairs with Motivation/Resources/Activity scores (0-4)",
+    3: "- Workshop 3: Strategic scenarios — Stakeholders (PP) with threat assessment (Dependency/Penetration/Maturity/Trust), Strategic scenarios (SS) linking RO/TO → PP → BS → ER",
+    4: "- Workshop 4: Operational scenarios — Kill chains (SOP) using step-by-step method (proche en proche), MITRE ATT&CK techniques, controls assessment (Effective/Partial/Absent)",
+    5: "- Workshop 5: Risk treatment — Security measures registry, residual risk assessment, treatment decisions",
+}
+
+_SYS_RULES = {
+    1: [
+        "- Business assets (VM): critical processes or information, assessed on DICT (Availability, Integrity, Confidentiality, Traceability)",
+        "- Supporting assets (BS): IT components supporting VMs (servers, apps, networks, data)",
+        "- Feared events (ER): business impact per VM, severity 1-4",
+    ],
+    2: [
+        # Relevance is the SUM of the three scores (0-12), shown as sum/12 in the
+        # UI; thresholds are on that sum (not a division). Matches _fort() in
+        # ai_prompts.py and the frontend colouring (>7 P1, >4 P2).
+        "- RO/TO pairs: Relevance = Motivation + Resources + Activity (the sum, 0-12; shown as sum/12). Priority from the sum: P1 (8-12), P2 (5-7), Not retained (3-4), Excluded (0-2)",
+    ],
+    3: [
+        "- Stakeholders (PP): external actors only (suppliers, partners, clients). Internal employees are NOT stakeholders if the study scope is the entire organization",
+        "- Strategic scenarios (SS): WHO (RO) attacks WHY (TO) THROUGH WHOM (PP) targeting WHAT (BS) causing WHICH impact (ER). Severity = MAX of linked ER severities",
+    ],
+    4: [
+        "- Kill chains (SOP): step-by-step from entry point (exposed BS) through lateral movement to final target (BS carrying VM). Each phase = elementary action with MITRE ATT&CK technique",
+    ],
+    5: [
+        "- Security measures: prioritize baseline measures first, then ecosystem, then complementary",
+    ],
+}
+
+# Each AI panel belongs to one workshop; the system prompt carries only that
+# one. An unknown panel falls back to all five.
+_PANEL_WORKSHOP = {
+    "vm": 1, "bs": 1, "er": 1, "socle": 1, "socle_row": 1,
+    "srov": 2,
+    "pp": 3, "ss": 3,
+    "sop": 4, "sop_row": 4,
+    "eco": 5, "eco_row": 5, "measures": 5, "residuals": 5, "residual_ss": 5,
+}
+
+_SYS_TRANSVERSE = [
+    "IMPORTANT: Write the ENTIRE response in the language specified in the user prompt (French or English) — EVERY field, including the short name/title fields (nom, evenement, scenario, mesure…), not only the long descriptions. Never leave a name in another language.",
     "IMPORTANT: Always respond with valid JSON matching the requested schema. No markdown, no explanation — JSON only.",
     "IMPORTANT: NEVER propose elements that already exist in the analysis. The user prompt includes existing elements — check them carefully and only suggest NEW, DIFFERENT items. Avoid duplicates or near-duplicates (same concept with slightly different wording).",
     "IMPORTANT: When proposing more than 2 items, keep each suggestion concise: short names (max 10 words) and brief details (max 2 sentences). When proposing 1-2 items, you may provide more detailed descriptions.",
     "IMPORTANT: If the user instruction is off-topic, hostile, asks for something outside EBIOS RM, or you cannot fulfil it as suggestions, respond with JSON {\"error\": \"brief explanation in the user's language\"} instead of fabricated content. NEVER smuggle refusals into suggestion fields.",
-])
+]
+
+
+def build_system_prompt(panel: str) -> str:
+    """EBIOS RM system prompt scoped to the current step's workshop: only that
+    workshop's structure and rules, plus the transverse constraints. An
+    unknown panel falls back to all five workshops."""
+    ws = _PANEL_WORKSHOP.get(panel)
+    workshops = [ws] if ws else [1, 2, 3, 4, 5]
+    lines = [_SYS_INTRO.format(ws=_SYS_WS_LABEL[ws] if ws else "the whole study"),
+             "", "EBIOS RM structure:"]
+    lines += [_SYS_STRUCTURE[n] for n in workshops]
+    lines += ["", "Rules:"]
+    for n in workshops:
+        lines += _SYS_RULES[n]
+    lines += [""] + _SYS_TRANSVERSE
+    return "\n".join(lines)
 
 
 def _parse_lax_or_refuse(text: str):
@@ -141,7 +196,7 @@ async def risk_suggest(body: RiskSuggestRequest,
         raise HTTPException(status_code=422, detail=str(e))
 
     provider, model = await _runtime_provider_model(db)
-    raw = await call_llm(db, RISK_SYSTEM_PROMPT, user_prompt, provider, model)
+    raw = await call_llm(db, build_system_prompt(body.panel), user_prompt, provider, model)
     # The server ENFORCES the expected shape rather than trusting the
     # model: hostile text stored in the database can hijack it, it cannot
     # get the result through. Unknown fields are discarded here, never

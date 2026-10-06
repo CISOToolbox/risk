@@ -93,7 +93,8 @@ if (typeof _registerTranslations === "function") {
         "ai.label.eco": "Mesures Écosystème",
         "ai.label.measures": "Mesures de Sécurité",
         "ai.label.residuals": "Risques Résiduels",
-        "ai.label.socle": "Socle de sécurité"
+        "ai.label.socle": "Socle de sécurité",
+        "ai.sop_for": "SOP pour "
     });
     _registerTranslations("en", {
         "ai.btn": "✨ AI",
@@ -156,7 +157,8 @@ if (typeof _registerTranslations === "function") {
         "ai.label.eco": "Ecosystem Controls",
         "ai.label.measures": "Security Controls",
         "ai.label.residuals": "Residual Risks",
-        "ai.label.socle": "Security baseline"
+        "ai.label.socle": "Security baseline",
+        "ai.sop_for": "SOP for "
     });
 }
 
@@ -164,8 +166,8 @@ if (typeof _registerTranslations === "function") {
 // SYSTEM PROMPT — backend deployment
 // ═══════════════════════════════════════════════════════════════════════
 // The EBIOS RM methodology system prompt lives server-side, in
-// risk/src/routes/ai.py (RISK_SYSTEM_PROMPT). _callAI posts the per-panel
-// user prompt to POST api/ai/risk/suggest, which owns the methodology.
+// risk/src/routes/ai.py (build_system_prompt(panel)). _callAI posts the
+// per-panel user prompt to POST api/ai/risk/suggest, which owns the methodology.
 // The opensource (browser-local) build keeps the prompt here instead.
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -258,7 +260,7 @@ function _normalizeSuggestions(type: string, result: any): any[] {
         });
     }
     if (type === "sop" && result && result.phases) {
-        result._title = "SOP for " + (result.ss || "");
+        result._title = t("ai.sop_for") + (result.ss || "");
         return [result];
     }
     if (Array.isArray(result)) return result;

@@ -190,15 +190,42 @@ def _action_schema(inclure: bool) -> str:
     return _ACTION_SCHEMA if inclure else ""
 
 
+# The study-context fields that help the model tailor suggestions: the free
+# text describing the organisation, its scope and the analyst's own notes —
+# where the analyst gives the most information. Metadata (date, analyst,
+# previous date, the severity-scale flag) is dropped as noise.
+_CONTEXT_KEYS = ("societe", "objet_etude", "reglementation", "evolutions", "commentaires")
+
+
+def _study_context(D: dict, *extra: str) -> dict:
+    """The study context useful to a step. ``extra`` adds panel-specific keys
+    (e.g. ``socle`` for supporting assets and security measures)."""
+    c = D.get("context", {}) or {}
+    return {k: c[k] for k in (*_CONTEXT_KEYS, *extra) if c.get(k)}
+
+
 # ── one builder per panel ─────────────────────────────────────────────────
 
 def _vm(D: dict, lang: str, **_) -> str:
+    n = len(_rows(D, "vm"))
+    # Build the inventory to ~10 fast, then one at a time (the model counts
+    # badly, so the quota is decided here).
+    if n >= 10:
+        howmany = ("Propose exactly ONE more business asset (VM) — the single most relevant one"
+                   " still missing.")
+    else:
+        howmany = (f"Propose {min(6, 10 - n)} NEW business assets (VM), the most relevant still"
+                   " missing, to build the inventory toward about 10 in total.")
     return (
-        "Context: " + _j(D.get("context", {})) +
-        "\n\nExisting business assets (VM): " + _j(_pick(_rows(D, "vm"), "id", "nom", "nature")) +
-        "\n\nPropose 3-5 additional business assets (VM) that are missing for this organization."
-        " Consider the sector, activities, and regulatory context. You may also suggest updates"
-        " to existing VMs by including their id." +
+        "Context: " + _j(_study_context(D)) +
+        "\n\nExisting business assets (VM): "
+        + _j(_pick(_rows(D, "vm"), "id", "nom", "nature", "description")) +
+        "\n\n" + howmany +
+        " Ground your suggestions in the context above (sector, activities, regulatory framework,"
+        " analyst notes). A VM is a critical business PROCESS or INFORMATION — never an IT component"
+        " (a server, application, database or network is a supporting asset / BS). Keep the"
+        " granularity at the business level, not a single tool or document. You may also suggest"
+        " updates to existing VMs by including their id." +
         "\n\nRespond in " + lang + "." +
         '\n\nJSON schema: [{"id":"VM-XX (only if updating existing)","nom":"...",'
         '"nature":"Information|Processus","description":"...","responsable":"..."}]'
@@ -206,14 +233,36 @@ def _vm(D: dict, lang: str, **_) -> str:
 
 
 def _bs(D: dict, lang: str, **_) -> str:
+    vms = _rows(D, "vm")
+    bss = _rows(D, "bs")
+    # A VM is covered when its id appears in some BS's vm field. Cover the
+    # uncovered ones first; the model counts badly, so the quota is set here.
+    # Match on whole ids, not substrings — VM-100 must not count as covered by
+    # a BS linked to VM-1000 (the frontend's _partMatches guards the same way).
+    linked = {tok for b in bss for tok in str(b.get("vm", "")).replace(",", " ").split()}
+    uncovered = [f'{v.get("id")} - {v.get("nom", "")}' for v in vms
+                 if v.get("id") and v["id"] not in linked]
+    gap = bool(uncovered) or len(bss) < 6
+    howmany = ("Propose several NEW supporting assets (BS), up to 6"
+               if gap else
+               "Propose ONE or two more supporting assets (BS) — the most relevant still missing")
+    covering = ("First cover the business assets that have NO supporting asset yet: "
+                + _j(uncovered) + ". "
+                if uncovered else
+                "Every business asset already has at least one supporting asset. ")
     return (
-        "Context: " + _j(D.get("context", {})) +
-        "\n\nBusiness assets: " + _j(_pick(_rows(D, "vm"), "id", "nom")) +
-        "\n\nExisting supporting assets: " + _j(_pick(_rows(D, "bs"), "id", "nom", "type", "vm")) +
-        "\n\nPropose 3-5 additional supporting assets (BS) missing to support these business assets."
-        " For each one give its type, the business assets it supports (use VM IDs), where it"
-        " runs or is held (localisation: site, datacentre, cloud region, provider) and who is"
-        " accountable for it (proprietaire: the internal team or role that owns it)."
+        "Context: " + _j(_study_context(D, "socle")) +
+        "\n\nBusiness assets: " + _j(_pick(vms, "id", "nom")) +
+        "\n\nExisting supporting assets: " + _j(_pick(bss, "id", "nom", "type", "vm")) +
+        "\n\n" + howmany + ". " + covering +
+        "Also add the cross-cutting supporting assets common to the whole information system that"
+        " are still missing (identity directory, authentication/SSO, office & collaboration suite,"
+        " network, backup, workstations, supervision…) — they support the business assets"
+        " indirectly; for these list every VM they serve, or all of them."
+        " For each BS give: its type — one of Hardware, Software/Application, Network, Data,"
+        " Cloud/external service, Site/premises, People/organisation (in the analysis language);"
+        " the business assets it supports (VM IDs); localisation (site, datacentre, cloud region,"
+        " provider); and proprietaire (the internal team or role that owns it)."
         " You may also suggest updates to existing BSs by including their id." +
         "\n\nRespond in " + lang + "." +
         '\n\nJSON schema: [{"id":"BS-XX (only if updating existing)","nom":"...","type":"...",'
@@ -226,7 +275,7 @@ def _er(D: dict, lang: str, **_) -> str:
     max_g = echelle[0].get("niveau", 4) if echelle else 4
     par_cat = bool((D.get("context") or {}).get("gravite_par_categorie"))
     base = (
-        "Context: " + _j(D.get("context", {})) +
+        "Context: " + _j(_study_context(D)) +
         "\n\nBusiness assets: " + _j(_pick(_rows(D, "vm"), "id", "nom")) +
         "\n\nExisting feared events: " + _j(_pick(_rows(D, "er"), "id", "evenement", "vm", "gravite"))
     )
@@ -257,9 +306,15 @@ def _er(D: dict, lang: str, **_) -> str:
             f'{{"financier":1-{max_g},"reputation":1-{max_g},"reglementaire":1-{max_g},'
             f'"donnees_perso":1-{max_g},"operationnel":1-{max_g}}}}}]'
         )
+    # Single-scale config: pass the scale WITH the meaning of each level, like
+    # the per-category branch — otherwise the model rates severity blindly.
+    single_scale = [{"niveau": g.get("niveau", ""), "label": g.get("label", ""),
+                     "description": g.get("description", "") or ""} for g in echelle]
     return (
         base +
-        f"\n\nGravity scale: 1 (low) to {max_g} (critical). Specify a single severity." + commun +
+        f"\n\nSeverity is a SINGLE overall level from 1 to {max_g}. Severity scale"
+        " (level, label, meaning): " + _j(single_scale) +
+        "\n\nFor each feared event, give one severity (gravite) using this scale." + commun +
         '\n\nJSON schema: [{"id":"ER-XX (only if updating existing)","evenement":"...",'
         '"vm":"VM-01 - Name","dict":"D|I|C|T","impacts":"...","gravite":1-' + str(max_g) + '}]'
     )
@@ -267,7 +322,7 @@ def _er(D: dict, lang: str, **_) -> str:
 
 def _srov(D: dict, lang: str, **_) -> str:
     return (
-        "Context: " + _j(D.get("context", {})) +
+        "Context: " + _j(_study_context(D)) +
         "\n\nBusiness assets: " + _j(_pick(_rows(D, "vm"), "id", "nom")) +
         "\n\nExisting risk origins (SR): " + _j(_pick(_rows(D, "sr_list"), "id", "nom")) +
         "\n\nExisting target objectives (OV): " + _j(_pick(_rows(D, "ov_list"), "id", "nom")) +
@@ -295,11 +350,18 @@ def _srov(D: dict, lang: str, **_) -> str:
 
 def _pp(D: dict, lang: str, **_) -> str:
     return (
-        "Context: " + _j(D.get("context", {})) +
+        "Context: " + _j(_study_context(D)) +
         "\n\nSupporting assets: " + _j(_pick(_rows(D, "bs"), "id", "nom", "type")) +
         "\n\nExisting stakeholders: " + _j(_pick(_rows(D, "pp"), "id", "nom", "type")) +
         "\n\nPropose 3-5 additional stakeholders (PP) in the ecosystem. Only EXTERNAL actors"
-        " (suppliers, partners, clients). Assess Dependency/Penetration/Maturity/Trust from 1 to 4."
+        " (suppliers, partners, clients)."
+        " Assess four threat criteria, each from 1 (low) to 4 (high), describing the stakeholder itself:"
+        " dependance = how much the organisation depends on it for its activities (1 negligible, 4 critical);"
+        " penetration = how deep its access/privileges into the information system are (1 none or minimal,"
+        " 4 broad/privileged); maturite = its own cybersecurity maturity (1 very weak, 4 excellent);"
+        " confiance = the level of trust in it (1 very low, 4 full)."
+        " The threat a stakeholder carries rises with dependance and penetration, and falls with maturite"
+        " and confiance."
         " Link to relevant BS (using ID - Name format)."
         " Give BOTH fields the screen holds: `categorie` is a closed list — exactly one of"
         " Client, Partenaire, Prestataire — and `type` is free text naming what the"
@@ -323,7 +385,7 @@ def _ss(D: dict, lang: str, **_) -> str:
         return _n("motivation") + _n("ressources") + _n("activite") > 4
 
     return (
-        "Context: " + _j(D.get("context", {})) +
+        "Context: " + _j(_study_context(D)) +
         "\n\nRO/TO pairs (P1+P2): " + _j(_pick([s for s in _rows(D, "srov") if _fort(s)],
                                                "couple", "sr_id", "ov_id")) +
         "\n\nStakeholders: " + _j(_pick(_rows(D, "pp"), "id", "nom")) +
@@ -344,7 +406,7 @@ def _ss(D: dict, lang: str, **_) -> str:
         " stakeholder or another business asset is a different scenario, not an extra entry here."
         " The severity follows on its own: the screen takes the highest of them." +
         "\n\nA strategic scenario is read at the level of the ECOSYSTEM. Write ONE sentence of business language, of this shape and no longer: <risk origin> exploits <what opens the path> to reach <business asset>, causing <feared event(s)>. What opens the path is said at the level of the ecosystem: the position of a stakeholder, an exposure of the organisation, an internal error, an access obtained. At most ONE intermediary, and only if there is one. It is NOT a kill chain: no technical step, no lateral movement, no workstation, hypervisor, snapshot, log or credential, no tool and no ATT&CK tactic. That detail belongs to workshop 4 and is proposed on the operational scenario screen, where it is expected. If your sentence says HOW the attacker proceeds inside the information system, you have left workshop 3." +
-        "\n\nNaming the NATURE of what opens the path is expected — an exploited vulnerability on an exposed service, a configuration error, an access obtained from a provider, the trust granted to a partner. What does not belong is the SEQUEL: what the attacker alters next, which component, product or module he goes through, in what order. No vendor product name, no connector, interface, role, policy or named account. A sentence that chains two mechanisms — `then`, `in order to`, `by ...ing`, `through the ... exposed to ...` — is an operational scenario, whatever its vocabulary." +
+        "\n\nNaming the NATURE of what opens the path is expected — an exploited vulnerability on an exposed service, a configuration error, an access obtained from a provider, the trust granted to a partner. What does not belong is the SEQUEL: what the attacker alters next, which component, product or module he goes through, in what order. No vendor product name, no connector, interface, role, policy or named account. A sentence that chains two mechanisms — `then`, `in order to`, `by ...ing`, `through the ... exposed to ...` — is an operational scenario, whatever its vocabulary. The forbidden direction is DOWNWARD — below the business asset into the infrastructure that merely hosts it (a virtualization platform, a server, the enterprise network), a technical step, or a product/technology name: 'A cybercriminal exploits a vulnerability on the identity-federation service to reach the virtualization platform hosting the whole IAM' drills too low on both counts; say instead 'A cybercriminal exploits an exposure of the identity system to cause a mass takeover of digital identities', and reach 'the identity directory', never 'Active Directory'. Staying BROAD is, on the contrary, welcome: a scenario may group several origins ('a cybercriminal or a nation-state exploits a supply-chain exposure to steal data') and may name its target generally — a class of data, a service — without pinning one business asset. That generality is the point of workshop 3; workshop 4 specialises it. Fill `couple_id`, `bs` and `er` with what the scenario does reach, and leave `bs`/`er` broad or empty when it is deliberately general." +
         "\n\nA path does NOT have to go through a stakeholder. Workshop 3 covers direct paths too — the origin reaches the asset without a third party, through an exposure or a weakness of the organisation itself. For such a scenario, say so and leave `pp` empty. Vary your proposals: a set where every scenario starts with the same formula, or rests on the same kind of entry, is a template and not an analysis. Across the proposals, alternate what opens the path — the position of a stakeholder, an exposure, an internal error, an access obtained — and never repeat the same opening words twice." +
         "\n\nTest each sentence before proposing it: SEVERAL different technical paths must fit under it, because workshop 4 details them one by one as operational scenarios, on their own screen. If only one path fits your sentence, you have written that path instead of the scenario — make it general again." +
         "\n\nToo operational: `An attacker compromises the vendor support to alter the access policies and roles defined in the identity governance product, causing a massive leak of personal data through the provisioning connectors exposed to the business applications.` The same scenario at the right level: `A cybercriminal exploits the access held by the identity management provider (PP-03) to reach the identity system (BS-07) and cause the mass leak of the personal data it holds (ER-02).` A direct path, just as valid: `A cybercriminal exploits a vulnerability exposed on the online booking portal (BS-02) to reach the patient records it serves and cause their mass leak (ER-01)` — no stakeholder in that one, and `pp` stays empty." +
@@ -427,10 +489,8 @@ def _sop(D: dict, lang: str, ss_id: str | None = None,
     cible = next((s for s in _rows(D, "ss") if s.get("id") == ss_id), None)
     if cible is None:
         raise ValueError(f"unknown strategic scenario '{ss_id}'")
-    ctx = D.get("context") or {}
     return (
-        "Context: " + _j({"societe": ctx.get("societe", ""), "socle": ctx.get("socle", ""),
-                          "reglementation": ctx.get("reglementation", "")}) +
+        "Context: " + _j(_study_context(D, "socle")) +
         "\n\nTarget strategic scenario: " + _j({
             "id": cible.get("id", ""), "scenario": cible.get("scenario", ""),
             "couple_id": cible.get("couple_id", ""), "pp": cible.get("pp", ""),
@@ -459,7 +519,12 @@ def _sop(D: dict, lang: str, ss_id: str | None = None,
         " phases maximum. Set each phase to the MITRE ATT&CK tactic id that best matches it,"
         " following the canonical order: " +
         ", ".join(f"{k} {v}" for k, v in ATTACK_TACTICS.items()) +
-        ". Put the specific ATT&CK technique id (TXXXX) in the action description." +
+        ". Put the specific ATT&CK technique id (TXXXX) in the action description."
+        " Each phase is ONE elementary action with EXACTLY ONE ATT&CK technique — never chain"
+        " two techniques in the same phase, and never offer alternative actions joined by 'or'"
+        " ('deposit a trojanised patch or exploit an exposed admin endpoint' is two phases, not"
+        " one). If several routes are plausible, keep the single most likely one, or split them"
+        " into separate phases. The action is one concrete step, stated plainly." +
         "\n\nRead the existing control of a phase from the baseline assessment above, not from"
         " imagination. A requirement assessed as `applied` means its measures ARE in place:"
         " put its reference in `ref`, what it requires in `controle`, and set `efficacite` to"
@@ -467,7 +532,12 @@ def _sop(D: dict, lang: str, ss_id: str | None = None,
         " requirement counters the phase, or the one that would is `not applied`, set Absent"
         " and leave `controle` empty — never credit a control the baseline does not carry."
         " For phases with Absent or Partiel effectiveness, also propose a security measure"
-        " (mesure_proposee)." +
+        " (mesure_proposee). It must be CONCRETE and specific to THIS phase and its ATT&CK"
+        " technique — a precise operational, technical or detection control (a named mechanism,"
+        " a configuration, a monitoring/alerting rule, a segmentation), not a restatement of a"
+        " baseline requirement. The baseline already states what must broadly be in place; here"
+        " add the measure that would actually block or detect THIS step of the kill chain against"
+        " this supporting asset." +
         "\n\nRespond in " + lang + "." +
         '\n\nJSON schema: {"ss":"' + str(ss_id) + '","phases":[{"phase":"TA00XX (ATT&CK tactic id'
         ' from the list above)","action":"Short description (TXXXX)","bs":"BS-XX - Name",'
@@ -485,9 +555,8 @@ def _sop(D: dict, lang: str, ss_id: str | None = None,
 
 
 def _eco(D: dict, lang: str, avec_mesures: bool = True, **_) -> str:
-    ctx = D.get("context") or {}
     return (
-        "Context: " + _j({"societe": ctx.get("societe", ""), "socle": ctx.get("socle", "")}) +
+        "Context: " + _j(_study_context(D, "socle")) +
         "\n\nStakeholders (PP): " + _j(_pick(_rows(D, "pp"), "id", "nom", "type", "dependance",
                                              "penetration", "maturite", "confiance")) +
         "\n\nEcosystem measures already defined: " + _j([
@@ -511,7 +580,7 @@ def _measures(D: dict, lang: str, avec_mesures: bool = True, **_) -> str:
     faibles = [s for s in _rows(D, "sop_detail")
                if s.get("efficacite") in ("Absent", "Partiel")]
     return (
-        "Context: " + _j(D.get("context", {})) +
+        "Context: " + _j(_study_context(D, "socle")) +
         "\n\nWeak phases (Absent/Partial controls): " + _j([
             {"sop": s.get("sop", ""), "ss": s.get("ss", ""),
              "phase": _attack_label(s.get("phase", "")), "action": s.get("action", ""),
@@ -522,7 +591,10 @@ def _measures(D: dict, lang: str, avec_mesures: bool = True, **_) -> str:
         " reinforcement, then ecosystem measures, then new complementary measures. Specify type"
         " (Prévention/Détection/Réaction), which SOP/phase it addresses, and baseline reference if"
         " applicable. Each measure must have a short name (mesure) and a detailed implementation"
-        " description (details) — do not put the whole description in the mesure field." +
+        " description (details) — do not put the whole description in the mesure field."
+        " Each measure must be CONCRETE and specific to the weak phase it addresses — a precise"
+        " operational, technical or detection control, not a generic restatement of a baseline"
+        " requirement." +
         "\n\nRespond in " + lang + "." +
         '\n\nJSON schema: [{' + _action_schema(avec_mesures) + '"mesure":"short name","details":"detailed description of the measure",'
         '"origine":"Socle|Écosystème|SOP|Complémentaire","type":"Prévention|Détection|Réaction",'
@@ -533,7 +605,7 @@ def _measures(D: dict, lang: str, avec_mesures: bool = True, **_) -> str:
 
 def _residuals(D: dict, lang: str, **_) -> str:
     return (
-        "Context: " + _j(D.get("context", {})) +
+        "Context: " + _j(_study_context(D)) +
         "\n\nStrategic scenarios: " + _j(_pick(_rows(D, "ss"), "id", "scenario")) +
         "\n\nAll measures: " + _j(_pick(_rows(D, "measures"), "id", "mesure", "origine", "statut")) +
         "\n\nCurrent residuals: " + _j(D.get("residuals", [])) +
@@ -731,7 +803,6 @@ def _residual_ss(D: dict, lang: str, row: int | None = None,
         raise ValueError(f"strategic scenario row {row} out of range")
     ss = scenarios[row]
     res = (_rows(D, "residuals")[row] if row < len(_rows(D, "residuals")) else {}) or {}
-    ctx = D.get("context") or {}
     phases = [d for d in _rows(D, "sop_detail") if d.get("ss") == ss.get("id")]
     faibles = [p for p in phases if p.get("efficacite") in ("Absent", "Partiel")]
     liees = [x.strip().split(" - ")[0].strip()
@@ -741,7 +812,7 @@ def _residual_ss(D: dict, lang: str, row: int | None = None,
     g_num = _ss_gravity(D, ss)
     v_init = _ss_v_init(D, str(ss.get("id") or "")) or 4
     return (
-        "Context: " + _j({"societe": ctx.get("societe", ""), "socle": ctx.get("socle", "")}) +
+        "Context: " + _j(_study_context(D, "socle")) +
         "\n\nStrategic scenario: " + _j({
             "id": ss.get("id", ""), "scenario": ss.get("scenario", ""),
             "couple_id": ss.get("couple_id", ""), "pp": ss.get("pp", ""),
