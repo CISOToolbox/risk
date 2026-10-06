@@ -29,22 +29,21 @@
         anthropic: {
             label: "Anthropic (Claude)",
             models: [
+                { id: "claude-opus-5-5", label: "Claude Opus 5.5" },
                 { id: "claude-sonnet-5", label: "Claude Sonnet 5" },
-                { id: "claude-opus-5", label: "Claude Opus 5" },
-                { id: "claude-fable-5", label: "Claude Fable 5" },
-                { id: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5" },
-                { id: "claude-opus-4-8", label: "Claude Opus 4.8" },
-                { id: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" }
+                { id: "claude-fable-5-1", label: "Claude Fable 5.1" },
+                { id: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5" }
             ],
-            defaultModel: "claude-sonnet-5",
+            defaultModel: "claude-opus-5-5",
             placeholder: "sk-ant-...",
             endpoint: "https://api.anthropic.com/v1/messages"
         },
         openai: {
             label: "OpenAI (GPT)",
             models: [
-                { id: "gpt-5.6", label: "GPT-5.6" },
-                { id: "gpt-5.6-terra", label: "GPT-5.6 terra" },
+                { id: "gpt-5.6", label: "GPT-5.6 Sol" },
+                { id: "gpt-5.6-terra", label: "GPT-5.6 Terra" },
+                { id: "gpt-5.6-luna", label: "GPT-5.6 Luna" },
                 { id: "gpt-5.5", label: "GPT-5.5" },
                 { id: "gpt-5.4-mini", label: "GPT-5.4 mini" },
                 { id: "gpt-4o", label: "GPT-4o" }
@@ -56,10 +55,11 @@
         gemini: {
             label: "Google (Gemini)",
             models: [
-                { id: "gemini-3.6-flash", label: "Gemini 3.6 Flash" },
+                { id: "gemini-3.8-flash", label: "Gemini 3.8 Flash" },
+                { id: "gemini-3.1-pro", label: "Gemini 3.1 Pro" },
                 { id: "gemini-3.5-flash-lite", label: "Gemini 3.5 Flash-Lite" }
             ],
-            defaultModel: "gemini-3.6-flash",
+            defaultModel: "gemini-3.8-flash",
             placeholder: "AIza...",
             // {model} interpolated (URL-encoded) at call time.
             endpoint: "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
@@ -67,12 +67,11 @@
         bedrock: {
             label: "AWS Bedrock",
             models: [
+                { id: "anthropic.claude-opus-5-5", label: "Claude Opus 5.5 (Bedrock)" },
                 { id: "anthropic.claude-sonnet-5", label: "Claude Sonnet 5 (Bedrock)" },
-                { id: "anthropic.claude-opus-5", label: "Claude Opus 5 (Bedrock)" },
-                { id: "anthropic.claude-sonnet-4-6-20250514-v1:0", label: "Claude Sonnet 4.6 (Bedrock)" },
                 { id: "anthropic.claude-haiku-4-5-20251001-v1:0", label: "Claude Haiku 4.5 (Bedrock)" }
             ],
-            defaultModel: "anthropic.claude-sonnet-5",
+            defaultModel: "anthropic.claude-opus-5-5",
             placeholder: "AKIAIOSFODNN7EXAMPLE",
             endpoint: "https://bedrock-runtime.eu-west-3.amazonaws.com"
         }
