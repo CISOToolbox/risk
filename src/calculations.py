@@ -209,10 +209,13 @@ def compute_analysis_stats(data: dict) -> dict:
     socle_rate = round(socle_sum / socle_total, 1) if socle_total else None
 
     # ── Action plan progress ─────────────────────────────────────
-    active_measures = [m for m in measures if m.get("statut") != "À étudier"]
-    plan_total = len(active_measures)
+    # Every measure is remaining work until it is "Terminé" — the ones still
+    # "À étudier" (the backlog) included. Counting only non-backlog measures
+    # reported a plan of 5 done + 5 to-study as 100% complete and hid the work
+    # left to reach the target (BUG-81).
+    plan_total = len(measures)
     plan_completed = sum(
-        1 for m in active_measures if m.get("statut") == "Terminé"
+        1 for m in measures if m.get("statut") == "Terminé"
     )
     plan_progress = (
         round(plan_completed / plan_total * 100, 1)

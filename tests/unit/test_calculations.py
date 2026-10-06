@@ -439,13 +439,13 @@ class TestComputeAnalysisStats:
                 {"statut": "Terminé"},
                 {"statut": "En cours"},
                 {"statut": "Terminé"},
-                {"statut": "À étudier"},  # excluded from active
+                {"statut": "À étudier"},  # backlog — counts as remaining work (BUG-81)
             ],
         }
         stats = compute_analysis_stats(data)
-        assert stats["action_plan_total"] == 3  # excludes "À étudier"
+        assert stats["action_plan_total"] == 4  # all measures, "À étudier" included
         assert stats["action_plan_completed"] == 2
-        assert stats["action_plan_progress"] == pytest.approx(66.7, abs=0.1)
+        assert stats["action_plan_progress"] == pytest.approx(50.0, abs=0.1)
 
     def test_action_plan_all_completed(self):
         data = {

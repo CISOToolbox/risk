@@ -743,7 +743,7 @@ function renderIndicators() {
     const counts = [
         ["VM", D.vm.length], ["BS", D.bs.length], ["PP", D.pp.length],
         ["ER", D.er.length], ["SS", D.ss.length], ["SOP", D.sop_summary.length],
-        [t("ebios.misc.measures_indicator"), D.measures.filter(function(m) { return m.statut !== "À étudier"; }).length],
+        [t("ebios.misc.measures_indicator"), D.measures.length],
     ];
     document.getElementById("indicators")!.innerHTML = counts.map(
         ([d,n]) => `<div class="ct-kpi" data-density="dense"><div class="ct-kpi-tone"></div><div class="ct-kpi-body"><div class="ct-kpi-label">${esc(d)}</div><div class="ct-kpi-value">${n}</div></div></div>`
@@ -2139,7 +2139,7 @@ function renderSynthesis() {
 
     // Measures summary
     const showAllMeasures = !!(document.getElementById("synth-measures-all") && (document.getElementById("synth-measures-all") as HTMLInputElement).checked);
-    const filteredMeasures = showAllMeasures ? D.measures.filter(m => m.statut !== "À étudier") : D.measures.filter(m => m.statut && m.statut !== "Terminé" && m.statut !== "À étudier");
+    const filteredMeasures = showAllMeasures ? D.measures : D.measures.filter(m => m.statut && m.statut !== "Terminé");
     const origColor: Record<string, string> = {"Socle":"var(--ct-low-tint)","Écosystème":"var(--ct-medium-tint)","SOP":"var(--ct-high-tint)","Complémentaire":"var(--ct-info-tint)"};
     const statutColor: Record<string, string> = {"Terminé":"var(--ct-low)","En cours":"var(--ct-high)","À étudier":"var(--ct-critical)"};
     const hasTerminated = D.measures.some(m => m.statut === "Terminé");
@@ -2154,7 +2154,7 @@ function renderSynthesis() {
             msH += `<td>${m.statut ? _statutBadge(m.statut) : ""}</td></tr>`;
         });
         msH += '</tbody></table>';
-        const toDoCount = D.measures.filter(m => m.statut && m.statut !== "Terminé" && m.statut !== "À étudier").length;
+        const toDoCount = D.measures.filter(m => m.statut && m.statut !== "Terminé").length;
         msH += `<p class="ct-text-label ct-muted ct-mt-1">${t("ebios.misc.measures_todo_count", {todo: toDoCount, total: D.measures.length})}</p>`;
     } else {
         msH += `<p class="text-muted">${t("ebios.misc.no_measures")}</p>`;
@@ -3002,7 +3002,9 @@ function _synthesisData() {
         } else socle.nonEvalue++;
     });
     socle.avg = socle.count > 0 ? Math.round(totalConf / socle.count) : 0;
-    const toDo = D.measures.filter(function(m) { return m.statut && m.statut !== "Terminé" && m.statut !== "À étudier"; });
+    // Remaining work = everything not yet "Terminé", the "À étudier" backlog
+    // included (BUG-81).
+    const toDo = D.measures.filter(function(m) { return m.statut && m.statut !== "Terminé"; });
     const NY = (D.risk_matrix && D.risk_matrix.length) || (D.gravity_scale && D.gravity_scale.length) || 4;
     const NX = (D.risk_matrix && D.risk_matrix[0] && D.risk_matrix[0].levels && D.risk_matrix[0].levels.length) || 4;
     return { ssVinit: ssVinit, dist: dist, positions: positions, rows: rows, socle: socle,

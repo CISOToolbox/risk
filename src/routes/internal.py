@@ -125,9 +125,12 @@ async def internal_stats(request: Request, db: AsyncSession = Depends(get_db)):
     # ── Measures ──
     # Project only the two columns the buckets need — no full-ORM hydration of
     # every measure just to count (stats is polled by Pilot every 30s).
+    # Count ALL measures: one still "À étudier" (the backlog) is remaining work
+    # and buckets as "planned", so the dashboard shows the work left to reach
+    # the target (BUG-81). A previous `!= "A etudier"` filter both hid the
+    # backlog and missed the accented stored value "À étudier".
     measures_rows = (await db.execute(
         select(AnalysisMeasure.statut, AnalysisMeasure.echeance)
-        .where(AnalysisMeasure.statut != "A etudier")
     )).all()
     total_measures = len(measures_rows)
     completed = 0
