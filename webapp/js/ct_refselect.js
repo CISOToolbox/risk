@@ -64,10 +64,12 @@ function ctRefOpen(uid) {
     var wasOpen = dd.classList.contains("open");
     dd.classList.toggle("open");
     if (!dd.classList.contains("open") && wasOpen) {
+        _ctRefUntrack();
         _ctRefFlush(dd);
     }
     else if (dd.classList.contains("open")) {
         _ctRefPosition(uid, dd);
+        _ctRefTrack(uid);
         var search = dd.querySelector(".ct-ref-search");
         if (search) {
             search.value = "";
@@ -94,6 +96,31 @@ function _ctRefPosition(uid, dd) {
     else {
         dd.style.top = Math.round(r.bottom) + "px"; // open below
     }
+}
+// Keep the open dropdown glued to its field while the modal body (or window)
+// scrolls or resizes: the dropdown is position:fixed, so without this it stays
+// frozen where it opened. One shared handler (only one dropdown is open at a
+// time); it self-detaches once the dropdown is no longer open.
+var _ctRefRepos = null;
+function _ctRefTrack(uid) {
+    _ctRefUntrack();
+    _ctRefRepos = function () {
+        var dd = document.getElementById(uid + "-dd");
+        if (!dd || !dd.classList.contains("open")) {
+            _ctRefUntrack();
+            return;
+        }
+        _ctRefPosition(uid, dd);
+    };
+    window.addEventListener("scroll", _ctRefRepos, true);
+    window.addEventListener("resize", _ctRefRepos);
+}
+function _ctRefUntrack() {
+    if (!_ctRefRepos)
+        return;
+    window.removeEventListener("scroll", _ctRefRepos, true);
+    window.removeEventListener("resize", _ctRefRepos);
+    _ctRefRepos = null;
 }
 function ctRefFilter(uid, query) {
     var q = (query || "").toLowerCase();
@@ -216,6 +243,7 @@ document.addEventListener("click", function (e) {
         d.classList.remove("open");
         _ctRefFlush(d);
     });
+    _ctRefUntrack();
 });
 window.ctRefSelect = ctRefSelect;
 window.ctRefOpen = ctRefOpen;
