@@ -22,13 +22,19 @@ Correspondence table (KEEP IN SYNC — the fixture test enforces it):
     audit       1     —                               —
     asset       1     —                               —
     access      1     —                               —
-    vendor      2     1→2 _migrateAssessmentToV2      1→2 no-op passthrough*
+    vendor      3     1→2 _migrateAssessmentToV2,     1→2 no-op passthrough*,
+                      2→3 classification 0→null       2→3 classification 0→null
 
-    * The V1→V2 assessment conversion needs the default questionnaire
-      template, which lives frontend-side. The backend keeps accepting
-      legacy V1 assessments (assessment_validation exemption R9) and the
-      conversion happens at first frontend load of the blob — the chain
-      entry documents the rev gap without duplicating the template.
+    * The V1→V2 assessment conversion needs the default questionnaire template,
+      which lives frontend-side, so the python 1→2 stays a documented
+      passthrough (legacy V1 assessments are accepted by assessment_validation
+      R9 and converted at first frontend load). The V2→V3 classification
+      coercion (FEAT-54: a stored 0 now means "assessed: no impact"; old 0s →
+      null) must run on EVERY import path, including the server-side
+      import/restore that persists the blob — so it runs in python
+      (_vendor_2_to_3) AND in the frontend chain, reshaping the ``vendors`` key
+      (declared in RESHAPED_KEYS, which the fixture test honours). The live DB
+      is migrated by alembic 018.
 
 Bumping a module's rev requires, in the SAME commit: the TS migration,
 the python migration (or documented passthrough), and an archived
@@ -44,7 +50,7 @@ MODULE_REVS: dict[str, int] = {
     "audit": 1,
     "asset": 1,
     "access": 1,
-    "vendor": 2,
+    "vendor": 3,
 }
 
 # Top-level collections guaranteed to exist after normalization — additive
@@ -75,8 +81,52 @@ def _vendor_1_to_2(data: dict) -> None:
     """Documented passthrough — see the correspondence table above."""
 
 
+_V54_CLS_KEYS = ("ops_impact", "processes", "replace_difficulty",
+                 "data_sensitivity", "integration", "regulatory_impact")
+_V54_DEP = ("ops_impact", "processes", "replace_difficulty")
+_V54_PEN = ("data_sensitivity", "integration", "regulatory_impact")
+
+
+def _v54_axis_mean(cls: dict, keys) -> float | None:
+    vals = []
+    for k in keys:
+        v = cls.get(k)
+        if v is None:
+            return None
+        vals.append(float(v))
+    return round(sum(vals) / len(vals), 1)
+
+
+def _vendor_2_to_3(data: dict) -> None:
+    """FEAT-54. A classification indicator at 0 used to mean "unset"; it now
+    means "assessed: no impact". Every stored 0 is coerced to null (not
+    assessed) and the derived exposure axes are recomputed all-or-nothing —
+    the same transform as alembic 018 and the frontend SCHEMA_MIGRATIONS[2], so
+    importing/restoring a rev<=2 blob never silently promotes an unset vendor to
+    "low". This reshapes the ``vendors`` key (declared in RESHAPED_KEYS)."""
+    for v in data.get("vendors") or []:
+        if not isinstance(v, dict):
+            continue
+        cls = v.get("classification")
+        if isinstance(cls, dict):
+            for k in _V54_CLS_KEYS:
+                if cls.get(k) == 0:
+                    cls[k] = None
+            exp = v.get("exposure")
+            if isinstance(exp, dict):
+                exp["dependance"] = _v54_axis_mean(cls, _V54_DEP)
+                exp["penetration"] = _v54_axis_mean(cls, _V54_PEN)
+
+
 MODULE_MIGRATIONS: dict[str, dict[int, Callable[[dict], None]]] = {
-    "vendor": {1: _vendor_1_to_2},
+    "vendor": {1: _vendor_1_to_2, 2: _vendor_2_to_3},
+}
+
+# Keys a module's migration chain is allowed to RESHAPE in place. The fixture
+# test checks these survive (stay present), not that they are byte-identical;
+# every other business key must be preserved verbatim.
+RESHAPED_KEYS: dict[str, set[str]] = {
+    "vendor": {"vendors"},  # FEAT-54 2→3 coerces classification 0 -> null
 }
 
 

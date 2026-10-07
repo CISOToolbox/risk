@@ -643,9 +643,14 @@ function _sliderColor(val, max) {
 function _applySliderStyle(el) {
     var val = parseInt(el.value) || 0;
     var max = parseInt(el.max) || 5;
+    var min = parseInt(el.min) || 0;
+    var span = (max - min) || 1;
     var invert = el.hasAttribute("data-invert");
-    var color = _sliderColor(invert ? (max - val) : val, max);
-    var pct = max > 0 ? (val / max * 100) : 0;
+    // Colour and fill are measured over [min, max], so the coloured bar ends
+    // exactly under the thumb for any min — e.g. a slider with a -1 "not
+    // assessed" notch. For the common min=0 slider this is unchanged.
+    var color = _sliderColor(invert ? (max - val) : (val - min), span);
+    var pct = (val - min) / span * 100;
     el.style.background = "linear-gradient(to right, " + color + " " + pct + "%, var(--ct-line) " + pct + "%)";
     var styleId = "slider-style-" + el.id;
     var existing = document.getElementById(styleId);
