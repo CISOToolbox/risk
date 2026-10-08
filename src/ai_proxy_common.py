@@ -57,7 +57,14 @@ async def _get_setting(key: str, db: AsyncSession) -> str:
 
 
 async def _get_custom_llm(db):
-    from src.routes.internal import _custom_llm
+    # Pushed by Pilot in the suite; a standalone build ships without
+    # routes/internal.py and reads only its own settings.
+    try:
+        from src.routes.internal import _custom_llm
+    except ModuleNotFoundError as e:
+        if e.name != "src.routes.internal":
+            raise
+        _custom_llm = {}
     cl = dict(_custom_llm)
     if not cl.get("endpoint"):
         ep = await _get_setting("ai_custom_endpoint", db)
