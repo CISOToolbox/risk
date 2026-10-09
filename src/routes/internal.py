@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.proxy_common import apply_proxy
 from src.auth import get_current_user
 from src.database import get_db
 from src.models import (
@@ -532,26 +533,23 @@ def _audit_internal_change(request: Request, action: str, details: dict) -> None
 
 @router.put("/internal/proxy")
 async def set_proxy(request: Request, db: AsyncSession = Depends(get_db)):
-    """Receive proxy config from Pilot."""
+    """Receive the outbound proxy config from Pilot: validated, then stored and
+    exported by src.proxy_common, which restores it at start-up. An empty
+    value clears it."""
     _check_service_token(request)
     body = await request.json()
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="Expected a JSON object")
     for key in ("http_proxy", "https_proxy"):
-        if key in body:
-            _validate_proxy_url(body[key])
-    if "http_proxy" in body:
-        os.environ["HTTP_PROXY"] = body["http_proxy"]
-        os.environ["http_proxy"] = body["http_proxy"]
-    if "https_proxy" in body:
-        os.environ["HTTPS_PROXY"] = body["https_proxy"]
-        os.environ["https_proxy"] = body["https_proxy"]
-    if "no_proxy" in body:
-        os.environ["NO_PROXY"] = body["no_proxy"]
-        os.environ["no_proxy"] = body["no_proxy"]
-    changed = {k: _redact_url(body[k]) for k in ("http_proxy", "https_proxy") if k in body}
-    if "no_proxy" in body:
-        changed["no_proxy"] = body["no_proxy"]
+        if body.get(key):
+            _validate_proxy_url(str(body[key]))
+    try:
+        changed = await apply_proxy(db, body)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Proxy endpoint not allowed: {e}")
     if changed:
-        _audit_internal_change(request, "proxy.set", changed)
+        _audit_internal_change(request, "proxy.set", {
+            k: v if k == "no_proxy" else (_redact_url(v) if v else "(cleared)") for k, v in changed.items()})
     return {"ok": True}
 
 

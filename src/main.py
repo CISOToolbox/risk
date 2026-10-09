@@ -102,6 +102,10 @@ async def on_startup():
     # Fail closed unless AUTH_MODE=none is explicit (see auth_common.assert_auth_posture).
     from src.auth import assert_auth_posture
     assert_auth_posture()
+    # The outbound proxy Pilot pushed, before anything goes out.
+    from src.database import async_session
+    from src.proxy_common import restore_proxy
+    await restore_proxy(async_session)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     logger.info("Database tables created")

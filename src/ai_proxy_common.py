@@ -73,7 +73,7 @@ async def _get_custom_llm(db):
                 "endpoint": ep,
                 "key": await _get_setting("ai_custom_key", db),
                 "model": await _get_setting("ai_custom_model", db),
-                "label": "Custom LLM",
+                "label": await _get_setting("ai_custom_label", db) or "Custom LLM",
             }
     return cl
 
@@ -491,7 +491,8 @@ def make_ai_router(generic_complete: bool = True) -> APIRouter:
                 await _upsert(f"ai_key_{provider}", body.get(provider, ""))
         # Bedrock secret/region + custom-LLM config (standalone deployments)
         for extra in ("ai_secret_bedrock", "ai_region_bedrock",
-                      "ai_custom_endpoint", "ai_custom_key", "ai_custom_model"):
+                      "ai_custom_endpoint", "ai_custom_key", "ai_custom_model",
+                      "ai_custom_label"):
             if extra in body:
                 await _upsert(extra, body.get(extra, ""))
         if "provider" in body:
