@@ -156,12 +156,6 @@ def _export_no_proxy() -> None:
     _export("no_proxy", ",".join(dict.fromkeys(entries)))  # each entry normalized already
 
 
-def pushed_proxy() -> bool:
-    """Whether the proxy in the environment is one Pilot pushed (rather than
-    the deployment's own, or none)."""
-    return any(_pushed.values())
-
-
 def _check_single_url(field: str, value: str) -> None:
     """One proxy URL per field. The route validates the URL's host only, so
     ``http://public:3128/,http://127.0.0.1:8080`` would pass it, and a

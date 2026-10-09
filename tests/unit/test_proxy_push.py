@@ -310,11 +310,11 @@ async def test_the_deployments_own_proxy_is_the_base_pilot_overrides(client, ses
     importlib.reload(proxy_common)
     try:
         await _push(client, {"http_proxy": "", "https_proxy": "", "no_proxy": ""})  # Pilot has none
-        assert os.environ["HTTPS_PROXY"] == corp and not proxy_common.pushed_proxy()
+        assert os.environ["HTTPS_PROXY"] == corp and not any(proxy_common._pushed.values())
         await _push(client, {"https_proxy": _PROXY})
-        assert os.environ["HTTPS_PROXY"] == _PROXY and proxy_common.pushed_proxy()
+        assert os.environ["HTTPS_PROXY"] == _PROXY and any(proxy_common._pushed.values())
         await _push(client, {"https_proxy": ""})  # cleared in Pilot: back to the deployment's
-        assert os.environ["HTTPS_PROXY"] == corp and not proxy_common.pushed_proxy()
+        assert os.environ["HTTPS_PROXY"] == corp and not any(proxy_common._pushed.values())
     finally:
         for var in _VARS:
             monkeypatch.delenv(var, raising=False)
@@ -355,7 +355,7 @@ async def test_a_restart_starts_from_the_stored_rows_not_from_memory(client, ses
         monkeypatch.delenv(var, raising=False)
     await proxy_common.restore_proxy(sessions)  # memory still holds the push
     assert "stale.medsecure.local" not in os.environ.get("NO_PROXY", "")
-    assert not proxy_common.pushed_proxy()
+    assert not any(proxy_common._pushed.values())
 
 
 @pytest.mark.asyncio
@@ -394,7 +394,7 @@ async def test_a_database_not_ready_at_start_up_still_leaves_a_readable_no_proxy
         assert [r for r in caplog.records if "stored proxy not restored" in r.getMessage()]
         assert os.environ["NO_PROXY"] == "localhost"
         httpx.Client().close()
-        assert not proxy_common.pushed_proxy()
+        assert not any(proxy_common._pushed.values())
     finally:
         for var in _VARS:
             monkeypatch.delenv(var, raising=False)
