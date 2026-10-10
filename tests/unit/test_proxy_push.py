@@ -227,11 +227,12 @@ async def test_the_log_names_the_proxy_host_only_and_only_on_change(client, capl
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("value", ["localhost,bad entry", "localhost,http://x", "a..b", "10.0.0.0/8",
-                                   "[::2]:443"])
-async def test_an_invalid_exception_is_refused(client, sessions, value):
+@pytest.mark.parametrize("value, entry", [("localhost,bad entry", "bad entry"), ("localhost,http://x", "http://x"),
+                                          ("a..b", "a..b"), ("10.0.0.0/8", "10.0.0.0/8"), ("[::2]:443", "[::2]:443")])
+async def test_an_invalid_exception_is_refused(client, sessions, value, entry):
     resp = await _push(client, {"https_proxy": _PROXY, "no_proxy": value})
     assert resp.status_code == 400
+    assert repr(entry) in resp.json()["detail"]  # Pilot tells the admin which one
     assert _proxy_env() == {}
     assert await _rows(sessions) == {}
 

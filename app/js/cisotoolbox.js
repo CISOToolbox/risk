@@ -1160,14 +1160,20 @@ function _sliderInput(el) {
 // ═══════════════════════════════════════════════════════════════════════
 // TOOLBAR & SIDEBAR
 // ═══════════════════════════════════════════════════════════════════════
-// isError is ignored here but consumed by the backend overrides
-// (vendor_api & co redefine showStatus with an error style).
+// An error is styled and stays long enough to be read; the timer of an
+// older message never clears a newer one.
 function showStatus(msg, isError) {
     var el = document.getElementById("status-msg");
-    if (el) {
-        el.textContent = msg;
-        setTimeout(function () { el.textContent = ""; }, 3000);
-    }
+    if (!el)
+        return;
+    el.textContent = msg;
+    el.classList.toggle("error", !!isError);
+    setTimeout(function () {
+        if (el.textContent === msg) {
+            el.textContent = "";
+            el.classList.remove("error");
+        }
+    }, isError ? 10000 : 3000);
 }
 function toggleMenu() {
     // Apps that don't ship an #io-menu dropdown (Surface, future modules)

@@ -615,6 +615,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-appbar-context .ct-sep { color: var(--ct-line-strong); }
 .ct-appbar-context .ct-muted { color: var(--ct-ink-2); }
 .ct-appbar-saved { font-family: var(--ct-font-mono); font-size: 11.5px; color: var(--ct-ink-2); }
+.ct-appbar-saved.error { color: var(--ct-critical); }
 .ct-appbar-actions { display: flex; align-items: center; gap: 4px; }
 .ct-iconaction { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
   border: 0; border-radius: var(--ct-r-md); background: transparent; color: var(--ct-ink-2); cursor: pointer; }

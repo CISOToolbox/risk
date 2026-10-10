@@ -202,10 +202,9 @@ async def call_llm(db: AsyncSession, system: str, user_msg: str,
     if provider != "custom" and not provider_conf:
         raise HTTPException(status_code=400, detail=f"Unknown provider: {provider}")
 
-    # follow_redirects=False is httpx's default, but it is stated here because
-    # the custom-provider branch below connects to a pinned IP: a redirect is a
-    # brand-new URL that never went through the guard, so silently enabling
-    # redirects later would undo the pin.
+    # follow_redirects=False is httpx's default, stated here: a redirect is a
+    # brand-new URL. The custom-provider branch below has its own guarded
+    # client, which must never follow one either (it would undo the pin).
     async with httpx.AsyncClient(timeout=170.0, follow_redirects=False) as client:
         try:
             if provider == "anthropic":
@@ -234,27 +233,30 @@ async def call_llm(db: AsyncSession, system: str, user_msg: str,
                 # POST carries the API key. Validating the hostname and then
                 # handing the *name* to httpx left a rebinding window — httpx
                 # re-resolves, so the IP that was vetted need not be the one
-                # connected to. Connect to the pinned IP instead, keeping the
-                # Host header and SNI so TLS still verifies the real name.
-                from src.ssrf_guard import resolve_safe_url as _rsu
+                # connected to. Directly, connect to the pinned IP, keeping the
+                # Host header and SNI so TLS still verifies the real name;
+                # through the outbound proxy, ask it for the name.
+                from src.ssrf_guard import resolve_safe_request
                 try:
-                    url, _host_headers, _ext = _rsu(url, require_https=True)
+                    url, _host_headers, _ext, _proxy = resolve_safe_request(url, require_https=True)
                 except ValueError as _e:
                     raise HTTPException(status_code=400, detail=f"Custom LLM endpoint blocked: {_e}")
                 hdrs = {"Content-Type": "application/json", **_host_headers}
                 if custom.get("key"):
                     hdrs["Authorization"] = f"Bearer {custom['key']}"
-                resp = await client.post(
-                    url, headers=hdrs, extensions=_ext,
-                    json={
-                        "model": custom.get("model") or model,
-                        "max_tokens": max_tokens,
-                        "messages": [
-                            {"role": "system", "content": system},
-                            {"role": "user", "content": user_msg},
-                        ],
-                    },
-                )
+                async with httpx.AsyncClient(timeout=170.0, follow_redirects=False,
+                                             transport=httpx.AsyncHTTPTransport(proxy=_proxy)) as custom_client:
+                    resp = await custom_client.post(
+                        url, headers=hdrs, extensions=_ext,
+                        json={
+                            "model": custom.get("model") or model,
+                            "max_tokens": max_tokens,
+                            "messages": [
+                                {"role": "system", "content": system},
+                                {"role": "user", "content": user_msg},
+                            ],
+                        },
+                    )
             elif provider == "gemini":
                 from urllib.parse import quote
                 g_url = provider_conf["endpoint"].format(model=quote(model, safe=""))
