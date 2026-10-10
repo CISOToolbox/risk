@@ -46,6 +46,7 @@ _ENV_NO_PROXY = os.environ.get("NO_PROXY") or os.environ.get("no_proxy") or ""
 # one cleared in Pilot brings it back, never leaves the module without.
 _ENV_PROXY = {f: os.environ.get(f.upper()) or os.environ.get(f) or "" for f in ("http_proxy", "https_proxy")}
 _pushed = {"http_proxy": "", "https_proxy": ""}  # what Pilot pushed, stored or restored
+_extra_internal: list[str] = []  # hosts a caller reaches with the service token (Pilot: its modules)
 _LABEL = re.compile(r"^(?!-)[a-z0-9_-]{1,63}(?<!-)$")  # httpx also reads an underscore
 _warned: set[str] = set()  # deployment entries already reported as unreadable
 
@@ -152,8 +153,31 @@ def _export_no_proxy() -> None:
     entries = [e for e in normalize_no_proxy(_pushed_no_proxy, strict=False).split(",") if e]
     entries += _deployment_entries()
     if any(os.environ.get(v) for v in ("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy")):
-        entries += [*_LOOPBACK, *_internal_hosts()]
+        entries += [*_LOOPBACK, *_internal_hosts(), *_extra_internal]
     _export("no_proxy", ",".join(dict.fromkeys(entries)))  # each entry normalized already
+
+
+def export_proxy(http_proxy: str, https_proxy: str, no_proxy: str, internal_hosts=()) -> None:
+    """Export a proxy kept somewhere else than in the ``proxy.*`` rows (Pilot's
+    own settings), its exceptions, and the hosts the caller reaches with the
+    service token, which never go through the proxy. An empty field falls
+    back to the deployment's own proxy."""
+    global _pushed_no_proxy, _extra_internal
+    for field, value in (("http_proxy", http_proxy), ("https_proxy", https_proxy)):
+        _pushed[field] = value or ""
+        _export(field, _pushed[field] or _ENV_PROXY[field])
+    _pushed_no_proxy = normalize_no_proxy(no_proxy or "", strict=False, warn=True)
+    _extra_internal = []
+    for host in filter(None, internal_hosts):
+        try:
+            if host.strip() == "*" or "," in host:  # one host, never every destination
+                raise ValueError("not a single host")
+            _extra_internal.append(_normalize_entry(host))
+        except ValueError as e:
+            if host not in _warned:
+                _warned.add(host)
+                logger.warning("internal host %r left out of NO_PROXY: %s", host, e)
+    _export_no_proxy()
 
 
 def _check_single_url(field: str, value: str) -> None:
