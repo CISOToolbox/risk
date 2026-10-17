@@ -215,17 +215,22 @@
             '<button class="settings-lang-btn' + (typeof _locale !== "undefined" && _locale === "fr" ? " active" : "") + '" id="settings-lang-fr">Français</button>' +
             '<button class="settings-lang-btn' + (typeof _locale !== "undefined" && _locale === "en" ? " active" : "") + '" id="settings-lang-en">English</button>' +
             '</div>' +
-            '</div>' +
-            '<div class="settings-section">' +
-            '<div class="settings-label">' + t("settings.ai_section") + '</div>' +
-            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
-            '<label class="settings-toggle"><input type="checkbox" id="settings-ai-toggle"' + (aiEnabled && canUse ? " checked" : "") + (canUse ? "" : " disabled") + '><span class="settings-toggle-slider"></span></label>' +
-            '<span class="fs-sm">' + t("settings.ai_enable") + '</span>' +
-            '</div>' +
-            (canUse
-                ? '<p class="fs-xs text-muted" style="margin:4px 0 0">' + esc(t("settings.ai_managed_note") || "Provider, model and API key are managed centrally by your administrator.") + '</p>'
-                : '<p class="fs-xs" style="margin:4px 0 0;color:var(--ct-critical)">' + esc(t("settings.ai_no_access") || "AI access has not been granted to your account. Contact your administrator.") + '</p>') +
             '</div>';
+        // hideAI: a module without browser-side AI (its AI, if any, runs on the
+        // server) shows no AI toggle — the same rule as the non-managed drawer.
+        if (!cfg.hideAI) {
+            h +=
+                '<div class="settings-section">' +
+                    '<div class="settings-label">' + t("settings.ai_section") + '</div>' +
+                    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
+                    '<label class="settings-toggle"><input type="checkbox" id="settings-ai-toggle"' + (aiEnabled && canUse ? " checked" : "") + (canUse ? "" : " disabled") + '><span class="settings-toggle-slider"></span></label>' +
+                    '<span class="fs-sm">' + t("settings.ai_enable") + '</span>' +
+                    '</div>' +
+                    (canUse
+                        ? '<p class="fs-xs text-muted" style="margin:4px 0 0">' + esc(t("settings.ai_managed_note") || "Provider, model and API key are managed centrally by your administrator.") + '</p>'
+                        : '<p class="fs-xs" style="margin:4px 0 0;color:var(--ct-critical)">' + esc(t("settings.ai_no_access") || "AI access has not been granted to your account. Contact your administrator.") + '</p>') +
+                    '</div>';
+        }
         h += (cfg.settingsExtraHTML ? cfg.settingsExtraHTML() : '');
         h += '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">' +
             '<button class="ai-btn-close" id="settings-cancel">' + t("ai.close") + '</button>' +
@@ -238,14 +243,16 @@
         document.getElementById("settings-lang-fr").onclick = function () { switchLang("fr", window.openSettings); };
         document.getElementById("settings-lang-en").onclick = function () { switchLang("en", window.openSettings); };
         document.getElementById("settings-save").onclick = function () {
-            var toggle = document.getElementById("settings-ai-toggle").checked;
-            if (toggle && !canUse)
-                return;
-            if (toggle && !aiEnabled) {
-                if (!confirm(t("settings.ai_privacy_warning")))
+            if (!cfg.hideAI) {
+                var toggle = document.getElementById("settings-ai-toggle").checked;
+                if (toggle && !canUse)
                     return;
+                if (toggle && !aiEnabled) {
+                    if (!confirm(t("settings.ai_privacy_warning")))
+                        return;
+                }
+                localStorage.setItem(pfx + "enabled", toggle ? "true" : "false");
             }
-            localStorage.setItem(pfx + "enabled", toggle ? "true" : "false");
             window._aiClosePanel();
             if (cfg.onSettingsSaved)
                 cfg.onSettingsSaved();
