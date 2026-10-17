@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.proxy_common import apply_proxy
+from src.proxy_common import apply_proxy, check_proxy_url
 from src.auth import get_current_user
 from src.database import get_db
 from src.models import (
@@ -39,25 +39,10 @@ VENDOR_URL = os.getenv("VENDOR_URL", "http://vendor-app:8080")
 
 
 def _validate_proxy_url(url: str) -> None:
-    """Reject a proxy URL that points at an internal target.
-
-    Delegates to the shared ssrf_guard rather than re-implementing the
-    blocklist. The local version this replaces swallowed socket.gaierror, so a
-    name that failed to resolve was ACCEPTED — the opposite of the shared
-    guard's fail-closed contract — and it never knew about the Alibaba/Oracle
-    metadata IPs, CGNAT, multicast or the reserved blocks.
-
-    It matters more here than at a normal call site: the route below exports
-    this value into the process-wide HTTP_PROXY, and httpx runs trust_env=True,
-    so it redirects EVERY outbound request the module makes afterwards —
-    including ones another guard had carefully pinned to a resolved IP.
-    """
-    from src.ssrf_guard import validate_public_url
-
+    """Reject a proxy URL that points at an internal target (see
+    ``proxy_common.check_proxy_url``)."""
     try:
-        # allow_private stays False: the previous implementation already
-        # refused RFC1918 proxies, so this is not a behaviour change.
-        validate_public_url(url)
+        check_proxy_url(url)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=f"Proxy endpoint not allowed: {e}")
 

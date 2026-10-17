@@ -18,7 +18,7 @@ the service token. While a proxy is set, NO_PROXY therefore always holds the
 loopback names and the host of every internal service URL (``*_URL``, except
 the public ones), next to what Pilot pushed.
 
-The route validates the URLs (``_validate_proxy_url``, ssrf_guard) before
+The routes validate the URLs (``check_proxy_url``, ssrf_guard) before
 calling ``apply_proxy``. ``restore_proxy`` does not resolve them again: they
 were validated when written, and a DNS failure at boot would drop the proxy.
 """
@@ -178,6 +178,20 @@ def export_proxy(http_proxy: str, https_proxy: str, no_proxy: str, internal_host
                 _warned.add(host)
                 logger.warning("internal host %r left out of NO_PROXY: %s", host, e)
     _export_no_proxy()
+
+
+def check_proxy_url(url: str, *, allow_private: bool = False) -> None:
+    """Raise ValueError unless ``url`` is an http(s) proxy on a safe target.
+
+    The proxy is exported into the process-wide HTTP(S)_PROXY, which httpx
+    honours (trust_env) for every outbound request, including the ones
+    another guard pinned to a resolved IP. Loopback, link-local (cloud
+    metadata) and the suite's own services are always refused;
+    ``allow_private`` keeps RFC1918 reachable, for an on-site proxy.
+    """
+    from src.ssrf_guard import validate_public_url
+
+    validate_public_url(url, allow_private=allow_private)
 
 
 def _check_single_url(field: str, value: str) -> None:
