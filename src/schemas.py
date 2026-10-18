@@ -98,12 +98,15 @@ class AIConfigResponse(BaseModel):
 
 class AIRuntimeResponse(BaseModel):
     managed: bool
+    managed_by: str = "pilot"
+    editable: bool = False
     can_use: bool
     provider: str
     model: str
     anthropic_configured: bool
     openai_configured: bool
     gemini_configured: bool = False
+    bedrock_configured: bool = False
     custom_configured: bool = False
 
 

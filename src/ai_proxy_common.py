@@ -38,10 +38,11 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src import auth_common
 from src.auth import auth_enabled, get_current_user, require_admin
 from src.database import get_db
 from src.models import AppSettings, User
-from src.settings_crypto import decrypt_setting, encrypt_setting, is_secret_key
+from src.settings_crypto import decrypt_setting, encrypt_setting_or_plain, is_secret_key
 from src.ai_models_common import AI_PROVIDERS
 from src.schemas import AICompleteRequest, AICompleteResponse, AIConfigResponse, AIRuntimeResponse
 
@@ -337,7 +338,36 @@ _provider_complete = call_llm
 
 
 def _ai_managed() -> bool:
+    """Pilot owns the AI settings and pushes them (suite)."""
     return os.getenv("AI_MANAGED_BY_PILOT", "false").lower() in ("1", "true", "yes")
+
+
+def _ai_on_server() -> bool:
+    """The module's server runs its AI: always in the suite (Pilot's settings)
+    and in standalone (the module admin's). The browser then never holds a
+    key, and every provider works — the page itself may only reach its own
+    server."""
+    return _ai_managed() or auth_common.AUTH_MODE != "pilot"
+
+
+def _check_ai_settings(body: dict) -> None:
+    """What a module admin saves, refused before anything is stored: an
+    unknown provider, a region that is not one (it ends up in the Bedrock
+    hostname), a custom endpoint the call itself would refuse — same check,
+    outbound proxy included. Pilot checks its own push."""
+    provider = body.get("provider")
+    if provider and provider not in AI_PROVIDERS and provider != "custom":
+        raise HTTPException(status_code=400, detail="Unknown AI provider")
+    region = (body.get("ai_region_bedrock") or "").strip()
+    if region:
+        _safe_bedrock_region(region)  # 400 unless a region name
+    endpoint = (body.get("ai_custom_endpoint") or "").strip()
+    if endpoint:
+        from src.ssrf_guard import resolve_safe_request
+        try:
+            resolve_safe_request(endpoint, require_https=True)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=f"Custom LLM endpoint not allowed: {e}")
 
 
 async def _runtime_provider_model(db: AsyncSession) -> tuple[str, str]:
@@ -421,7 +451,13 @@ def make_ai_router(generic_complete: bool = True) -> APIRouter:
 
     @router.get("/runtime", response_model=AIRuntimeResponse)
     async def get_ai_runtime(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-        managed = _ai_managed()
+        managed = _ai_on_server()
+        managed_by = "pilot" if _ai_managed() else "module"
+        try:
+            require_admin(user)
+            is_admin = True
+        except HTTPException:
+            is_admin = False
         if not auth_enabled() or user is None:
             can_use = True
         else:
@@ -434,12 +470,16 @@ def make_ai_router(generic_complete: bool = True) -> APIRouter:
             custom_configured = False
         return AIRuntimeResponse(
             managed=managed,
+            # Who sets provider, model and keys: Pilot, or the module's admin.
+            managed_by=managed_by,
+            editable=managed_by == "module" and is_admin,
             can_use=can_use,
             provider=provider,
             model=model,
             anthropic_configured=bool(await _get_api_key("anthropic", db)),
             openai_configured=bool(await _get_api_key("openai", db)),
             gemini_configured=bool(await _get_api_key("gemini", db)),
+            bedrock_configured=bool(await _get_api_key("bedrock", db)),
             custom_configured=custom_configured,
         )
 
@@ -474,6 +514,9 @@ def make_ai_router(generic_complete: bool = True) -> APIRouter:
             except HTTPException:
                 raise HTTPException(status_code=401, detail="Not authenticated")
             require_admin(user)
+            if _ai_managed():
+                raise HTTPException(status_code=409, detail="AI is managed in Pilot (Settings) in suite mode.")
+            _check_ai_settings(body)
 
         async def _upsert(key: str, value: str) -> None:
             # A stolen pg_dump used to yield live provider keys in cleartext —
@@ -481,7 +524,9 @@ def make_ai_router(generic_complete: bool = True) -> APIRouter:
             # for the keys that are credentials; provider/model/region stay
             # readable, they are configuration.
             if is_secret_key(key):
-                value = encrypt_setting(value)
+                # In clear when the deployment has no ENCRYPTION_KEY (allowed
+                # for some standalone modules, warned once), as every setting.
+                value = encrypt_setting_or_plain(value)
             r = await db.execute(select(AppSettings).where(AppSettings.key == key))
             s = r.scalar_one_or_none()
             if s:
@@ -496,7 +541,9 @@ def make_ai_router(generic_complete: bool = True) -> APIRouter:
                       "ai_custom_endpoint", "ai_custom_key", "ai_custom_model",
                       "ai_custom_label"):
             if extra in body:
-                await _upsert(extra, body.get(extra, ""))
+                # Stored as checked: an endpoint or region with stray spaces
+                # would pass the check and fail every call.
+                await _upsert(extra, str(body.get(extra) or "").strip())
         if "provider" in body:
             await _upsert("ai_provider", body.get("provider", ""))
         if "model" in body:
@@ -520,11 +567,19 @@ def make_ai_router(generic_complete: bool = True) -> APIRouter:
 
     @router.get("/keys")
     async def get_ai_keys(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+        """What the module's AI settings form shows: whether each secret is set
+        (never its value), and the configuration in clear."""
         require_admin(user)
         result = {}
-        for provider in ("anthropic", "openai", "gemini"):
+        for provider in ("anthropic", "openai", "gemini", "bedrock"):
             key = await _get_api_key(provider, db)
             result[provider] = "configured" if key else ""
+        for secret in ("ai_secret_bedrock", "ai_custom_key"):
+            result[secret] = "configured" if await _get_setting(secret, db) else ""
+        for plain in ("provider", "model"):
+            result[plain] = await _get_setting(f"ai_{plain}", db) or ""
+        for plain in ("ai_region_bedrock", "ai_custom_endpoint", "ai_custom_model", "ai_custom_label"):
+            result[plain] = await _get_setting(plain, db) or ""
         return result
 
     @router.post("/validate-key")

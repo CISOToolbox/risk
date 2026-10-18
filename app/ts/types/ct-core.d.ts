@@ -50,6 +50,9 @@ interface CtColor { bg: string; txt: string; vivid: string; }
 
 interface CtAiRuntime {
     managed: boolean;
+    /** Who sets provider, model and keys: "pilot" (suite) or "module" (its admin). */
+    managed_by?: string;
+    editable?: boolean;
     can_use: boolean;
     provider: string;
     model: string;
