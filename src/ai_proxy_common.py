@@ -239,7 +239,8 @@ async def call_llm(db: AsyncSession, system: str, user_msg: str,
                 # through the outbound proxy, ask it for the name.
                 from src.ssrf_guard import resolve_safe_request
                 try:
-                    url, _host_headers, _ext, _proxy = resolve_safe_request(url, require_https=True)
+                    url, _host_headers, _ext, _proxy = resolve_safe_request(
+                        url, require_https=not _insecure_llm_endpoint_allowed())
                 except ValueError as _e:
                     raise HTTPException(status_code=400, detail=f"Custom LLM endpoint blocked: {_e}")
                 hdrs = {"Content-Type": "application/json", **_host_headers}
@@ -337,6 +338,14 @@ async def call_llm(db: AsyncSession, system: str, user_msg: str,
 _provider_complete = call_llm
 
 
+def _insecure_llm_endpoint_allowed() -> bool:
+    """The operator's opt-out for a custom LLM over plain http — the same
+    ALLOW_INSECURE_CUSTOM_LLM_ENDPOINT Pilot reads (the suite's .env reaches
+    every service). It only lifts the https requirement: internal, metadata
+    and suite addresses stay refused."""
+    return os.getenv("ALLOW_INSECURE_CUSTOM_LLM_ENDPOINT", "false").lower() in ("1", "true", "yes")
+
+
 def _ai_managed() -> bool:
     """Pilot owns the AI settings and pushes them (suite)."""
     return os.getenv("AI_MANAGED_BY_PILOT", "false").lower() in ("1", "true", "yes")
@@ -354,7 +363,7 @@ def _check_ai_settings(body: dict) -> None:
     """What a module admin saves, refused before anything is stored: an
     unknown provider, a region that is not one (it ends up in the Bedrock
     hostname), a custom endpoint the call itself would refuse — same check,
-    outbound proxy included. Pilot checks its own push."""
+    outbound proxy and http opt-out included. Pilot checks its own push."""
     provider = body.get("provider")
     if provider and provider not in AI_PROVIDERS and provider != "custom":
         raise HTTPException(status_code=400, detail="Unknown AI provider")
@@ -365,7 +374,7 @@ def _check_ai_settings(body: dict) -> None:
     if endpoint:
         from src.ssrf_guard import resolve_safe_request
         try:
-            resolve_safe_request(endpoint, require_https=True)
+            resolve_safe_request(endpoint, require_https=not _insecure_llm_endpoint_allowed())
         except ValueError as e:
             raise HTTPException(status_code=400, detail=f"Custom LLM endpoint not allowed: {e}")
 
