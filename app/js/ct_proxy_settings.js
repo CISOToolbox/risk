@@ -59,12 +59,12 @@
             _field("ct-proxy-https", "settings.proxy.https", cfg.https_proxy, "http://proxy.example.com:3128", env.https_proxy) +
             _field("ct-proxy-http", "settings.proxy.http", cfg.http_proxy, "http://proxy.example.com:3128", env.http_proxy) +
             _field("ct-proxy-no", "settings.proxy.no_proxy", cfg.no_proxy, "intranet.example.com, 10.0.0.12", env.no_proxy) +
-            '</div>' +
-            '<div class="ct-actions mt-8">' +
-            '<button class="ct-btn" data-write data-variant="primary" data-click="_ctProxySave">' + esc(t("settings.proxy.save")) + '</button>' +
             '</div>';
     }
     window._ctProxySettingsBody = function () {
+        // Saved by the panel's single Save button.
+        if (window._ctSettingsRegister)
+            window._ctSettingsRegister({ id: "proxy", holder: HOLDER, save: _proxySave });
         return '<div id="' + HOLDER + '"><p class="ct-muted fs-sm">' + esc(t("settings.proxy.loading")) + '</p></div>';
     };
     window._ctProxySettingsHTML = function () {
@@ -87,7 +87,7 @@
             holder.innerHTML = '<p class="ct-muted fs-sm">' + esc(t("settings.proxy.load_error")) + '</p>';
         }
     };
-    window._ctProxySave = async function () {
+    async function _proxySave() {
         var body = {
             http_proxy: _val("ct-proxy-http").trim(),
             https_proxy: _val("ct-proxy-https").trim(),
@@ -100,20 +100,17 @@
                 body: JSON.stringify(body)
             });
             if (r.ok) {
-                showStatus(t("settings.proxy.saved"));
                 window._ctProxySettingsLoad();
+                return null;
             }
-            else if (r.status === 403) {
-                showStatus(t("settings.proxy.admin_only"), true);
-            }
-            else {
-                showStatus(await _detail(r, "settings.proxy.save_error"), true);
-            }
+            if (r.status === 403)
+                return t("settings.proxy.admin_only");
+            return await _detail(r, "settings.proxy.save_error");
         }
         catch (e) {
-            showStatus(t("settings.proxy.save_error"), true);
+            return t("settings.proxy.save_error");
         }
-    };
+    }
     _registerTranslations("fr", {
         "settings.proxy.title": "Proxy sortant",
         "settings.proxy.loading": "Chargement…",
@@ -125,8 +122,6 @@
         "settings.proxy.https": "Proxy HTTPS",
         "settings.proxy.http": "Proxy HTTP",
         "settings.proxy.no_proxy": "Exceptions (sans proxy)",
-        "settings.proxy.save": "Enregistrer",
-        "settings.proxy.saved": "Réglages du proxy enregistrés",
         "settings.proxy.save_error": "Échec de l'enregistrement des réglages du proxy",
         "settings.proxy.admin_only": "Réservé aux administrateurs du module"
     });
@@ -141,8 +136,6 @@
         "settings.proxy.https": "HTTPS proxy",
         "settings.proxy.http": "HTTP proxy",
         "settings.proxy.no_proxy": "Exceptions (no proxy)",
-        "settings.proxy.save": "Save",
-        "settings.proxy.saved": "Proxy settings saved",
         "settings.proxy.save_error": "Could not save the proxy settings",
         "settings.proxy.admin_only": "Reserved to the module's administrators"
     });

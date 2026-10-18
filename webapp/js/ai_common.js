@@ -386,8 +386,15 @@
         _overlayEl.className = "ai-overlay";
         var _overlayMouseDown = null;
         _overlayEl.addEventListener("mousedown", function (e) { _overlayMouseDown = e.target; });
-        _overlayEl.addEventListener("click", function (e) { if (e.target === _overlayEl && _overlayMouseDown === _overlayEl)
-            _aiClosePanel(); });
+        _overlayEl.addEventListener("click", function (e) {
+            if (e.target === _overlayEl && _overlayMouseDown === _overlayEl) {
+                // The settings ask before unsaved changes go (FEAT-59).
+                if (typeof window._ctSettingsClose === "function")
+                    window._ctSettingsClose();
+                else
+                    _aiClosePanel();
+            }
+        });
         document.body.appendChild(_overlayEl);
         _panelEl = document.createElement("div");
         _panelEl.className = "ai-panel";

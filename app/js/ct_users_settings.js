@@ -26,6 +26,7 @@
 (function () {
     "use strict";
     var HOLDER = "ct-users-settings";
+    var _loaded = null;
     var STATE_TONES = { active: "low", pending: "medium", disabled: "neutral" };
     async function _detail(r, fallbackKey) {
         try {
@@ -70,9 +71,6 @@
             '<label class="ct-check"><input type="checkbox" id="ct-user-ai-' + key + '"' + (u.ai_enabled ? " checked" : "") + '>' +
             '<span class="ct-check-box">' + _icon("check", 12) + '</span>' + esc(t("settings.users.ai")) + '</label>' +
             '</div>' +
-            '<div class="ct-actions mt-8">' +
-            '<button class="ct-btn" data-write data-click="_ctUsersSave" data-args=\'' + _da(u.id) + '\'>' + esc(t("settings.users.save")) + '</button>' +
-            '</div>' +
             '</div>';
     }
     function _render(list) {
@@ -85,6 +83,9 @@
             list.users.map(function (u) { return _row(u, list.roles); }).join("");
     }
     window._ctUsersSettingsBody = function () {
+        // Saved by the panel's single Save button: the accounts changed only.
+        if (window._ctSettingsRegister)
+            window._ctSettingsRegister({ id: "users", holder: HOLDER, save: _usersSave });
         return '<div id="' + HOLDER + '"><p class="ct-muted fs-sm">' + esc(t("settings.users.loading")) + '</p></div>';
     };
     window._ctUsersSettingsHTML = function () {
@@ -105,44 +106,59 @@
             }
             if (!r.ok)
                 throw new Error(String(r.status));
-            holder.innerHTML = _render(await r.json());
+            _loaded = await r.json();
+            holder.innerHTML = _render(_loaded);
         }
         catch (e) {
             holder.innerHTML = '<p class="ct-muted fs-sm">' + esc(t("settings.users.load_error")) + '</p>';
         }
     };
-    window._ctUsersSave = async function (id) {
-        var role = document.getElementById("ct-user-role-" + id);
-        var ai = document.getElementById("ct-user-ai-" + id);
-        if (!ai)
-            return;
-        try {
-            var r = await fetch("api/users/" + encodeURIComponent(id), {
-                method: "PUT", credentials: "same-origin",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(role ? { role: role.value, ai_enabled: ai.checked } : { ai_enabled: ai.checked })
-            });
-            if (r.ok) {
-                showStatus(t("settings.users.saved"));
-                window._ctUsersSettingsLoad();
+    /** Saves the accounts whose role or AI access changed since loaded. */
+    async function _usersSave() {
+        if (!_loaded || _loaded.managed)
+            return null;
+        var errors = [];
+        for (var i = 0; i < _loaded.users.length; i++) {
+            var u = _loaded.users[i];
+            var role = document.getElementById("ct-user-role-" + u.id);
+            var ai = document.getElementById("ct-user-ai-" + u.id);
+            if (!ai)
+                continue;
+            var body = {};
+            if (role && role.value !== u.role)
+                body.role = role.value;
+            if (ai.checked !== u.ai_enabled)
+                body.ai_enabled = ai.checked;
+            if (!Object.keys(body).length)
+                continue;
+            try {
+                var r = await fetch("api/users/" + encodeURIComponent(u.id), {
+                    method: "PUT", credentials: "same-origin",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(body)
+                });
+                if (r.ok) {
+                    if (body.role !== undefined)
+                        u.role = body.role;
+                    if (body.ai_enabled !== undefined)
+                        u.ai_enabled = body.ai_enabled;
+                    continue;
+                }
+                errors.push(u.email + " — " + (r.status === 403 ? t("settings.users.admin_only")
+                    : r.status === 409 ? t("settings.users.last_admin")
+                        : r.status === 400 ? t("settings.users.invalid_role")
+                            : await _detail(r, "settings.users.save_error")));
             }
-            else if (r.status === 403) {
-                showStatus(t("settings.users.admin_only"), true);
-            }
-            else if (r.status === 409) {
-                showStatus(t("settings.users.last_admin"), true);
-            }
-            else if (r.status === 400) {
-                showStatus(t("settings.users.invalid_role"), true);
-            }
-            else {
-                showStatus(await _detail(r, "settings.users.save_error"), true);
+            catch (e) {
+                errors.push(u.email + " — " + t("settings.users.save_error"));
             }
         }
-        catch (e) {
-            showStatus(t("settings.users.save_error"), true);
-        }
-    };
+        // A refused change stays on screen, still pending, for the next Save.
+        if (errors.length)
+            return errors.join(" · ");
+        window._ctUsersSettingsLoad();
+        return null;
+    }
     _registerTranslations("fr", {
         "settings.users.title": "Utilisateurs",
         "settings.users.loading": "Chargement…",
@@ -157,8 +173,6 @@
         "settings.users.never": "jamais",
         "settings.users.role": "Rôle",
         "settings.users.ai": "Assistant IA autorisé",
-        "settings.users.save": "Enregistrer",
-        "settings.users.saved": "Utilisateur mis à jour",
         "settings.users.save_error": "Échec de la mise à jour de l'utilisateur",
         "settings.users.last_admin": "Le dernier administrateur ne peut être ni rétrogradé ni désactivé",
         "settings.users.invalid_role": "Rôle non disponible dans ce module",
@@ -189,8 +203,6 @@
         "settings.users.never": "never",
         "settings.users.role": "Role",
         "settings.users.ai": "AI assistant allowed",
-        "settings.users.save": "Save",
-        "settings.users.saved": "User updated",
         "settings.users.save_error": "Could not update the user",
         "settings.users.last_admin": "The last administrator cannot be demoted nor disabled",
         "settings.users.invalid_role": "This role is not available in this module",

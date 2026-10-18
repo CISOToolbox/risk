@@ -38,5 +38,4 @@ interface Window {
     _ctProxySettingsHTML?: () => string;
     _ctProxySettingsBody?: () => string;
     _ctProxySettingsLoad?: () => void;
-    _ctProxySave?: () => void;
 }

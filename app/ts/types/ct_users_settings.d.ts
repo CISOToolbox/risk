@@ -43,5 +43,4 @@ interface Window {
     _ctUsersSettingsHTML?: () => string;
     _ctUsersSettingsBody?: () => string;
     _ctUsersSettingsLoad?: () => void;
-    _ctUsersSave?: (id: string) => void;
 }

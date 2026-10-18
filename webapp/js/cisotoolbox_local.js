@@ -631,7 +631,16 @@ function _wireDemoSettings() {
     if (!btn)
         return;
     btn.onclick = function () {
+        // Closing the panel: unsaved settings are asked about first (FEAT-59).
+        if (typeof window._ctSettingsGuard === "function")
+            window._ctSettingsGuard(_loadDemo);
+        else
+            _loadDemo();
+    };
+    function _loadDemo() {
         var demoFile = (window._locale || "fr") === "fr" ? "demo-fr.json" : "demo-en.json";
+        if (typeof window._ctSettingsEnd === "function")
+            window._ctSettingsEnd();
         if (typeof window._aiClosePanel === "function")
             window._aiClosePanel();
         fetch(demoFile).then(function (r) {
@@ -649,7 +658,7 @@ function _wireDemoSettings() {
         }).catch(function (e) {
             showStatus(t("settings.demo_error") + " " + e.message);
         });
-    };
+    }
 }
 _registerTranslations("fr", {
     "settings.demo_section": "Démonstration",

@@ -394,6 +394,10 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
    (see the breakpoint further down). data-cols="3" gives three equal columns,
    data-cols="2-1" a wide field beside a narrow one (host and port). */
 .ct-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+/* A group of fields that can be turned off as a whole (a settings section
+   whose fields only apply once its toggle is on). */
+.ct-settings-fields { border: 0; margin: 0; padding: 0; min-width: 0; }
+.ct-settings-fields:disabled { opacity: .55; }
 .ct-form-grid[data-cols="3"] { grid-template-columns: repeat(3, 1fr); }
 .ct-form-grid[data-cols="2-1"] { grid-template-columns: 2fr 1fr; }
 .ct-form-grid .ct-field + .ct-field { margin-top: 0; }

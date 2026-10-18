@@ -64,6 +64,7 @@
         var panel = window._aiEnsurePanel();
         panel.title.textContent = t("settings.title");
         var _hideAI = cfg.hideAI || !_hasAI;
+        window._ctSettingsBegin();
         var _settingsHTML = 
         // Language
         '<div class="settings-section">' +
@@ -169,10 +170,13 @@
         panel.body.innerHTML = _settingsHTML;
         panel.footer.innerHTML = "";
         window._aiOpenPanel();
-        // ai-close-btn already wired in _aiEnsurePanel
-        document.getElementById("settings-cancel").onclick = window._aiClosePanel;
-        document.getElementById("settings-lang-fr").onclick = function () { switchLang("fr", window.openSettings); };
-        document.getElementById("settings-lang-en").onclick = function () { switchLang("en", window.openSettings); };
+        // Every way out asks before modifications are lost.
+        document.getElementById("settings-cancel").onclick = window._ctSettingsClose;
+        var closeX = document.getElementById("ai-close-btn");
+        if (closeX)
+            closeX.onclick = window._ctSettingsClose;
+        document.getElementById("settings-lang-fr").onclick = function () { window._ctSettingsGuard(function () { switchLang("fr", window.openSettings); }); };
+        document.getElementById("settings-lang-en").onclick = function () { window._ctSettingsGuard(function () { switchLang("en", window.openSettings); }); };
         var toggleKeyBtn = document.getElementById("settings-toggle-key");
         if (toggleKeyBtn)
             toggleKeyBtn.onclick = function () {
@@ -225,7 +229,12 @@
                 }
             };
         document.getElementById("settings-save").onclick = async function () {
+            // The registered sections (a backend module's mail, proxy, users…)
+            // first: the panel stays open on an error, shown in its section.
+            if (!(await window._ctSettingsSaveAll()))
+                return;
             if (!_hasAI) {
+                window._ctSettingsEnd();
                 window._aiClosePanel();
                 return;
             } // language-only drawer (no ai_common)
@@ -306,6 +315,7 @@
             // with no key and toggle-only saves. No-op in opensource builds.
             if (typeof window._aiPersistConfig === "function")
                 window._aiPersistConfig();
+            window._ctSettingsEnd();
             window._aiClosePanel();
             if (cfg.onSettingsSaved)
                 cfg.onSettingsSaved();
@@ -316,11 +326,210 @@
         // App-specific post-render hook
         if (cfg.onSettingsRendered)
             cfg.onSettingsRendered();
+        window._ctSettingsAccordion(panel.body);
+    };
+    // ── One Save button, sections in an accordion (FEAT-59) ───────────
+    //
+    // Every section that writes somewhere registers here; the panel's single
+    // Save button saves the sections modified since the panel opened, and
+    // only them, then runs the drawer's own path (browser preferences,
+    // onSettingsSaved) if something outside the registered sections changed.
+    // Edits are tracked by delegation on the panel body, so sections that
+    // load their content asynchronously need nothing more than their holder.
+    var _sections = [];
+    var _dirty = {};
+    var _legacyDirty = false;
+    var _openIndex = 0; // the open accordion section, kept across re-renders
+    var _tracking = null;
+    var _saving = false;
+    function _sectionOf(el) {
+        for (var i = 0; i < _sections.length; i++) {
+            var holder = document.getElementById(_sections[i].holder);
+            if (holder && holder.contains(el))
+                return _sections[i];
+        }
+        return null;
+    }
+    function _onEdit(e) {
+        var target = e.target;
+        if (!target || !target.matches || !target.matches("input, select, textarea"))
+            return;
+        // Applied at once (a time zone, a language): nothing to save.
+        if (target.closest("[data-settings-immediate]"))
+            return;
+        var section = _sectionOf(target);
+        if (section)
+            _dirty[section.id] = true;
+        else
+            _legacyDirty = true;
+    }
+    window._ctSettingsBegin = function () {
+        _sections = [];
+        _dirty = {};
+        _legacyDirty = false;
+    };
+    /** A section changed by code (a reset to defaults) or given up (a
+     *  cancelled edit): no input event tells the registry. */
+    window._ctSettingsMark = function (id, dirty) {
+        _dirty[id] = dirty !== false;
+        if (dirty !== false)
+            return;
+        // Given up: the error of its last Save goes too.
+        for (var i = 0; i < _sections.length; i++) {
+            if (_sections[i].id !== id)
+                continue;
+            var holder = document.getElementById(_sections[i].holder);
+            var details = holder ? holder.closest("details.ct-settings-acc") : null;
+            if (details)
+                details.querySelectorAll(".ct-settings-error").forEach(function (el) { el.remove(); });
+        }
+    };
+    /** The panel is gone: nothing pending, and the next opening starts on
+     *  the first section. */
+    window._ctSettingsEnd = function () {
+        window._ctSettingsBegin();
+        _openIndex = 0;
+    };
+    window._ctSettingsRegister = function (section) {
+        _sections = _sections.filter(function (s) { return s.id !== section.id; });
+        _sections.push(section);
+    };
+    window._ctSettingsDirty = function () {
+        return _legacyDirty || Object.keys(_dirty).some(function (k) { return _dirty[k]; });
+    };
+    /** Each top-level section of the panel (one .settings-section with its
+     *  .settings-label) becomes an exclusive <details>; anything else stays
+     *  as it is. The open one is kept across a re-render (a language switch). */
+    window._ctSettingsAccordion = function (body) {
+        var index = 0;
+        Array.prototype.slice.call(body.children).forEach(function (sec) {
+            if (!sec.classList.contains("settings-section"))
+                return;
+            var labels = Array.prototype.filter.call(sec.children, function (c) {
+                return c.classList.contains("settings-label");
+            });
+            if (labels.length !== 1)
+                return;
+            var details = document.createElement("details");
+            details.className = "ct-settings-acc";
+            details.setAttribute("name", "ct-settings"); // one open at a time
+            var summary = document.createElement("summary");
+            summary.className = "ct-settings-acc__summary";
+            summary.textContent = labels[0].textContent || "";
+            labels[0].remove();
+            var inner = document.createElement("div");
+            inner.className = "ct-settings-acc__body";
+            while (sec.firstChild)
+                inner.appendChild(sec.firstChild);
+            details.appendChild(summary);
+            details.appendChild(inner);
+            var mine = index++;
+            details.open = mine === _openIndex;
+            details.addEventListener("toggle", function () { if (details.open)
+                _openIndex = mine; });
+            sec.replaceWith(details);
+        });
+        if (_tracking !== body) {
+            body.addEventListener("input", _onEdit);
+            body.addEventListener("change", _onEdit);
+            _tracking = body;
+        }
+    };
+    function _showSectionError(section, message) {
+        var holder = document.getElementById(section.holder);
+        var details = holder ? holder.closest("details.ct-settings-acc") : null;
+        var place = details ? details.querySelector(".ct-settings-acc__body") : holder;
+        if (!place) {
+            showStatus(message, true);
+            return;
+        }
+        var p = document.createElement("p");
+        p.className = "ct-settings-error";
+        p.textContent = message;
+        place.insertBefore(p, place.firstChild);
+        if (details)
+            details.open = true;
+    }
+    /** `legacy` (the drawer's own settings) returns false when the user
+     *  declined (a consent prompt): nothing is reported, the change stays
+     *  pending. */
+    window._ctSettingsSaveAll = async function (legacy) {
+        if (_saving)
+            return false; // a second click while saving
+        _saving = true;
+        var button = document.getElementById("settings-save");
+        if (button)
+            button.disabled = true;
+        try {
+            document.querySelectorAll(".ai-panel-body .ct-settings-error").forEach(function (el) { el.remove(); });
+            var saved = 0, failed = 0, declined = false;
+            for (var i = 0; i < _sections.length; i++) {
+                var section = _sections[i];
+                if (!_dirty[section.id])
+                    continue;
+                var error;
+                try {
+                    error = await section.save();
+                }
+                catch (e) {
+                    error = e.message || String(e);
+                }
+                if (error) {
+                    failed++;
+                    _showSectionError(section, error);
+                }
+                else {
+                    saved++;
+                    _dirty[section.id] = false;
+                }
+            }
+            if (_legacyDirty && legacy) {
+                if (await legacy()) {
+                    saved++;
+                    _legacyDirty = false;
+                }
+                else
+                    declined = true;
+            }
+            if (failed)
+                showStatus(t("settings.save_partial", { n: failed }), true);
+            else if (saved)
+                showStatus(t("settings.saved"));
+            else if (legacy && !declined)
+                showStatus(t("settings.nothing_to_save"));
+            return failed === 0 && !declined;
+        }
+        finally {
+            _saving = false;
+            if (button)
+                button.disabled = false;
+        }
+    };
+    /** Runs `then` unless modifications would be lost and the user keeps them. */
+    window._ctSettingsGuard = function (then) {
+        if (window._ctSettingsDirty() && !confirm(t("settings.unsaved_confirm")))
+            return;
+        then();
+    };
+    window._ctSettingsClose = function () {
+        // The panel is shared with the AI assistant: guard only the settings.
+        if (document.querySelector(".ai-panel-body .ct-settings-acc")) {
+            window._ctSettingsGuard(function () {
+                window._ctSettingsEnd();
+                window._aiClosePanel();
+            });
+        }
+        else {
+            window._aiClosePanel();
+        }
     };
     // ── I18N — settings keys ─────────────────────────────────────────
     _registerTranslations("fr", {
         "ai.close": "Fermer", // settings close button — registered here so ct_settings is self-sufficient (also defined in ai_common)
         "settings.title": "Réglages",
+        "settings.nothing_to_save": "Aucune modification à enregistrer",
+        "settings.save_partial": "{n} section(s) non enregistrée(s) : voir le détail dans la section",
+        "settings.unsaved_confirm": "Des modifications ne sont pas enregistrées. Les abandonner ?",
         "settings.language": "Langue",
         "settings.ai_section": "Assistant IA",
         // Shared posture labels (used by _postureLabel) — registered here so every
@@ -353,6 +562,9 @@
     });
     _registerTranslations("en", {
         "ai.close": "Close", // settings close button — registered here so ct_settings is self-sufficient (also defined in ai_common)
+        "settings.nothing_to_save": "Nothing to save",
+        "settings.save_partial": "{n} section(s) not saved: see the detail in the section",
+        "settings.unsaved_confirm": "Some changes are not saved. Discard them?",
         "settings.title": "Settings",
         "settings.language": "Language",
         "settings.ai_section": "AI Assistant",
@@ -386,6 +598,15 @@
     var style = document.createElement("style");
     style.textContent = [
         ".settings-section { margin-bottom:20px; }",
+        ".ct-settings-acc { border-top:1px solid var(--ct-line); padding:2px 0; }",
+        ".ct-settings-acc[open] { padding-bottom:12px; }",
+        ".ct-settings-acc__summary { cursor:pointer; list-style:none; padding:12px 4px; font-weight:600; font-size:0.9em; color:var(--ct-ink); display:flex; align-items:center; gap:8px; user-select:none; }",
+        ".ct-settings-acc__summary::-webkit-details-marker { display:none; }",
+        ".ct-settings-acc__summary::marker { content:''; }",
+        ".ct-settings-acc__summary::before { content:'\\25B8'; color:var(--ct-ink-2); width:18px; display:inline-flex; justify-content:center; transition:transform .15s; }",
+        ".ct-settings-acc[open] > .ct-settings-acc__summary::before { transform:rotate(90deg); color:var(--ct-ink); }",
+        ".ct-settings-acc__body { padding:4px 4px 4px 26px; }",
+        ".ct-settings-error { color:var(--ct-critical); font-size:0.85em; margin:0 0 8px; }",
         ".settings-label { font-weight:600; font-size:0.85em; margin-bottom:8px; color:var(--ct-ink); }",
         ".settings-lang-btn { padding:6px 16px; border:1px solid var(--ct-line); border-radius:4px; background:var(--ct-surface); color:var(--ct-ink); cursor:pointer; font-size:0.85em; }",
         ".settings-lang-btn.active { background:var(--ct-accent); color:#fff; border-color:var(--ct-accent); }",

@@ -21,8 +21,25 @@
  * Per-module hooks via window.AI_APP_CONFIG:
  *   hideAI, settingsExtraHTML(), onSettingsRendered(), onSettingsSaved()
  */
+/** A settings section saved by the panel's single Save button. */
+interface CtSettingsSection {
+    id: string;
+    /** Element id of the section's content: an edit inside it marks the section modified. */
+    holder: string;
+    /** Saves the section; resolves to null when saved, or the error to show in it. */
+    save: () => Promise<string | null>;
+}
 interface Window {
     openSettings?: () => void;
+    _ctSettingsBegin?: () => void;
+    _ctSettingsRegister?: (section: CtSettingsSection) => void;
+    _ctSettingsAccordion?: (body: HTMLElement) => void;
+    _ctSettingsSaveAll?: (legacy?: () => Promise<boolean> | boolean) => Promise<boolean>;
+    _ctSettingsMark?: (id: string, dirty?: boolean) => void;
+    _ctSettingsEnd?: () => void;
+    _ctSettingsDirty?: () => boolean;
+    _ctSettingsClose?: () => void;
+    _ctSettingsGuard?: (then: () => void) => void;
     /** Provider allowlist — set by ai_backend.js (backend deployments). */
     _AI_PROVIDER_ALLOWLIST?: string[];
     /** Flushes provider/model/creds server-side — set by ai_backend.js. */

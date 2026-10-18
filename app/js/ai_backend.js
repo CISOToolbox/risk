@@ -211,6 +211,7 @@
         var canUse = !!window._aiRuntime.can_use;
         var panel = window._aiEnsurePanel();
         panel.title.textContent = t("settings.title");
+        window._ctSettingsBegin();
         var h = '<div class="settings-section">' +
             '<div class="settings-label">' + t("settings.language") + '</div>' +
             '<div style="display:flex;gap:8px">' +
@@ -220,6 +221,16 @@
             '</div>';
         // hideAI: a module without browser-side AI (its AI, if any, runs on the
         // server) shows no AI toggle — the same rule as the non-managed drawer.
+        // Standalone: the module's server runs the AI and its admin sets it in
+        // the same section as the toggle — its fields only usable once the
+        // assistant is on. With hideAI (the module's AI runs on the server
+        // only, no toggle), the provider has the section to itself.
+        var serverConfig = window._aiRuntime.managed_by === "module" && !!window._aiRuntime.editable;
+        if (serverConfig)
+            window._ctSettingsRegister({ id: "ai-server", holder: "ct-ai-server", save: _aiServerSave });
+        var serverHTML = serverConfig
+            ? '<div id="ct-ai-server" class="mt-8"><p class="ct-muted fs-sm">' + esc(t("settings.ai_server.loading")) + '</p></div>'
+            : '';
         if (!cfg.hideAI) {
             h +=
                 '<div class="settings-section">' +
@@ -233,13 +244,12 @@
                             ? (window._aiRuntime.editable ? "settings.ai_server.note_admin" : "settings.ai_server.note")
                             : "settings.ai_managed_note")) + '</p>'
                         : '<p class="fs-xs" style="margin:4px 0 0;color:var(--ct-critical)">' + esc(t("settings.ai_no_access") || "AI access has not been granted to your account. Contact your administrator.") + '</p>') +
+                    serverHTML +
                     '</div>';
         }
-        // Standalone: the module's server runs the AI and its admin sets it
-        // here — shown even with hideAI, whose AI runs on the server too.
-        if (window._aiRuntime.managed_by === "module" && window._aiRuntime.editable) {
+        else if (serverConfig) {
             h += '<div class="settings-section"><div class="settings-label">' + esc(t("settings.ai_server.title")) + '</div>' +
-                '<div id="ct-ai-server"><p class="ct-muted fs-sm">' + esc(t("settings.ai_server.loading")) + '</p></div></div>';
+                serverHTML + '</div>';
         }
         h += (cfg.settingsExtraHTML ? cfg.settingsExtraHTML() : '');
         h += '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">' +
@@ -249,31 +259,45 @@
         panel.body.innerHTML = h;
         panel.footer.innerHTML = "";
         window._aiOpenPanel();
-        document.getElementById("settings-cancel").onclick = window._aiClosePanel;
-        document.getElementById("settings-lang-fr").onclick = function () { switchLang("fr", window.openSettings); };
-        document.getElementById("settings-lang-en").onclick = function () { switchLang("en", window.openSettings); };
+        // Every way out asks before modifications are lost.
+        document.getElementById("settings-cancel").onclick = window._ctSettingsClose;
+        var closeX = document.getElementById("ai-close-btn");
+        if (closeX)
+            closeX.onclick = window._ctSettingsClose;
+        document.getElementById("settings-lang-fr").onclick = function () { window._ctSettingsGuard(function () { switchLang("fr", window.openSettings); }); };
+        document.getElementById("settings-lang-en").onclick = function () { window._ctSettingsGuard(function () { switchLang("en", window.openSettings); }); };
+        // One Save button: the modified sections, then this drawer's own
+        // settings (the browser AI toggle, the module's onSettingsSaved).
+        // The panel stays open; an error stays in its section.
         document.getElementById("settings-save").onclick = function () {
-            if (!cfg.hideAI) {
-                var toggle = document.getElementById("settings-ai-toggle").checked;
-                if (toggle && !canUse)
-                    return;
-                if (toggle && !aiEnabled) {
-                    if (!confirm(t("settings.ai_privacy_warning")))
-                        return;
+            window._ctSettingsSaveAll(function () {
+                if (!cfg.hideAI) {
+                    var toggle = document.getElementById("settings-ai-toggle").checked;
+                    if (toggle && !canUse)
+                        return false;
+                    if (toggle && !aiEnabled) {
+                        if (!confirm(t("settings.ai_privacy_warning")))
+                            return false;
+                    }
+                    localStorage.setItem(pfx + "enabled", toggle ? "true" : "false");
+                    aiEnabled = toggle;
                 }
-                localStorage.setItem(pfx + "enabled", toggle ? "true" : "false");
-            }
-            window._aiClosePanel();
-            if (cfg.onSettingsSaved)
-                cfg.onSettingsSaved();
-            else if (typeof renderAll === "function")
-                renderAll();
-            showStatus(t("settings.saved"));
+                if (cfg.onSettingsSaved)
+                    cfg.onSettingsSaved();
+                else if (typeof renderAll === "function")
+                    renderAll();
+                return true;
+            });
         };
         if (cfg.onSettingsRendered)
             cfg.onSettingsRendered();
-        if (document.getElementById("ct-ai-server"))
+        window._ctSettingsAccordion(panel.body);
+        if (document.getElementById("ct-ai-server")) {
+            var aiToggleEl = document.getElementById("settings-ai-toggle");
+            if (aiToggleEl)
+                aiToggleEl.onchange = _aiServerApplyEnabled;
             _aiServerLoad();
+        }
     };
     var _aiServer = { keys: {}, providers: {}, provider: "anthropic" };
     // Providers whose key the module can test (validate-key).
@@ -314,7 +338,8 @@
         else {
             fields = _aiSecret("ct-ai-key", "settings.ai_server.api_key", !!k[p]);
         }
-        holder.innerHTML = '<p class="ct-muted fs-xs">' + esc(t("settings.ai_server.help")) + '</p>' +
+        holder.innerHTML = '<fieldset id="ct-ai-server-fields" class="ct-settings-fields">' +
+            '<p class="ct-muted fs-xs">' + esc(t("settings.ai_server.help")) + '</p>' +
             '<div class="ct-form-grid">' +
             _aiField("ct-ai-provider", "settings.ai_server.provider", '<select class="ct-select" id="ct-ai-provider" data-change="_ctAiServerProvider" data-pass-value>' + options + '</select>') +
             _aiField("ct-ai-model", "settings.ai_server.model", '<input type="text" class="ct-input" id="ct-ai-model" list="ct-ai-models" autocomplete="off" value="' + esc(model) + '">' +
@@ -323,10 +348,19 @@
             '</div>' +
             '<label class="ct-check"><input type="checkbox" id="ct-ai-clear">' +
             '<span class="ct-check-box">' + _icon("check", 12) + '</span>' + esc(t("settings.ai_server.clear")) + '</label>' +
-            '<div class="ct-actions mt-8">' +
-            '<button class="ct-btn" data-write data-variant="primary" data-click="_ctAiServerSave">' + esc(t("settings.ai_server.save")) + '</button>' +
-            (_AI_TESTABLE.indexOf(p) >= 0 ? '<button class="ct-btn" data-click="_ctAiServerTest">' + esc(t("settings.ai_server.test")) + '</button>' : '') +
-            '</div>';
+            (_AI_TESTABLE.indexOf(p) >= 0
+                ? '<div class="ct-actions mt-8"><button class="ct-btn" data-click="_ctAiServerTest">' + esc(t("settings.ai_server.test")) + '</button></div>'
+                : '') +
+            '</fieldset>';
+        _aiServerApplyEnabled();
+    }
+    /** The provider's fields are usable only while the assistant is on (no
+     *  toggle with hideAI: always usable). */
+    function _aiServerApplyEnabled() {
+        var fields = document.getElementById("ct-ai-server-fields");
+        var toggle = document.getElementById("settings-ai-toggle");
+        if (fields)
+            fields.disabled = !!toggle && !toggle.checked;
     }
     async function _aiServerLoad() {
         try {
@@ -353,7 +387,15 @@
         _aiServer.provider = value;
         _aiServerRender();
     };
-    window._ctAiServerSave = async function () {
+    /** Saves the module's AI settings; null when saved, else the error. */
+    async function _aiServerSave() {
+        // Assistant off: its fields are locked, nothing of them is sent, and
+        // what was typed is dropped (reloaded) rather than shown as saved.
+        var fields = document.getElementById("ct-ai-server-fields");
+        if (fields && fields.disabled) {
+            await _aiServerLoad();
+            return null;
+        }
         var p = _aiServer.provider;
         var body = { provider: p, model: _aiVal("ct-ai-model") };
         // A secret left blank keeps the stored one: only typed values go —
@@ -396,24 +438,22 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body)
             });
-            if (r.ok) {
-                showStatus(t("settings.ai_server.saved"));
-                await window._aiFetchRuntime();
-                _aiServerLoad();
-            }
-            else {
+            if (!r.ok) {
                 var detail = "";
                 try {
                     detail = (await r.json()).detail || "";
                 }
                 catch (e) { /* not JSON */ }
-                showStatus(detail || t("settings.ai_server.save_error"), true);
+                return detail || t("settings.ai_server.save_error");
             }
+            await window._aiFetchRuntime();
+            _aiServerLoad();
+            return null;
         }
         catch (e) {
-            showStatus(t("settings.ai_server.save_error"), true);
+            return t("settings.ai_server.save_error");
         }
-    };
+    }
     window._ctAiServerTest = async function () {
         try {
             var r = await fetch("api/ai/validate-key?provider=" + encodeURIComponent(_aiServer.provider), {
@@ -442,7 +482,7 @@
             "settings.ai_server.load_error": "Impossible de charger les réglages IA du module.",
             "settings.ai_server.help": "Le serveur du module appelle le fournisseur : la clé n'est jamais envoyée au navigateur, et tous les fournisseurs sont possibles. Les utilisateurs autorisés (Utilisateurs → Assistant IA autorisé) s'en servent. Les variables d'environnement *_API_KEY restent la valeur par défaut. Une clé laissée vide est conservée.",
             "settings.ai_server.note": "Le fournisseur, le modèle et la clé sont réglés par l'administrateur du module.",
-            "settings.ai_server.note_admin": "Le fournisseur, le modèle et la clé se règlent ci-dessous, sur le serveur du module.",
+            "settings.ai_server.note_admin": "Le fournisseur, le modèle et la clé se règlent ci-dessous, sur le serveur du module, une fois l'assistant activé.",
             "settings.ai_server.provider": "Fournisseur",
             "settings.ai_server.model": "Modèle",
             "settings.ai_server.api_key": "Clé API",
@@ -453,10 +493,8 @@
             "settings.ai_server.label": "Nom affiché",
             "settings.ai_server.custom": "LLM personnalisé",
             "settings.ai_server.secret_set": "Déjà définie — laisser vide pour la conserver",
-            "settings.ai_server.save": "Enregistrer",
             "settings.ai_server.clear": "Retirer les clés enregistrées pour ce fournisseur",
             "settings.ai_server.test": "Tester la clé",
-            "settings.ai_server.saved": "Réglages IA du module enregistrés",
             "settings.ai_server.save_error": "Échec de l'enregistrement des réglages IA",
             "settings.ai_server.test_ok": "Clé valide",
             "settings.ai_server.test_failed": "La clé n'a pas été acceptée"
@@ -470,7 +508,7 @@
             "settings.ai_server.load_error": "Could not load the module's AI settings.",
             "settings.ai_server.help": "The module's server calls the provider: the key never reaches the browser, and every provider works. Users allowed to (Users → AI assistant allowed) use it. The *_API_KEY environment variables remain the default. A key left blank is kept.",
             "settings.ai_server.note": "Provider, model and key are set by the module's administrator.",
-            "settings.ai_server.note_admin": "Provider, model and key are set below, on the module's server.",
+            "settings.ai_server.note_admin": "Provider, model and key are set below, on the module's server, once the assistant is on.",
             "settings.ai_server.provider": "Provider",
             "settings.ai_server.model": "Model",
             "settings.ai_server.api_key": "API key",
@@ -481,10 +519,8 @@
             "settings.ai_server.label": "Display name",
             "settings.ai_server.custom": "Custom LLM",
             "settings.ai_server.secret_set": "Already set — leave blank to keep it",
-            "settings.ai_server.save": "Save",
             "settings.ai_server.clear": "Remove the keys saved for this provider",
             "settings.ai_server.test": "Test the key",
-            "settings.ai_server.saved": "Module AI settings saved",
             "settings.ai_server.save_error": "Could not save the AI settings",
             "settings.ai_server.test_ok": "Key accepted",
             "settings.ai_server.test_failed": "The key was not accepted"
