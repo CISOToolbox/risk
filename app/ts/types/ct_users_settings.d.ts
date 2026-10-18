@@ -29,12 +29,14 @@ interface CtUserRow {
     name: string;
     role: string;
     state: string;
+    local: boolean;
     ai_enabled: boolean;
     last_login: string | null;
 }
 interface CtUsersList {
     users: CtUserRow[];
     roles: string[];
+    identity_provider: boolean;
     managed: boolean;
 }
 interface Window {

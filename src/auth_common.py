@@ -71,7 +71,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, Request
 import jwt
 from jwt.exceptions import InvalidTokenError as JWTError
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
@@ -463,6 +463,7 @@ async def standalone_sign_in(db: AsyncSession, email: str, *, name: str = "", pi
     disabled — the caller issues a session right after, so refusing here is
     what keeps it shut."""
     email = (email or "").strip().lower()
+    await _serialize_account_creation(db)
     user = (await db.execute(select(User).where(User.email == email))).scalar_one_or_none()
     now = datetime.now(timezone.utc)
     if user is None:
@@ -488,6 +489,50 @@ async def standalone_sign_in(db: AsyncSession, email: str, *, name: str = "", pi
     if state != "active":
         raise HTTPException(status_code=403,
                             detail=_DISABLED_DETAIL if state == "disabled" else _PENDING_DETAIL)
+    return user
+
+
+async def _serialize_account_creation(db: AsyncSession) -> None:
+    """Two first sign-ins at the same time must not both create an admin:
+    on PostgreSQL, hold a transaction-wide lock while the module decides.
+    (SQLite, used by the unit tests, serialises writes by itself.)"""
+    if db.bind is not None and db.bind.dialect.name == "postgresql":
+        await db.execute(text("SELECT pg_advisory_xact_lock(hashtext('ciso-standalone-accounts'))"))
+
+
+async def local_account(db: AsyncSession) -> User | None:
+    """The module's local account: the one its key (AUTH_TOKEN) opens — the
+    oldest admin created with the key, never by an identity provider. Any
+    other account created with the key is an ordinary account."""
+    return (await db.execute(select(User).where(User.provider == "token", User.role == "admin")
+                             .order_by(User.created_at, User.id))).scalars().first()
+
+
+def is_local_account(user: User, local: User | None) -> bool:
+    return local is not None and user.id == local.id
+
+
+async def standalone_local_sign_in(db: AsyncSession, email: str) -> User:
+    """Sign in with the module's key: always the same local account, the
+    module's admin. The address only names it when it is created (it is not
+    bound by the allowed email domains); afterwards the key opens that
+    account whatever address is typed. Raises 409 when the address belongs
+    to another account — the key never takes one over, nor brings back a
+    disabled or pending one."""
+    now = datetime.now(timezone.utc)
+    await _serialize_account_creation(db)
+    user = await local_account(db)
+    if user is None:
+        email = (email or "").strip().lower() or "admin@local"
+        if (await db.execute(select(User).where(User.email == email))).scalar_one_or_none() is not None:
+            raise HTTPException(status_code=409, detail=(
+                "This address belongs to another account: name the local account with another address"))
+        user = User(email=email, name=email.split("@")[0], provider="token", provider_id="token",
+                    role="admin")  # the key's account is the module's admin
+        db.add(user)
+    user.last_login = now
+    await db.commit()
+    await db.refresh(user)
     return user
 
 

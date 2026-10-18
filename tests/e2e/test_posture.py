@@ -170,7 +170,9 @@ def test_login_then_authenticated_call(client):
 
     me = client.get("/auth/me")
     assert me.status == 200, "/auth/me -> %s right after login" % me.status
-    assert me.json().get("email") == "e2e@example.com"
+    # The key opens the module's local account: named e2e@ on a fresh stack,
+    # whatever account the instance already has otherwise.
+    assert me.json().get("email") == r.json().get("email")
 
     role = client.get("/auth/role")
     assert role.status == 200

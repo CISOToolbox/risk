@@ -20,6 +20,10 @@ then only says so (``managed``) and refuses writes with 409. In standalone
   next request (the role is read from the table on every request);
 - allow or not the AI assistant for an account.
 
+The local account — the one the module's key opens — stays the admin: its
+role cannot be changed here. Without an identity provider it is the only
+account.
+
 The last active admin cannot be demoted nor disabled: the module would be
 left without anyone to run it. The admin rows are locked while counting, so
 two demotions at the same time cannot both pass.
@@ -40,7 +44,16 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth import get_current_user, require_admin
-from src.auth_common import AUTH_MODE, ROLE_DISABLED, ROLE_PENDING, account_state, module_ladder
+from src import auth_routes_common
+from src.auth_common import (
+    AUTH_MODE,
+    ROLE_DISABLED,
+    ROLE_PENDING,
+    account_state,
+    is_local_account,
+    local_account,
+    module_ladder,
+)
 from src.database import get_db
 from src.models import User
 
@@ -55,6 +68,7 @@ class UserOut(BaseModel):
     name: str
     role: str
     state: str
+    local: bool
     ai_enabled: bool
     last_login: datetime | None
     created_at: datetime | None
@@ -65,12 +79,12 @@ class UserUpdate(BaseModel):
     ai_enabled: bool | None = None
 
 
-def _out(u: User) -> UserOut:
+def _out(u: User, local: User | None) -> UserOut:
     state = account_state(u.role)
     return UserOut(id=u.id, email=u.email, name=u.name or "",
                    # Outside the ladder and not disabled: shown as pending.
                    role=u.role if state != "pending" else ROLE_PENDING,
-                   state=state, ai_enabled=u.ai_enabled == "true",
+                   state=state, local=is_local_account(u, local), ai_enabled=u.ai_enabled == "true",
                    last_login=u.last_login, created_at=u.created_at)
 
 
@@ -81,9 +95,12 @@ async def list_users(user: User = Depends(get_current_user), db: AsyncSession = 
     require_admin(user)
     managed = AUTH_MODE == "pilot"
     rows = [] if managed else (await db.execute(select(User).order_by(User.created_at))).scalars().all()
+    local = None if managed else await local_account(db)
     return {
-        "users": [_out(u) for u in rows],
+        "users": [_out(u, local) for u in rows],
         "roles": list(module_ladder()),
+        # Without one, the module has a single account: the key's.
+        "identity_provider": auth_routes_common._identity_provider_configured(),
         # Suite: accounts and roles are Pilot's; the UI says so.
         "managed": managed,
     }
@@ -99,7 +116,10 @@ async def update_user(user_id: uuid.UUID, body: UserUpdate, request: Request,
     if target is None:
         raise HTTPException(status_code=404, detail="User not found")
     details: dict = {}
+    local = await local_account(db)
     if body.role is not None and body.role != target.role:
+        if is_local_account(target, local):
+            raise HTTPException(status_code=409, detail="The local account is the module key's and stays admin")
         if body.role not in (*module_ladder(), ROLE_PENDING, ROLE_DISABLED):
             raise HTTPException(status_code=400, detail="Invalid role")
         if target.role == "admin" and body.role != "admin":
@@ -122,4 +142,4 @@ async def update_user(user_id: uuid.UUID, body: UserUpdate, request: Request,
         logger.info("user %s updated by %s: %s", target.email,
                     getattr(user, "email", None) or "(auth disabled)", details)
     await db.refresh(target)
-    return _out(target)
+    return _out(target, local)
