@@ -72,13 +72,16 @@
                 }).then(function (r) {
                     if (r.ok) {
                         window.location.href = "./";
+                        return;
                     }
-                    else {
+                    // A refused account (awaiting approval, disabled, domain) says why.
+                    return r.json().catch(function () { return {}; }).then(function (body) {
+                        var why = r.status === 403 && typeof body.detail === "string" ? body.detail : "Invalid token";
                         if (errEl) {
                             errEl.style.display = "block";
-                            errEl.textContent = "Invalid token";
+                            errEl.textContent = why;
                         }
-                    }
+                    });
                 }).catch(function () {
                     if (errEl) {
                         errEl.style.display = "block";

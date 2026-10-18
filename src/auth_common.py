@@ -12,6 +12,9 @@ Supports three modes:
   - **pilot** (AUTH_MODE=pilot, default): Suite-integrated. JWT cookie set by
     Pilot, per-module permissions in the JWT `permissions` dict.
   - **standalone** (AUTH_MODE=standalone): Own login flow via AUTH_TOKEN.
+    The module's own `users` table is the source of truth: the first account
+    is the admin, every other one awaits an admin's approval, and the role is
+    read from the table on every request (see `standalone_sign_in`).
   - **none** (AUTH_MODE=none): Authentication DISABLED — every route is served
     as admin. Dev/test only, and the ONLY way to run without a credential:
     `assert_auth_posture()` refuses to boot if the mode's credential is missing
@@ -68,7 +71,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, Request
 import jwt
 from jwt.exceptions import InvalidTokenError as JWTError
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
@@ -389,6 +392,110 @@ async def _sync_user_from_jwt(db: AsyncSession, payload: dict) -> User:
     return user
 
 
+# ── Standalone accounts ──────────────────────────────────────────
+#
+# Without Pilot, the module's `users` table is the source of truth for who
+# may come in and with which role. The session cookie only proves who the
+# caller is: the role is read from the table on every request, so an admin's
+# change — a promotion, a demotion, a disabled account — applies to the very
+# next request, and a session never recreates an account nor restores a role.
+
+# Each module's roles, lowest to highest — the ones Pilot's user screen offers
+# for that module (`_MODULE_ROLES` in Pilot_app.ts; a suite contract keeps the
+# two tables equal). A standalone admin grants one of these.
+MODULE_ROLES: dict[str, tuple[str, ...]] = {
+    "risk": ("viewer", "editor", "admin"),
+    "vendor": ("viewer", "manager", "control", "admin"),
+    "compliance": ("viewer", "editor", "admin"),
+    "audit": ("viewer", "editor", "admin"),
+    "asset": ("viewer", "contributor", "admin"),
+    "access": ("manager", "control", "admin"),
+    "surface": ("viewer", "triager", "admin"),
+    "appsec": ("viewer", "triager", "admin"),
+    "watch": ("viewer", "editor", "admin"),
+}
+# An account that awaits an admin's approval, and one an admin turned off.
+# Any other value outside the ladder (the former "user") counts as pending.
+ROLE_PENDING = "pending"
+ROLE_DISABLED = "disabled"
+# The identity providers a standalone module can sign accounts in with — as
+# opposed to the shared deployment token ("token").
+IDENTITY_PROVIDERS = ("entra", "google", "oidc")
+
+
+def module_ladder() -> tuple[str, ...]:
+    """The roles a standalone admin can grant in this module."""
+    return MODULE_ROLES.get(MODULE_NAME, ("admin",))
+
+
+def account_state(role: str | None) -> str:
+    """``active``, ``pending`` or ``disabled`` for a stored role."""
+    if role == ROLE_DISABLED:
+        return "disabled"
+    return "active" if role in module_ladder() else "pending"
+
+
+_PENDING_DETAIL = "Account created and awaiting administrator approval"
+_DISABLED_DETAIL = "Account disabled"
+
+
+async def _standalone_user(db: AsyncSession, payload: dict) -> User:
+    """The account a standalone session belongs to, as stored now. 401 when
+    it no longer exists, is disabled or awaits approval: the session ends."""
+    email = payload.get("email", "")
+    user = (await db.execute(select(User).where(User.email == email))).scalar_one_or_none()
+    if user is None or str(user.id) != str(payload.get("sub", "")):
+        raise HTTPException(status_code=401, detail="Account no longer exists. Sign in again.")
+    state = account_state(user.role)
+    if state != "active":
+        raise HTTPException(status_code=401,
+                            detail=_DISABLED_DETAIL if state == "disabled" else _PENDING_DETAIL)
+    return user
+
+
+async def standalone_sign_in(db: AsyncSession, email: str, *, name: str = "", picture: str = "",
+                             provider: str, provider_id: str = "") -> User:
+    """Find or create a standalone account at sign-in, and let it in only if
+    an admin granted it a role.
+
+    The first account of the module is its admin; every other one is created
+    awaiting approval. Raises 403 for an account that awaits approval or was
+    disabled — the caller issues a session right after, so refusing here is
+    what keeps it shut."""
+    email = (email or "").strip().lower()
+    user = (await db.execute(select(User).where(User.email == email))).scalar_one_or_none()
+    now = datetime.now(timezone.utc)
+    if user is None:
+        first = (await db.execute(select(func.count()).select_from(User))).scalar() == 0
+        user = User(email=email, name=name or email.split("@")[0], picture=picture or None,
+                    provider=provider, provider_id=provider_id or "",
+                    role="admin" if first else ROLE_PENDING, last_login=now)
+        db.add(user)
+    else:
+        if name:
+            user.name = name
+        if picture:
+            user.picture = picture
+        if provider in IDENTITY_PROVIDERS:
+            # Signed in through an identity provider: the account is that
+            # provider's from now on, even if it was first created with the
+            # shared token (what closes the token, see the module's auth).
+            user.provider, user.provider_id = provider, provider_id or user.provider_id
+        user.last_login = now
+    await db.commit()
+    await db.refresh(user)
+    state = account_state(user.role)
+    if state != "active":
+        raise HTTPException(status_code=403,
+                            detail=_DISABLED_DETAIL if state == "disabled" else _PENDING_DETAIL)
+    return user
+
+
+def standalone_permissions(user: User) -> dict:
+    """The `permissions` claim of a standalone session: this module only."""
+    return {MODULE_NAME: user.role} if MODULE_NAME else {}
+
+
 # ── Module-role resolution ───────────────────────────────────────
 
 def _get_module_role(payload: dict) -> str:
@@ -424,6 +531,10 @@ async def _resolve_user_from_cookie(
         payload = decode_jwt(token)
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
+    if AUTH_MODE != "pilot":
+        user = await _standalone_user(db, payload)
+        user._module_role = user.role  # type: ignore
+        return user, user.role
     module_role = _get_module_role(payload)
     if not module_role and payload.get("role") == "admin":
         module_role = "admin"

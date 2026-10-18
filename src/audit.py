@@ -173,9 +173,11 @@ def install_write_journal_middleware(app: Any, exclude: tuple = ()) -> None:
                       else f"{resource}.{_MW_VERB[request.method]}")
             from src.database import async_session
             async with async_session() as db:
+                # A route may say what changed (request.state.journal_details).
                 await log_write(db, None, request, action,
                                 actor=email or "?",
                                 entity_type=resource, entity_id=entity_id,
+                                details=getattr(request.state, "journal_details", ""),
                                 commit=True)
         except Exception as e:  # noqa: BLE001 — never break the request
             logger.warning("write-journal middleware failed: %s", e)

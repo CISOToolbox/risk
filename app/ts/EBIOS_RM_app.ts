@@ -3534,6 +3534,6 @@ ${esc(e.stack||"")}</pre></section>`;
 
 window.AI_APP_CONFIG = {
     storagePrefix: "ebios",
-    settingsExtraHTML: function() { return (typeof _demoSettingsHTML === "function" ? _demoSettingsHTML() : "") + (window._ctProxySettingsHTML ? window._ctProxySettingsHTML() : ""); },
-    onSettingsRendered: function() { if (typeof _wireDemoSettings === "function") _wireDemoSettings(); if (window._ctProxySettingsLoad) window._ctProxySettingsLoad(); }
+    settingsExtraHTML: function() { return (typeof _demoSettingsHTML === "function" ? _demoSettingsHTML() : "") + (window._ctProxySettingsHTML ? window._ctProxySettingsHTML() : "") + (window._ctUsersSettingsHTML ? window._ctUsersSettingsHTML() : ""); },
+    onSettingsRendered: function() { if (typeof _wireDemoSettings === "function") _wireDemoSettings(); if (window._ctProxySettingsLoad) window._ctProxySettingsLoad(); if (window._ctUsersSettingsLoad) window._ctUsersSettingsLoad(); }
 };

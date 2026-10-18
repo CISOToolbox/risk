@@ -8,10 +8,10 @@ import os
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
-from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth import AUTH_MODE, AUTH_TOKEN, COOKIE_NAME, MODULE_NAME, auth_enabled, create_jwt, get_current_user_permissive, get_module_role
+from src.auth_common import standalone_permissions, standalone_sign_in
 from src.database import get_db
 from src.models import User
 from src.schemas import UserResponse
@@ -97,27 +97,9 @@ async def login_token(body: dict, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid token")
 
     email = (body.get("email") or "admin@local").strip().lower()
-
-    # Upsert user
-    result = await db.execute(select(User).where(User.email == email))
-    user = result.scalar_one_or_none()
-    if not user:
-        count_result = await db.execute(select(func.count()).select_from(User))
-        role = "admin" if count_result.scalar() == 0 else "user"
-        user = User(
-            email=email,
-            name=email.split("@")[0],
-            provider="token",
-            provider_id="token",
-            role=role,
-        )
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
-
-    # In standalone, first user gets admin on this module
-    perms = {MODULE_NAME: "admin"} if user.role == "admin" and MODULE_NAME else {}
-    jwt_token = create_jwt(str(user.id), user.email, user.role, perms)
+    # The first account is the admin; any other awaits an admin's approval.
+    user = await standalone_sign_in(db, email, provider="token", provider_id="token")
+    jwt_token = create_jwt(str(user.id), user.email, user.role, standalone_permissions(user))
     response = JSONResponse(content={"ok": True, "email": user.email, "role": user.role})
     response.set_cookie(COOKIE_NAME, jwt_token, httponly=True, samesite="lax", max_age=86400, secure=_cookie_secure())
     return response
