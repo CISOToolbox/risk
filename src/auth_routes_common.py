@@ -66,7 +66,7 @@ APP_URL = os.getenv("APP_URL", "")
 # ── Provider configuration (standalone mode only) ──────────────────────
 ENTRA_CLIENT_ID = os.getenv("ENTRA_CLIENT_ID", "")
 ENTRA_CLIENT_SECRET = os.getenv("ENTRA_CLIENT_SECRET", "")
-ENTRA_TENANT_ID = os.getenv("ENTRA_TENANT_ID", "common")
+ENTRA_TENANT_ID = os.getenv("ENTRA_TENANT_ID", "")
 
 ENTRA_AUTH_URL = f"https://login.microsoftonline.com/{ENTRA_TENANT_ID}/oauth2/v2.0/authorize"
 ENTRA_TOKEN_URL = f"https://login.microsoftonline.com/{ENTRA_TENANT_ID}/oauth2/v2.0/token"
