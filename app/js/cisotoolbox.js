@@ -1870,6 +1870,15 @@ function ct_initModulePicker() {
         picker.setAttribute("aria-expanded", "false");
         picker.style.cursor = "pointer";
     }
+    else {
+        // Re-run once a module learns it is standalone (BUG-108): the label
+        // stops being a switcher, and a menu opened before is closed.
+        _ctCloseModuleMenu();
+        picker.removeAttribute("data-click");
+        picker.removeAttribute("aria-haspopup");
+        picker.removeAttribute("aria-expanded");
+        picker.style.cursor = "";
+    }
     ct_hydrateIcons(picker);
 }
 _w.ct_initModulePicker = ct_initModulePicker;

@@ -96,7 +96,27 @@ function ct_fetchModulesMenu() {
     }
     catch (e) { /* corrupt cache — static fallback applies */ }
     var url = _ctCurrentModuleId() === "pilot" ? "api/modules/menu" : "api/modules-menu";
-    fetch(url).then(function (r) { return r.ok ? r.json() : null; }).then(function (list) {
+    fetch(url).then(function (r) {
+        // BUG-108 — every backend module ships edition "suite"; a 404 means
+        // its server has no Pilot configured: it runs standalone. The menu
+        // then lists this module only, and a menu cached from an earlier
+        // suite session on the same origin goes. Pilot down (503) keeps the
+        // suite menu.
+        if (r.status === 404) {
+            cfg.edition = "standalone";
+            _ctSyncEdition();
+            delete cfg.modules;
+            try {
+                localStorage.removeItem("ct_modules_menu");
+            }
+            catch (e) { /* storage blocked */ }
+            var initPicker = window.ct_initModulePicker;
+            if (typeof initPicker === "function")
+                initPicker();
+            return null;
+        }
+        return r.ok ? r.json() : null;
+    }).then(function (list) {
         if (!list || !list.length)
             return;
         cfg.modules = _ctMenuFromRegistry(list);
