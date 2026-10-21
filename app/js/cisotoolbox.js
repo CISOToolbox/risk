@@ -769,8 +769,12 @@ document.addEventListener("change", function (e) {
         args.push(e);
     _safeDispatch(fn, args);
 });
-document.addEventListener("input", function (e) {
-    var el = e.target.closest("[data-input]");
+// The field and value a composition just ended with: Firefox (and Safari)
+// follow compositionend with a plain input event carrying the same value —
+// dispatched once, not twice.
+var _composedLast = { el: null, value: null };
+function _dispatchInput(target) {
+    var el = target?.closest?.("[data-input]");
     if (!el)
         return;
     var fn = el.getAttribute("data-input");
@@ -780,6 +784,25 @@ document.addEventListener("input", function (e) {
     if (el.hasAttribute("data-pass-el"))
         args.push(el);
     _safeDispatch(fn, args);
+}
+// A dead key (ê, ô, ï) or an IME composes a character over several input
+// events. A handler that re-renders the field in the middle of it replaces
+// the field and drops the composition ("m^êt" for "mêt"): wait until the
+// character is complete, then dispatch once with the final value.
+document.addEventListener("input", function (e) {
+    if (e.isComposing)
+        return;
+    var el = e.target?.closest?.("[data-input]") || null;
+    var last = _composedLast;
+    _composedLast = { el: null, value: null };
+    if (el && el === last.el && el.value === last.value)
+        return; // already dispatched
+    _dispatchInput(e.target);
+});
+document.addEventListener("compositionend", function (e) {
+    var el = e.target?.closest?.("[data-input]") || null;
+    _composedLast = { el: el, value: el ? el.value : null };
+    _dispatchInput(e.target);
 });
 // ═══════════════════════════════════════════════════════════════════════
 // COLONNES (masquer / afficher / redimensionner)

@@ -294,6 +294,11 @@ declare function _autoHeight(el: HTMLElement): void;
 declare var _BLOCKED_DISPATCH: Record<string, number>;
 declare function _safeDispatch(fn: string, args: unknown[]): void;
 declare var _mouseDownTarget: EventTarget | null;
+declare var _composedLast: {
+    el: Element | null;
+    value: unknown;
+};
+declare function _dispatchInput(target: EventTarget | null): void;
 declare function hd(key: string): string;
 declare var _userHiddenCols: Record<string, string[]>;
 declare var _userColWidths: Record<string, Record<string, string>>;
