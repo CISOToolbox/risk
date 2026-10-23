@@ -3,6 +3,17 @@
 Every release has its section here, written at release time from the
 changes since the previous one and published as the GitHub release notes.
 
+## 1.2.1 — 2026-10-23
+
+### Fixed
+
+- A composed character is dispatched once in the Firefox and Safari event order too (socle)
+- A character composed with a dead key or an IME is dispatched once, complete (socle)
+
+### Maintenance
+
+- Socle composition dedup (propagation)
+
 ## 1.2.0 — 2026-10-20
 
 ### Added
