@@ -43,6 +43,13 @@ PYTHON_VERSION="3.13"   # the python:3.13-slim base of every image
 # package=date — a release newer than the cutoff, accepted case by case.
 EXCEPTIONS=(
     "pyjwt=2026-09-24"   # PyJWT 2.15.0: GHSA-42vr-xj54-vc7v
+    "certifi=2026-10-21" # certifi 2026.10.19: GHSA-6q48-6c7w-9gw2 / PYSEC-2026-4320 (emSign roots)
+    # An exception also caps the package at its date: drop each one once the
+    # cutoff has passed it (certifi: once CUTOFF is after 2026-10-21), or the
+    # package stays frozen — for certifi, its root store with it. certifi is
+    # also pinned in every requirements.txt and in constraints.txt (so that
+    # scanners resolving requirements.txt see it): drop those pins with the
+    # exception, or they keep it frozen just the same.
 )
 
 if [ -z "${CUTOFF:-}" ]; then

@@ -3,9 +3,9 @@
 #   pip install --require-hashes -r requirements-test-lock.txt
 # Resolved for Python 3.13, any platform, with the repository's
 # constraints.txt and no release after 2026-09-17 (14-day cooldown), except:
-# pyjwt=2026-09-24. Regenerate with tests/lock-deps.sh after changing an
+# pyjwt=2026-09-24 certifi=2026-10-21. Regenerate with tests/lock-deps.sh after changing an
 # input below.
-# input: requirements-lock.txt sha256:6037d7f8ae01dead4a8eabb2d0e389507ed967f2842777ddc4a9b99c31fe87e1
+# input: requirements-lock.txt sha256:e149bcd116672bbeeccb630ca7b62068bb5e79964443e432a9648fb120ce55a5
 # input: requirements-test.txt sha256:ef83b877e415b2d648b5552652699bee41d4d5d3361628984b9f678c78d23431
 aiosqlite==0.22.1 \
     --hash=sha256:043e0bd78d32888c0a9ca90fc788b38796843360c855a7262a532813133a0650 \
@@ -83,9 +83,9 @@ asyncpg==0.31.0 \
 authlib==1.6.12 \
     --hash=sha256:0656d8482f28fc8221929d5f35b2bde5d13e10555ebc06b4561b0d622e83b1bd \
     --hash=sha256:e9229ad7fde610b139dd12f5edbe97eab9ee78bfb85691247e767727850b99ab
-certifi==2026.7.22 \
-    --hash=sha256:62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775 \
-    --hash=sha256:741e2c3b351ddf169a738da9f2c048608ff7f2c5cc02f1ebc6b118bb090d5d55
+certifi==2026.10.19 \
+    --hash=sha256:035c1e85572b141bf1c3a3eff0e33a8eb74917522f2559075ff8d2fea780a1ae \
+    --hash=sha256:42d35340cc5b9ba78e818ddbff0c5b1c2b779de448a340fd1b989f5fa8670e1b
 cffi==2.1.1 ; platform_python_implementation != 'PyPy' \
     --hash=sha256:046bfc24911b37851ee1b51aab8bffe713d89c68c6a057b09484ce9fd5f69b4e \
     --hash=sha256:06c72bb76605a4b0cd0aad6930b69d4baf7dd5d806cfc409b824191099700e66 \
