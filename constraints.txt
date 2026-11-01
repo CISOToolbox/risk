@@ -54,7 +54,7 @@ asyncpg==0.31.0
 alembic==1.18.4
 
 # ── Auth — all 9 modules ─────────────────────────────────────────────────────
-authlib==1.6.12
+authlib==1.9.1
 PyJWT==2.15.0                   # DEP-03 — GHSA-xgmm-8j9v-c9wx, GHSA-ffc3-869f-jxw9 and five more (HIGH), GHSA-42vr-xj54-vc7v (moderate); pins carry [crypto]
 
 # ── Transitive pins forced for security — all 9 modules ──────────────────────
@@ -70,6 +70,7 @@ anyio==4.14.2                   # via httpx/starlette — GHSA-82r6-8w77-94w6
 
 # ── Shared by a subset of modules ────────────────────────────────────────────
 cryptography==50.0.0            # access, appsec, surface, watch
+pyasn1==0.6.5                   # access, asset (via ldap3) — GHSA-2qm8-x737-gmw5 + 3 (quadratic BER decoding)
 boto3==1.43.96                  # access, asset, pilot (+ add-on aws_iam)
 botocore==1.43.96               # via boto3 — pinned with it, else the image takes the newest release
 s3transfer==0.19.2              # via boto3
@@ -83,7 +84,7 @@ openpyxl==3.1.5                 # vendor (dora_export), add-on acme
 # Listed so a second consumer starts from the same version instead of
 # introducing a new generation of pins. Harmless as constraints: an entry for
 # a package that is not installed is simply ignored by pip.
-dnspython==2.7.0                # surface
+dnspython==2.9.0                # surface — GHSA-45c3-73f7-pv4m
 dnstwist==20250130              # surface
 feedparser==6.0.11              # watch
 beautifulsoup4==4.13.3          # watch

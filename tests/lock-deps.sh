@@ -44,6 +44,10 @@ PYTHON_VERSION="3.13"   # the python:3.13-slim base of every image
 EXCEPTIONS=(
     "pyjwt=2026-09-24"   # PyJWT 2.15.0: GHSA-42vr-xj54-vc7v
     "certifi=2026-10-21" # certifi 2026.10.19: GHSA-6q48-6c7w-9gw2 / PYSEC-2026-4320 (emSign roots)
+    "dnspython=2026-10-09" # dnspython 2.9.0: GHSA-45c3-73f7-pv4m
+    "authlib=2026-10-14" # Authlib 1.9.1: GHSA-8m4g-j4wp-wgcg, GHSA-7vr2-2fgp-9w7p and two more (JWS forgery)
+    "pyasn1=2026-10-27"  # pyasn1 0.6.5: GHSA-2qm8-x737-gmw5 and three more (quadratic decoding)
+    "joserfc=2026-10-18" # joserfc 1.7.6 (via Authlib 1.9): GHSA-9pg5-8c7x-5hfx
     # An exception also caps the package at its date: drop each one once the
     # cutoff has passed it (certifi: once CUTOFF is after 2026-10-21), or the
     # package stays frozen — for certifi, its root store with it. certifi is
