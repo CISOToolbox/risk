@@ -37,6 +37,7 @@ from src.models import (
     AnalysisSS,
     AnalysisVM,
 )
+from src.routes.analyses import _can, validate_risk_matrix
 from src.routes.crud_factory import create_entity_router
 
 
@@ -370,6 +371,17 @@ def _si_from_dict(aid, i, d):
 socle_iso_router = create_entity_router("socle_iso", AnalysisSocleISO, _si_to_dict, _si_from_dict)
 
 
+# ── Singleton routes: same permission ladder as every analysis route ──
+
+async def _analysis_for(db: AsyncSession, analysis_id: uuid.UUID, user, perm: str) -> Analysis:
+    analysis = await db.get(Analysis, analysis_id)
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+    if not _can(perm, analysis, user):
+        raise HTTPException(status_code=403, detail="Access denied")
+    return analysis
+
+
 # ── Context (singleton GET/PUT) ──────────────────────────────────
 
 context_router = APIRouter(prefix="/api/analyses/{analysis_id}/context", tags=["analyses"])
@@ -381,9 +393,7 @@ async def get_context(
     user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    analysis = await db.get(Analysis, analysis_id)
-    if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found")
+    await _analysis_for(db, analysis_id, user, "read")
     result = await db.execute(
         select(AnalysisContext).where(AnalysisContext.analysis_id == analysis_id)
     )
@@ -408,9 +418,7 @@ async def put_context(
     user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    analysis = await db.get(Analysis, analysis_id)
-    if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found")
+    analysis = await _analysis_for(db, analysis_id, user, "edit")
 
     await db.execute(sa_delete(AnalysisContext).where(AnalysisContext.analysis_id == analysis_id))
     db.add(AnalysisContext(
@@ -439,9 +447,7 @@ async def get_settings(
     user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    analysis = await db.get(Analysis, analysis_id)
-    if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found")
+    await _analysis_for(db, analysis_id, user, "read")
     result = await db.execute(
         select(AnalysisSettings).where(AnalysisSettings.analysis_id == analysis_id)
     )
@@ -458,9 +464,7 @@ async def put_settings(
     user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    analysis = await db.get(Analysis, analysis_id)
-    if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found")
+    analysis = await _analysis_for(db, analysis_id, user, "edit")
 
     await db.execute(sa_delete(AnalysisSettings).where(AnalysisSettings.analysis_id == analysis_id))
     db.add(AnalysisSettings(
@@ -483,9 +487,7 @@ async def get_risk_matrix(
     user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    analysis = await db.get(Analysis, analysis_id)
-    if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found")
+    await _analysis_for(db, analysis_id, user, "read")
     result = await db.execute(
         select(AnalysisRiskMatrix).where(AnalysisRiskMatrix.analysis_id == analysis_id)
     )
@@ -500,15 +502,14 @@ async def put_risk_matrix(
     user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    analysis = await db.get(Analysis, analysis_id)
-    if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found")
+    analysis = await _analysis_for(db, analysis_id, user, "edit")
+    matrix = validate_risk_matrix(body)
 
     await db.execute(sa_delete(AnalysisRiskMatrix).where(AnalysisRiskMatrix.analysis_id == analysis_id))
-    db.add(AnalysisRiskMatrix(analysis_id=analysis_id, matrix=body))
+    db.add(AnalysisRiskMatrix(analysis_id=analysis_id, matrix=matrix))
     analysis.updated_at = datetime.now(timezone.utc)
     await db.commit()
-    return body
+    return matrix
 
 
 # ── All entity routers ───────────────────────────────────────────

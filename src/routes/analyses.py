@@ -3,9 +3,10 @@ from __future__ import annotations
 import copy
 import uuid
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 
 import re
+import unicodedata
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 from sqlalchemy import delete, func, or_, select
@@ -364,6 +365,80 @@ def _s(val, default=""):
     return str(val)
 
 
+# Risk levels are stored in French (the frontend's canonical keys); the
+# English labels and accent-less spellings it may send map onto them. Lookup
+# ignores case, surrounding spaces and Unicode normalisation form.
+_RISK_LEVELS = {"": "", "faible": "Faible", "low": "Faible", "moyen": "Moyen", "medium": "Moyen",
+                "élevé": "Élevé", "elevé": "Élevé", "eleve": "Élevé", "high": "Élevé"}
+_MAX_GRAVITY = 5
+
+
+def _risk_level(v: Any) -> Optional[str]:
+    if not isinstance(v, str):
+        return None
+    return _RISK_LEVELS.get(unicodedata.normalize("NFC", v).strip().casefold())
+
+
+def _gravity(g: Any) -> Optional[int]:
+    if isinstance(g, str):
+        try:
+            g = int(g.strip())
+        except ValueError:
+            return None
+    if isinstance(g, bool) or not isinstance(g, int) or not 1 <= g <= _MAX_GRAVITY:
+        return None
+    return g
+
+
+def validate_risk_matrix(rows: Any, strict: bool = True) -> list[dict]:
+    """Return the risk matrix with canonical levels.
+
+    Each row is `{"g": 1..5, "levels": [level, ...]}` with at most five rows
+    and five levels: the frontend renders these values, so nothing else is
+    stored. `strict` rejects anything else with 422 (the matrix route). The
+    whole-analysis writes (save, import, duplicate, restore) pass
+    `strict=False`: a matrix stored before this check must not block them, so
+    an invalid row is dropped and an unknown level blanked instead.
+    """
+    def bad(msg: str):
+        if strict:
+            raise HTTPException(status_code=422, detail=f"Invalid risk matrix: {msg}")
+
+    if not isinstance(rows, list):
+        bad("expected a list")
+        return []
+    if len(rows) > _MAX_GRAVITY:
+        bad(f"at most {_MAX_GRAVITY} rows")
+    out = []
+    for row in rows[:_MAX_GRAVITY]:
+        if not isinstance(row, dict):
+            bad("each row must be an object")
+            continue
+        g = _gravity(row.get("g"))
+        if g is None:
+            bad(f"g must be an integer from 1 to {_MAX_GRAVITY}")
+            continue
+        levels = row.get("levels")
+        if not isinstance(levels, list):
+            bad("levels must be a list")
+            levels = []
+        if len(levels) > _MAX_GRAVITY:
+            bad(f"at most {_MAX_GRAVITY} levels per row")
+        canon = [_risk_level(v) for v in levels[:_MAX_GRAVITY]]
+        if None in canon:
+            bad("unknown risk level")
+        out.append({"g": g, "levels": [c or "" for c in canon]})
+    return out
+
+
+def _recalculate(data: dict) -> dict:
+    """recalculate_all on a copy whose risk matrix is already cleaned: the
+    residual risk levels are read from it."""
+    data = copy.deepcopy(data)
+    data["risk_matrix"] = validate_risk_matrix(data.get("risk_matrix") or [], strict=False)
+    return recalculate_all(data)
+
+
 async def _delete_children(db: AsyncSession, analysis_id: uuid.UUID):
     for model in _CHILD_TABLES:
         await db.execute(delete(model).where(model.analysis_id == analysis_id))
@@ -405,7 +480,7 @@ async def _decompose_data(db: AsyncSession, analysis_id: uuid.UUID, data: dict):
         ))
 
     # Risk matrix
-    rm = data.get("risk_matrix") or []
+    rm = validate_risk_matrix(data.get("risk_matrix") or [], strict=False)
     if rm:
         db.add(AnalysisRiskMatrix(analysis_id=analysis_id, matrix=rm))
 
@@ -743,7 +818,7 @@ async def update_analysis(
         analysis.analyst = body.analyst
 
     if body.data is not None:
-        recalculated = recalculate_all(copy.deepcopy(body.data))
+        recalculated = _recalculate(body.data)
         await _delete_children(db, analysis.id)
         await _decompose_data(db, analysis.id, recalculated)
         # Auto-sync name from data.context.societe
@@ -891,7 +966,7 @@ async def recalculate_analysis(
         raise HTTPException(status_code=403, detail="Access denied")
 
     data = await _reconstruct_data(db, analysis.id)
-    recalculated = recalculate_all(copy.deepcopy(data))
+    recalculated = _recalculate(data)
 
     await _delete_children(db, analysis.id)
     await _decompose_data(db, analysis.id, recalculated)
