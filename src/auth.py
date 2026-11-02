@@ -20,6 +20,7 @@ from src.auth_common import (  # noqa: F401 — re-export
     get_module_role,
     perms_for_module_role,
     require_admin,
+    require_edit_role,
     require_identity,
     require_min_role,
     VIEWER_MODULE_ROLES,

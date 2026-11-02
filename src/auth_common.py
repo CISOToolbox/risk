@@ -701,6 +701,17 @@ def require_min_role(user: Optional[User], min_role: str, hierarchy: list[str]) 
         raise HTTPException(status_code=403, detail=f"Requires {min_role} role, you have {role}")
 
 
+def require_edit_role(user: Optional[User]) -> None:
+    """Gate for creating a business object from scratch (new, import,
+    duplicate): the module role must grant `edit` on the shared ladder.
+    A read-only role (viewer, reader, triager) would otherwise become owner,
+    with full rights, of whatever it creates. `user is None` passes."""
+    if user is None or user.role == "admin":
+        return
+    if "edit" not in perms_for_module_role(get_module_role(user)):
+        raise HTTPException(status_code=403, detail="Requires a role that can edit")
+
+
 def require_admin(user: Optional[User]) -> None:
     """Admin gate. `user is None` = auth disabled = admin: pass through.
 
