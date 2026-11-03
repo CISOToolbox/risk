@@ -58,6 +58,18 @@ def test_openapi_schema_is_served(client):
     assert schema.get("paths"), "empty OpenAPI schema"
 
 
+def test_api_docs_are_not_published_by_default(anon):
+    """Without ENABLE_API_DOCS, neither the schema nor Swagger UI is served:
+    they would hand the whole route inventory to an unauthenticated caller."""
+    if HAS_OPENAPI:
+        pytest.skip("this deployment enables its API docs")
+    for path in ("/openapi.json", "/docs", "/redoc"):
+        r = anon.get(path)
+        served = r.status == 200 and any(
+            mark in r.text for mark in ('"openapi"', "swagger-ui", "redoc.standalone"))
+        assert not served, "%s is served -> %s" % (path, r.status)
+
+
 # -- 2. The SPA and its assets ----------------------------------------------
 
 def test_index_is_served(client):
@@ -207,8 +219,10 @@ def test_no_local_token_login_when_the_module_has_none(anon):
     """
     if HAS_TOKEN_LOGIN:
         pytest.skip("this module offers a token login by design")
-    paths = anon.get("/openapi.json").json().get("paths", {})
-    assert "/auth/login/token" not in paths
+    # Probed directly: the schema that used to list it is no longer published.
+    # An existing route answers 401/422; only the static mount answers 405.
+    r = anon.post("/auth/login/token", {})
+    assert r.status in (404, 405), "/auth/login/token -> %s" % r.status
 
 
 def test_login_page_is_served(client):

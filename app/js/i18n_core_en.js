@@ -194,6 +194,8 @@ _registerTranslations("en", {
     "chrome.theme_light": "Light theme",
     "chrome.lang": "Language",
     "chrome.saved_at": "Saved {time}",
+    "dir.source_confirm_local": "Use this module's local directory instead of the central one (Pilot)?\n\nOwners and recipients will be chosen from the local base.", // directory_picker
+    "dir.source_confirm_pilot": "Use the central directory (Pilot) for this module?\n\nOwners and recipients will be chosen from it.", // directory_picker
     "chrome.saved_local": "Saved locally {time}",
     "chrome.export_json": "Export (JSON)",
     "chrome.import_json": "Import (JSON)",

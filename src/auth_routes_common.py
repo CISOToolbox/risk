@@ -466,7 +466,10 @@ async def callback_oidc(request: Request, db: AsyncSession = Depends(get_db)):
             userinfo = await _verify_id_token_jwks(
                 id_token, jwks_url,
                 audience=OIDC_CLIENT_ID,
-                issuer=endpoints.get("issuer"),
+                # The discovery document must carry `issuer`; when it does
+                # not, check against the configured one rather than not at
+                # all (verification is skipped for an empty issuer).
+                issuer=endpoints.get("issuer") or OIDC_ISSUER,
             )
         except Exception:
             return RedirectResponse(url="/login.html?error=token_verify_failed")

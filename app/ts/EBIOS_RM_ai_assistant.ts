@@ -1082,7 +1082,7 @@ window._aiRunSOP = async function(ssId: string, mode: string) {
     _lastSuggestType = "_aiGenSOP";
     _lastSuggestArgs = [ssId];
     var p = _aiEnsurePanel();
-    p.body.innerHTML = '<div class="ai-loading"><div class="spinner"></div><p class="ct-mt-3">' + t("ai.generating_sop", {id: ssId}) + '</p></div>';
+    p.body.innerHTML = '<div class="ai-loading"><div class="spinner"></div><p class="ct-mt-3">' + t("ai.generating_sop", {id: esc(ssId)}) + '</p></div>';
     p.footer.innerHTML = "";
     try {
         // An unknown strategic scenario is rejected by the server (422), which

@@ -292,8 +292,15 @@ def decode_jwt(token: str) -> dict:
 # same check, over the service-token channel that already exists for the
 # other direction.
 #
+# Pilot answers with the account's current state: whether it is active, its
+# global role and its role in this module. The token's claims are lowered to
+# that state (see _clamp_to_upstream), never raised: a demotion applies within
+# _REVOCATION_TTL, a promotion with the next sign-in, as before.
+#
 # Cached, because this sits on the request path: one lookup per identity per
-# _REVOCATION_TTL, not one per request.
+# _REVOCATION_TTL, not one per request — except for a token newer than the one
+# the verdict was cached for: Pilot mints new cookies at each sign-in, and a
+# promoted account must not be held to the verdict of its previous token.
 #
 # Failure policy is deliberately fail-OPEN, and that is a trade-off worth
 # stating. Failing closed would make every module unusable whenever Pilot is
@@ -304,7 +311,7 @@ def decode_jwt(token: str) -> dict:
 _PILOT_URL = os.getenv("PILOT_URL", "")
 _SERVICE_TOKEN = os.getenv("SERVICE_TOKEN", "")
 _REVOCATION_TTL = int(os.getenv("REVOCATION_CHECK_TTL_SECONDS", "300"))
-_revocation_cache: dict[str, tuple[float, bool]] = {}
+_revocation_cache: dict[str, tuple[float, dict, float]] = {}
 
 
 def _revocation_check_enabled() -> bool:
@@ -316,15 +323,132 @@ def _revocation_check_enabled() -> bool:
     return AUTH_MODE == "pilot" and bool(_PILOT_URL) and bool(_SERVICE_TOKEN)
 
 
-async def _is_active_upstream(email: str) -> bool:
-    """Does Pilot still consider `email` an active account?"""
+async def _upstream_status(email: str, token_exp: float = 0) -> Optional[dict]:
+    """Pilot's current verdict on `email`, or None when there is none to apply.
+
+    `token_exp` is the expiry of the session token being checked: a cached
+    verdict is reused only for a token no newer than the one it was fetched for.
+
+    The verdict is `{"active": bool, "role": str, "module_role": str | None}`;
+    `module_role` is None when Pilot does not send it (an older Pilot).
+    None overall means: check disabled, Pilot unreachable, or an answer that
+    is not a verdict — keep the token's claims.
+    """
     if not _revocation_check_enabled() or not email:
-        return True
+        return None
 
     import time
 
     now = time.time()
     hit = _revocation_cache.get(email)
+    if hit and now - hit[0] < _REVOCATION_TTL and token_exp <= hit[2]:
+        return hit[1]
+
+    import httpx
+
+    try:
+        async with httpx.AsyncClient(timeout=3.0, follow_redirects=False) as client:
+            resp = await client.get(
+                f"{_PILOT_URL.rstrip('/')}/api/internal/users/status",
+                params={"email": email, "module": MODULE_NAME},
+                headers={"X-Service-Token": _SERVICE_TOKEN},
+            )
+        if resp.status_code != 200:
+            # Pilot answered, but not with a verdict (misconfigured token,
+            # endpoint absent on an older Pilot). Not a revocation.
+            return None
+        data = resp.json()
+        module_role = data.get("module_role")
+        status = {
+            "active": bool(data.get("active")),
+            "role": str(data.get("role") or ""),
+            "module_role": module_role if isinstance(module_role, str) else None,
+        }
+    except Exception:
+        # Unreachable: keep serving, and retry on the next request rather than
+        # caching a verdict we did not actually get.
+        return None
+
+    _revocation_cache[email] = (now, status, token_exp)
+    return status
+
+
+def _role_rank(role: str) -> float:
+    """Position of `role` in this module's ladder, -1 when it grants nothing.
+
+    A read-only role the ladder does not list (a suite viewer in Access, whose
+    ladder starts at manager) still reads, as before this check: it ranks
+    below every role of the ladder.
+    """
+    ladder = MODULE_ROLES.get(MODULE_NAME, ())
+    if role in ladder:
+        return ladder.index(role)
+    return -0.5 if role in VIEWER_MODULE_ROLES else -1
+
+
+def _clamp_to_upstream(payload: dict, status: dict) -> tuple[dict, str]:
+    """The token's claims lowered to Pilot's current state, and the module role.
+
+    Global role: in a module it only matters as "admin" (admin everywhere,
+    `user.role == "admin"` checks), so a token minted for an admin whom Pilot
+    no longer holds as one takes Pilot's role. Any other difference only
+    changes the module role, handled next.
+
+    Module role: the token's when Pilot holds the same one; otherwise the
+    lower of the two on this module's ladder, where a role neither listed nor
+    read-only grants nothing. Without `module_role` (an older Pilot), only
+    the global demotion applies.
+    """
+    clamped = dict(payload)
+    if payload.get("role") == "admin" and status["role"] != "admin":
+        clamped["role"] = status["role"]
+    if status["module_role"] is None:
+        return clamped, _effective_module_role(clamped)
+    granted = _effective_module_role(payload)
+    current = _effective_module_role({
+        "role": status["role"],
+        "permissions": {MODULE_NAME: status["module_role"]} if status["module_role"] else {},
+    })
+    if current == granted:
+        return clamped, granted
+    module_role = min(granted, current, key=_role_rank)
+    return clamped, module_role if _role_rank(module_role) > -1 else ""
+
+
+# ── Role in a sibling module ─────────────────────────────────────
+# A module session carries this module's role only: Pilot mints just that
+# entry of the permissions map. A route that fetches another module's data on
+# the caller's behalf, with the service token (which that module trusts
+# without any ACL), must first learn the caller's role THERE — from Pilot.
+#
+# Fail-CLOSED, unlike the revocation check above: the question is whether to
+# disclose another module's data, and no answer means no.
+_sibling_cache: dict[tuple[str, str], tuple[float, str]] = {}
+
+
+async def sibling_module_role(user: Optional[User], module: str) -> str:
+    """`user`'s current role in `module`, another module of the suite; "" for none.
+
+    - auth disabled (`user is None`): "admin", as everywhere else;
+    - pilot mode: Pilot's current answer — the per-module role, else the
+      global role mapped as in `_get_module_role` (admin, viewer). An
+      inactive account, an unreachable Pilot or a Pilot that does not answer
+      `module_role` yields "", and so does a role outside `module`'s ladder;
+    - standalone: there is no suite directory to ask; only this module's
+      admin, who runs the deployment, is taken as admin there too.
+    """
+    if user is None:
+        return "admin"
+    if AUTH_MODE != "pilot":
+        return "admin" if getattr(user, "role", "") == "admin" else ""
+    email = (getattr(user, "email", "") or "").strip().lower()
+    if not _revocation_check_enabled() or not email or not module:
+        return ""
+
+    import time
+
+    now = time.time()
+    hit = _sibling_cache.get((email, module))
     if hit and now - hit[0] < _REVOCATION_TTL:
         return hit[1]
 
@@ -334,21 +458,28 @@ async def _is_active_upstream(email: str) -> bool:
         async with httpx.AsyncClient(timeout=3.0, follow_redirects=False) as client:
             resp = await client.get(
                 f"{_PILOT_URL.rstrip('/')}/api/internal/users/status",
-                params={"email": email},
+                params={"email": email, "module": module},
                 headers={"X-Service-Token": _SERVICE_TOKEN},
             )
         if resp.status_code != 200:
-            # Pilot answered, but not with a verdict (misconfigured token,
-            # endpoint absent on an older Pilot). Not a revocation.
-            return True
-        allowed = bool(resp.json().get("active"))
+            return ""
+        data = resp.json()
     except Exception:
-        # Unreachable: keep serving, and retry on the next request rather than
-        # caching a verdict we did not actually get.
-        return True
-
-    _revocation_cache[email] = (now, allowed)
-    return allowed
+        return ""
+    module_role = data.get("module_role")
+    if not isinstance(module_role, str):
+        return ""
+    role = str(data.get("role") or "")
+    if not data.get("active"):
+        granted = ""
+    elif role == "admin":
+        granted = "admin"
+    else:
+        granted = module_role or ("viewer" if role == "viewer" else "")
+    if granted not in MODULE_ROLES.get(module, ()):
+        granted = ""   # a role outside that module's ladder grants nothing
+    _sibling_cache[(email, module)] = (now, granted)
+    return granted
 
 
 # ── User sync ────────────────────────────────────────────────────
@@ -560,6 +691,14 @@ def _get_module_role(payload: dict) -> str:
     return ""
 
 
+def _effective_module_role(payload: dict) -> str:
+    """`_get_module_role`, with a suite admin admin here whatever the map says."""
+    module_role = _get_module_role(payload)
+    if not module_role and payload.get("role") == "admin":
+        module_role = "admin"
+    return module_role
+
+
 async def _resolve_user_from_cookie(
     request: Request,
     db: AsyncSession,
@@ -580,14 +719,15 @@ async def _resolve_user_from_cookie(
         user = await _standalone_user(db, payload)
         user._module_role = user.role  # type: ignore
         return user, user.role
-    module_role = _get_module_role(payload)
-    if not module_role and payload.get("role") == "admin":
-        module_role = "admin"
-    if not await _is_active_upstream(payload.get("email", "")):
-        raise HTTPException(
-            status_code=401,
-            detail="Account no longer active. Sign in again.",
-        )
+    module_role = _effective_module_role(payload)
+    status = await _upstream_status(payload.get("email", ""), float(payload.get("exp") or 0))
+    if status is not None:
+        if not status["active"]:
+            raise HTTPException(
+                status_code=401,
+                detail="Account no longer active. Sign in again.",
+            )
+        payload, module_role = _clamp_to_upstream(payload, status)
     user = await _sync_user_from_jwt(db, payload)
     user._module_role = module_role or ""  # type: ignore
     return user, module_role or ""

@@ -303,7 +303,7 @@ function inp(section: string, idx: number, field: string, val: unknown, type = "
 function sel(section: string, idx: number, field: string, val: unknown, options: (string | number)[], labelFn?: (o: string | number) => string) {
     let h = `<select data-s="${section}" data-i="${idx}" data-f="${field}" data-change="_updateFieldFromEl" data-pass-el>`;
     h += `<option value=""></option>`;
-    for (const o of options) h += `<option value="${o}" ${String(val) === String(o) ? 'selected' : ''}>${labelFn ? esc(String(labelFn(o))) : o}</option>`;
+    for (const o of options) h += `<option value="${esc(o)}" ${String(val) === String(o) ? 'selected' : ''}>${esc(labelFn ? labelFn(o) : o)}</option>`;
     h += `</select>`;
     return h;
 }
@@ -905,7 +905,7 @@ function renderContext() {
     D.gravity_scale.forEach((g, i) => {
         const gc = gravColor(g.niveau);
         const gtc = gravTextColor(g.niveau);
-        gh += `<tr><td class="ta-c"><span style="display:inline-block;width:28px;height:28px;border-radius:50%;background:${gc};color:${gtc};text-align:center;line-height:28px;font-weight:700">${g.niveau}</span></td>`;
+        gh += `<tr><td class="ta-c"><span style="display:inline-block;width:28px;height:28px;border-radius:50%;background:${gc};color:${gtc};text-align:center;line-height:28px;font-weight:700">${esc(g.niveau)}</span></td>`;
         gh += `<td><input type="text" value="${esc(g.label)}" class="w-full fw-600" data-change="_setGravityField" data-args='${_da(i,"label",true)}' data-pass-value></td>`;
         gh += `<td><textarea rows="2" class="w-full fs-sm" data-change="_setGravityField" data-args='${_da(i,"description",false)}' data-pass-value>${esc(g.description||"")}</textarea></td>`;
         for (const ic of impactCols) {
@@ -923,7 +923,7 @@ function renderContext() {
     var riskCanonicals = ["Faible", "Moyen", "Élevé"];
     D.risk_matrix.forEach((row, ri) => {
         const gLbl = gravLabel(row.g);
-        gh += `<tr><th class="ta-l fs-sm">${gLbl || "G"+row.g} (${row.g})</th>`;
+        gh += `<tr><th class="ta-l fs-sm">${esc(gLbl || "G"+row.g)} (${esc(row.g)})</th>`;
         for (let vi = 0; vi < 4; vi++) {
             const rawVal = row.levels[vi] || "";
             const canon = _toCanonicalRisk(rawVal);
@@ -1383,7 +1383,7 @@ function _selErCat(idx: number, catKey: string, val: EbNum | undefined) {
     let h = `<select data-i="${idx}" data-cat="${catKey}" data-change="_updateErGraviteCat" data-pass-el><option value=""></option>`;
     D.gravity_scale.forEach(g => {
         const desc = (g[field] && String(g[field]).trim()) || ("Niveau " + g.niveau + (g.label ? " — " + g.label : ""));
-        h += `<option value="${g.niveau}" ${String(val) === String(g.niveau) ? "selected" : ""}>${esc(desc)}</option>`;
+        h += `<option value="${esc(g.niveau)}" ${String(val) === String(g.niveau) ? "selected" : ""}>${esc(desc)}</option>`;
     });
     return h + "</select>";
 }

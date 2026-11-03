@@ -137,7 +137,7 @@
             return '';
         var h = '<div style="margin:16px 0;padding:12px;background:var(--ct-canvas);border:1px solid var(--ct-line);border-radius:8px">';
         h += '<label style="font-weight:600;font-size:0.85em;display:block;margin-bottom:8px">Source de l\'annuaire</label>';
-        h += '<select data-change="_dirSetSource" data-pass-value style="padding:6px 10px;border:1px solid var(--ct-line);border-radius:4px;font-size:0.85em">';
+        h += '<select data-change="_dirSetSource" data-pass-value data-pass-el style="padding:6px 10px;border:1px solid var(--ct-line);border-radius:4px;font-size:0.85em">';
         h += '<option value="local"' + (_dirSource === "local" ? ' selected' : '') + '>Base locale du module</option>';
         h += '<option value="pilot"' + (_dirSource === "pilot" ? ' selected' : '') + '>Annuaire central (Pilot)</option>';
         h += '</select>';
@@ -146,7 +146,15 @@
         h += '</div>';
         return h;
     };
-    window._dirSetSource = function (val) {
+    window._dirSetSource = function (val, el) {
+        // Switching the source changes whom every picker of the module offers:
+        // confirmed, and the select is put back when declined.
+        if ((val !== "local" && val !== "pilot") || val === _dirSource
+            || !confirm(t(val === "pilot" ? "dir.source_confirm_pilot" : "dir.source_confirm_local"))) {
+            if (el)
+                el.value = _dirSource;
+            return;
+        }
         fetch("api/settings/directory-source", {
             method: "PUT", credentials: "same-origin",
             headers: { "Content-Type": "application/json" },

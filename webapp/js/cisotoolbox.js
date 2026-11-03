@@ -176,6 +176,15 @@ function ctColorLevel(level, maxLevel) {
     return CT_COLORS[scale[idx]] || CT_COLORS.gray;
 }
 /**
+ * A colour read from the data, for a style attribute: only a #rrggbb value
+ * is used (trimmed and lower-cased, as the servers store it); anything else
+ * (an import, a row stored before the server validated it) gives `fallback`.
+ */
+function ctHexColor(value, fallback) {
+    var v = typeof value === "string" ? value.trim().toLowerCase() : "";
+    return /^#[0-9a-f]{6}$/.test(v) ? v : fallback;
+}
+/**
  * Render a styled badge with pastel background and dark text.
  * @param {string} text — badge label
  * @param {string} colorName — CT_COLORS key (green, orange, red, yellow, blue, gray...)
@@ -682,9 +691,7 @@ function _toggleSidebarMobile() {
         nav.classList.toggle("collapsed");
 }
 function _menuAction(fnName) {
-    if (_BLOCKED_DISPATCH[fnName])
-        return;
-    if (typeof window[fnName] === "function")
+    if (_ctDispatchable(fnName) && typeof window[fnName] === "function")
         window[fnName]();
     toggleMenu();
 }
@@ -721,11 +728,47 @@ function _autoHeight(el) {
     el.style.height = "auto";
     el.style.height = el.scrollHeight + "px";
 }
-// Blocked function names for data-click dispatch (defense-in-depth)
+// Markup is built from data: a value that escapes esc() once can name any
+// global function, with arguments of its choosing in data-args. The
+// dispatcher therefore only calls the handlers the code declared: the ones
+// the shared scripts render (below) and the page's own list, passed to
+// _ctDeclareHandlers() by its *_handlers.js, loaded right after this script.
+var _CT_SHARED_HANDLERS = [
+    "_aiClosePanel", "_autoHeight", "_connToggleHelp", "_ctAiServerProvider", "_ctAiServerTest",
+    "_ctBulkbarClear", "_ctBulkbarDispatch", "_ctDerKind", "_ctDerOpen", "_ctFvNoop", "_ctModalBackdrop",
+    "_ctModalBtn", "_ctNcAgeFilter", "_ctNcDeclare", "_ctNcFilter", "_ctNcModuleFilter", "_ctNcOpen",
+    "_ctNcOpenItem", "_ctNcRequestDer", "_ctNcSettings", "_ctNcSeverityFilter", "_ctNcSourceFilter",
+    "_ctNoop", "_ctSmtpTest", "_ctTableBulkToggle", "_ctTableBulkToggleAll", "_ctUpCreate",
+    "_ctUpFocus", "_ctUpPick", "_ctUpSearch", "_ctmSsFilter", "_ctmSsOpen", "_ctmSsSelect",
+    "_menuAction", "_noop", "_setAuditSearch", "_sliderInput", "_toggleSidebarMobile",
+    "ctRefCreate", "ctRefFilter", "ctRefOpen", "ctRefRemove", "ctRefTagClick", "ctRefToggle", "ct_go",
+    "ct_setLang", "ct_toggleLang", "ct_toggleModuleMenu", "ct_toggleRailGroup", "ct_toggleTheme",
+    "loadJSON", "newAnalysis", "openFile", "openSettings", "quickSaveJSON", "saveJSON", "showCol",
+    "switchHelpTab", "toggleColsPopup", "toggleGroup", "toggleHelp", "toggleMenu"
+];
+// Declared names (null-prototype map); null while the page declared nothing.
+var _ctHandlers = null;
+function _ctDeclareHandlers(names) {
+    if (!_ctHandlers) {
+        _ctHandlers = Object.create(null);
+        _CT_SHARED_HANDLERS.forEach(function (n) { _ctHandlers[n] = 1; });
+    }
+    names.forEach(function (n) { _ctHandlers[n] = 1; });
+}
+// A page that declares no handlers (the standalone webapps, the vendor
+// portal) keeps the former blocklist of dangerous built-ins.
 var _BLOCKED_DISPATCH = { "eval": 1, "Function": 1, "setTimeout": 1, "setInterval": 1, "fetch": 1, "open": 1, "close": 1, "alert": 1, "confirm": 1, "prompt": 1, "importScripts": 1, "postMessage": 1, "XMLHttpRequest": 1, "WebSocket": 1, "EventSource": 1, "Worker": 1, "SharedWorker": 1, "navigator": 1, "crypto": 1, "Notification": 1 };
+function _ctDispatchable(fn) {
+    if (_ctHandlers)
+        return _ctHandlers[fn] === 1;
+    return !_BLOCKED_DISPATCH[fn];
+}
 function _safeDispatch(fn, args) {
-    if (_BLOCKED_DISPATCH[fn])
+    if (!_ctDispatchable(fn)) {
+        if (typeof window[fn] === "function")
+            console.warn("[ct] handler not declared: " + fn);
         return;
+    }
     if (typeof window[fn] === "function")
         window[fn].apply(null, args);
 }

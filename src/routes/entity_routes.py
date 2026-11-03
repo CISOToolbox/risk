@@ -37,7 +37,7 @@ from src.models import (
     AnalysisSS,
     AnalysisVM,
 )
-from src.routes.analyses import _can, validate_risk_matrix
+from src.routes.analyses import _can, gravity_level_out, validate_gravity_level, validate_risk_matrix
 from src.routes.crud_factory import create_entity_router
 
 
@@ -302,25 +302,10 @@ fair_router = create_entity_router("fair", AnalysisFAIR, _fair_to_dict, _fair_fr
 
 # ── Gravity Scale ────────────────────────────────────────────────
 
-def _gs_to_dict(g):
-    return {"niveau": g.niveau or "", "label": g.label or "",
-            "description": g.description or "",
-            "impact_financier": g.impact_financier or "",
-            "impact_reputation": g.impact_reputation or "",
-            "impact_reglementaire": g.impact_reglementaire or "",
-            "impact_donnees_perso": g.impact_donnees_perso or "",
-            "impact_operationnel": g.impact_operationnel or ""}
+_gs_to_dict = gravity_level_out
 
 def _gs_from_dict(aid, i, d):
-    return AnalysisGravityScale(analysis_id=aid, sort_order=i,
-                                niveau=str(d.get("niveau", "")),
-                                label=d.get("label", ""),
-                                description=d.get("description", ""),
-                                impact_financier=d.get("impact_financier", ""),
-                                impact_reputation=d.get("impact_reputation", ""),
-                                impact_reglementaire=d.get("impact_reglementaire", ""),
-                                impact_donnees_perso=d.get("impact_donnees_perso", ""),
-                                impact_operationnel=d.get("impact_operationnel", ""))
+    return AnalysisGravityScale(analysis_id=aid, sort_order=i, **validate_gravity_level(d))
 
 gravity_scale_router = create_entity_router("gravity_scale", AnalysisGravityScale, _gs_to_dict, _gs_from_dict)
 
@@ -492,7 +477,7 @@ async def get_risk_matrix(
         select(AnalysisRiskMatrix).where(AnalysisRiskMatrix.analysis_id == analysis_id)
     )
     rm = result.scalar_one_or_none()
-    return rm.matrix if rm else []
+    return validate_risk_matrix(rm.matrix, strict=False) if rm else []
 
 
 @risk_matrix_router.put("")

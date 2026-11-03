@@ -226,19 +226,8 @@ async def _reconstruct_data(db: AsyncSession, analysis_id: uuid.UUID) -> dict:
     data = {
         "context": context,
         "socle_type": settings.socle_type if settings else "anssi",
-        "gravity_scale": [
-            {
-                "niveau": g.niveau or "", "label": g.label or "",
-                "description": g.description or "",
-                "impact_financier": g.impact_financier or "",
-                "impact_reputation": g.impact_reputation or "",
-                "impact_reglementaire": g.impact_reglementaire or "",
-                "impact_donnees_perso": g.impact_donnees_perso or "",
-                "impact_operationnel": g.impact_operationnel or "",
-            }
-            for g in gravity_rows
-        ],
-        "risk_matrix": rm.matrix if rm else [],
+        "gravity_scale": [gravity_level_out(g) for g in gravity_rows],
+        "risk_matrix": validate_risk_matrix(rm.matrix, strict=False) if rm else [],
         "vm": [
             {"id": v.id, "nom": v.nom or "", "nature": v.nature or "",
              "description": v.description or "", "responsable": v.responsable or ""}
@@ -431,6 +420,64 @@ def validate_risk_matrix(rows: Any, strict: bool = True) -> list[dict]:
     return out
 
 
+_GRAVITY_TEXT_FIELDS = ("description", "impact_financier", "impact_reputation", "impact_reglementaire",
+                        "impact_donnees_perso", "impact_operationnel")
+
+
+def validate_gravity_level(row: Any, strict: bool = True) -> dict:
+    """Return one severity-scale row with a numeric level and plain-text fields.
+
+    `niveau` is an integer from 1 to 5 (stored as its string), or empty for a
+    level not set yet; `label` is one line of at most 100 characters; the
+    other fields are strings. The frontend renders these values, so nothing
+    else is stored. `strict` (the gravity_scale route) rejects anything else
+    with 422; the whole-analysis writes pass `strict=False`, which blanks an
+    invalid value instead, like `validate_risk_matrix`.
+    """
+    def bad(msg: str):
+        if strict:
+            raise HTTPException(status_code=422, detail=f"Invalid severity scale: {msg}")
+
+    if not isinstance(row, dict):
+        bad("each level must be an object")
+        row = {}
+    raw = row.get("niveau")
+    if raw is None or (isinstance(raw, str) and not raw.strip()):
+        niveau = ""
+    else:
+        g = _gravity(raw)
+        if g is None:
+            bad(f"niveau must be an integer from 1 to {_MAX_GRAVITY}")
+        niveau = "" if g is None else str(g)
+
+    def text(field: str) -> str:
+        v = row.get(field)
+        if v is None:
+            return ""
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            return str(v)    # a spreadsheet cell read as a number
+        if not isinstance(v, str):
+            bad(f"{field} must be a string")
+            return ""
+        return v
+
+    label = " ".join(text("label").split())
+    if len(label) > 100:
+        bad("label is at most 100 characters")
+        label = label[:100]
+    out = {"niveau": niveau, "label": label}
+    for field in _GRAVITY_TEXT_FIELDS:
+        out[field] = text(field)
+    return out
+
+
+def gravity_level_out(g) -> dict:
+    """A stored severity-scale row as the frontend reads it. A row stored
+    before `validate_gravity_level` existed is cleaned the same way."""
+    return validate_gravity_level({f: getattr(g, f) for f in ("niveau", "label", *_GRAVITY_TEXT_FIELDS)},
+                                  strict=False)
+
+
 def _recalculate(data: dict) -> dict:
     """recalculate_all on a copy whose risk matrix is already cleaned: the
     residual risk levels are read from it."""
@@ -468,16 +515,8 @@ async def _decompose_data(db: AsyncSession, analysis_id: uuid.UUID, data: dict):
 
     # Gravity scale
     for i, g in enumerate(data.get("gravity_scale") or []):
-        db.add(AnalysisGravityScale(
-            analysis_id=analysis_id, sort_order=i,
-            niveau=str(g.get("niveau", "")), label=g.get("label", ""),
-            description=g.get("description", ""),
-            impact_financier=g.get("impact_financier", ""),
-            impact_reputation=g.get("impact_reputation", ""),
-            impact_reglementaire=g.get("impact_reglementaire", ""),
-            impact_donnees_perso=g.get("impact_donnees_perso", ""),
-            impact_operationnel=g.get("impact_operationnel", ""),
-        ))
+        db.add(AnalysisGravityScale(analysis_id=analysis_id, sort_order=i,
+                                    **validate_gravity_level(g, strict=False)))
 
     # Risk matrix
     rm = validate_risk_matrix(data.get("risk_matrix") or [], strict=False)

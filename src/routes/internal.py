@@ -18,7 +18,8 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.proxy_common import apply_proxy, check_proxy_url
-from src.auth import get_current_user
+from src.auth import get_current_user, require_edit_role
+from src.auth_common import sibling_module_role
 from src.database import get_db
 from src.models import (
     Analysis,
@@ -380,12 +381,21 @@ async def sync_vendor(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Pull vendors from Vendor module, inject into Risk's D.pp[] as read-only."""
+    """Pull vendors from Vendor module, inject into Risk's D.pp[] as read-only.
+
+    The pull uses the service token, which Vendor serves without any ACL:
+    the caller must be a Risk editor AND hold a role in Vendor (asked to
+    Pilot, fail-closed) — otherwise this would hand Vendor's whole inventory
+    to an account Vendor itself turns away.
+    """
+    require_edit_role(user)
     analysis = await db.get(Analysis, analysis_id)
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found")
     if not _can("edit", analysis, user):
         raise HTTPException(status_code=403, detail="Access denied")
+    if not await sibling_module_role(user, "vendor"):
+        raise HTTPException(status_code=403, detail="No access to the Vendor module")
 
     # Fetch vendors from Vendor module
     headers = {"X-Service-Token": SERVICE_TOKEN} if SERVICE_TOKEN else {}

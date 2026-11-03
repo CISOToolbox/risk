@@ -154,6 +154,12 @@ declare function ctColor(name: string): CtColor;
  */
 declare function ctColorLevel(level: number, maxLevel?: number): CtColor;
 /**
+ * A colour read from the data, for a style attribute: only a #rrggbb value
+ * is used (trimmed and lower-cased, as the servers store it); anything else
+ * (an import, a row stored before the server validated it) gives `fallback`.
+ */
+declare function ctHexColor(value: unknown, fallback: string): string;
+/**
  * Render a styled badge with pastel background and dark text.
  * @param {string} text — badge label
  * @param {string} colorName — CT_COLORS key (green, orange, red, yellow, blue, gray...)
@@ -291,7 +297,11 @@ declare function _menuAction(fnName: string): void;
 declare function toggleHelp(tab?: string): void;
 declare function switchHelpTab(tab: string): void;
 declare function _autoHeight(el: HTMLElement): void;
+declare var _CT_SHARED_HANDLERS: string[];
+declare var _ctHandlers: Record<string, number> | null;
+declare function _ctDeclareHandlers(names: string[]): void;
 declare var _BLOCKED_DISPATCH: Record<string, number>;
+declare function _ctDispatchable(fn: string): boolean;
 declare function _safeDispatch(fn: string, args: unknown[]): void;
 declare var _mouseDownTarget: EventTarget | null;
 declare var _composedLast: {

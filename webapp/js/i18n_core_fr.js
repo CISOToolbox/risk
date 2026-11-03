@@ -194,6 +194,8 @@ _registerTranslations("fr", {
     "chrome.theme_light": "Thème clair",
     "chrome.lang": "Langue",
     "chrome.saved_at": "Enregistré {time}",
+    "dir.source_confirm_local": "Utiliser la base locale du module au lieu de l'annuaire central (Pilot) ?\n\nLes responsables et destinataires seront choisis dans la base locale.", // directory_picker
+    "dir.source_confirm_pilot": "Utiliser l'annuaire central (Pilot) pour ce module ?\n\nLes responsables et destinataires y seront choisis.", // directory_picker
     "chrome.saved_local": "Enregistré localement {time}",
     "chrome.export_json": "Exporter (JSON)",
     "chrome.import_json": "Importer (JSON)",
