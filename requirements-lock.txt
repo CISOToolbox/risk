@@ -3,9 +3,9 @@
 #   pip install --require-hashes -r requirements-lock.txt
 # Resolved for Python 3.13, any platform, with the repository's
 # constraints.txt and no release after 2026-09-17 (14-day cooldown), except:
-# pyjwt=2026-09-24 certifi=2026-10-21 dnspython=2026-10-09 authlib=2026-10-14 pyasn1=2026-10-27 joserfc=2026-10-18. Regenerate with tests/lock-deps.sh after changing an
+# pyjwt=2026-09-24 certifi=2026-10-21 dnspython=2026-10-09 authlib=2026-10-14 pyasn1=2026-10-27 joserfc=2026-10-18 mako=2026-09-23 setuptools=2026-10-20. Regenerate with tests/lock-deps.sh after changing an
 # input below.
-# input: requirements.txt sha256:3ab8e53b4da3ad7615aabca6651f7ec3fa76a51ddd3895136bad68e05b504a16
+# input: requirements.txt sha256:f1fb5f3f62aa09b62d2ef1983937f324c9437a8888bc8236051a84c5579b7968
 alembic==1.18.4 \
     --hash=sha256:a5ed4adcf6d8a4cb575f3d759f071b03cd6e5c7618eb796cb52497be25bfe19a \
     --hash=sha256:cb6e1fd84b6174ab8dbb2329f86d631ba9559dd78df550b57804d607672cedbc
@@ -385,9 +385,9 @@ idna==3.18 \
 joserfc==1.7.6 \
     --hash=sha256:e2d72e3fa937ed8ddd42ad8c1cc337a43e7ffd02efa572a2aa15e2764a05b506 \
     --hash=sha256:fb1cf6d2977318bef976c2ed2ef2167cc5f8ade8fc96f034e38f7abd656907c4
-mako==1.3.12 \
-    --hash=sha256:8f61569480282dbf557145ce441e4ba888be453c30989f879f0d652e39f53ea9 \
-    --hash=sha256:9f778e93289bd410bb35daadeb4fc66d95a746f0b75777b942088b7fd7af550a
+mako==1.4.3 \
+    --hash=sha256:723296007c870bfd6b3f0c3230dba7198096e5269297ebf5e4eff9e7ffa39d4f \
+    --hash=sha256:cd6537fe88d5fec315c55c2f8529bc4ce7a9a352ad7db3eeaa6a66e2dd4ec37a
 markupsafe==3.0.3 \
     --hash=sha256:0303439a41979d9e74d18ff5e2dd8c43ed6c6001fd40e5bf2e43f7bd9bbc523f \
     --hash=sha256:068f375c472b3e7acbe2d5318dea141359e6900156b5b2ba06a30b169086b91a \
