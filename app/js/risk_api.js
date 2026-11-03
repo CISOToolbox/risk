@@ -27,27 +27,23 @@
             window.location.href = "/login.html?redirect=" + encodeURIComponent(_rp);
             throw new Error("Not authenticated");
         }
-        if (resp.status === 403) {
-            var errBody = "";
+        // The body is read once: a second read throws and loses the server's reason.
+        var errBody = "";
+        if (!resp.ok) {
             try {
                 errBody = await resp.text();
             }
             catch (e) { }
-            if (errBody.indexOf("pending") >= 0) {
-                window.location.href = "/login.html?error=pending";
-                throw new Error("Account pending");
-            }
+        }
+        if (resp.status === 403 && errBody.indexOf("pending") >= 0) {
+            window.location.href = "/login.html?error=pending";
+            throw new Error("Account pending");
         }
         if (resp.status === 204)
             return null;
-        if (!resp.ok) {
-            var errText = "";
-            try {
-                errText = await resp.text();
-            }
-            catch (e) { }
-            throw new Error("API " + resp.status + ": " + errText.substring(0, 200));
-        }
+        // Status, server's reason and the FEAT-33 marker travel with the error.
+        if (!resp.ok)
+            throw ct_apiError(resp, errBody);
         return resp.json();
     }
     // ═══════════════════════════════════════════════════════════════

@@ -237,6 +237,82 @@ document.addEventListener("keydown", function (e) {
             quickSaveJSON();
     }
 });
+// A FastAPI validation error (422) carries a list of {loc, msg}: said as
+// "field: message; …" rather than as raw JSON.
+function _ctDetailText(detail) {
+    if (typeof detail === "string")
+        return detail;
+    if (Array.isArray(detail)) {
+        return detail.map(function (d) {
+            if (!d || typeof d !== "object" || !d.msg)
+                return typeof d === "string" ? d : JSON.stringify(d);
+            var loc = Array.isArray(d.loc) ? d.loc.filter(function (x) { return x !== "body"; }).join(".") : "";
+            return (loc ? loc + ": " : "") + String(d.msg);
+        }).join("; ");
+    }
+    return JSON.stringify(detail);
+}
+function ct_apiError(resp, body) {
+    var detail = body || "";
+    try {
+        var parsed = JSON.parse(body);
+        if (parsed && parsed.detail)
+            detail = _ctDetailText(parsed.detail);
+    }
+    catch (e) { }
+    // A proxy's own error page (HTML) or an empty body gives no reason to show.
+    if (!detail.trim() || detail.trim().charAt(0) === "<")
+        detail = t("chrome.no_reason", { status: String(resp.status) });
+    var err = new Error("API " + resp.status + ": " + (body || "").substring(0, 200));
+    err.status = resp.status;
+    err.detail = detail;
+    err.stale = resp.status === 409 && !!resp.headers && resp.headers.get("X-CT-Conflict") === "stale";
+    return err;
+}
+// A refusal carries a reason worth showing; a server error or a network
+// failure does not.
+function _ctRefusal(err) {
+    var st = err && err.status;
+    return st === 400 || st === 403 || st === 409 || st === 422;
+}
+/**
+ * The whole-project save failed. A version conflict keeps its own message;
+ * any other refusal (400 / 409 / 422) says the server's reason, then reloads what
+ * the server keeps — every later save would fail the same way. A 403 is only
+ * said, in red: reloading would not change it, and a read-only user would
+ * get it on every visit. Returns false for any other failure (the caller
+ * logs it).
+ */
+function ct_projectSaveFailed(err) {
+    if (err && err.stale) {
+        alert(t("chrome.stale_conflict"));
+        window.location.reload();
+        return true;
+    }
+    if (!_ctRefusal(err))
+        return false;
+    var reason = String((err && err.detail) || "");
+    if (err.status === 403) {
+        showStatus("⚠ " + reason.substring(0, 200), true);
+        return true;
+    }
+    alert(t("chrome.save_refused", { reason: reason }));
+    window.location.reload();
+    return true;
+}
+/**
+ * A targeted change (PATCH, section PUT, create, delete) failed: a refusal
+ * shows the server's reason in red — a 404 too (the record was deleted
+ * meanwhile, e.g. from another tab) — and any other failure (server error,
+ * network) is said too: the change was not saved.
+ */
+function ct_changeFailed(err) {
+    console.error("Change not saved:", err);
+    if (_ctRefusal(err) || (err && err.status === 404))
+        showStatus("⚠ " + String((err && err.detail) || "").substring(0, 200), true);
+    else
+        showStatus(t("chrome.save_failed"), true);
+}
 // ═══════════════════════════════════════════════════════════════════════
 // SNAPSHOTS / HISTORY — removed in the suite/standalone variants.
 // Feature dropped (the History tab no longer exists). Stubs kept in case

@@ -55,16 +55,17 @@ window._autoSave = function() {
             expected_server_rev: _serverRev
         } as any).then(function() {
             _renderCatalog();
-        }).catch(function(e: any) {
-            if (e && String(e.message || "").indexOf("API 409") === 0) {
-                alert(t("chrome.stale_conflict"));
-                window.location.reload();
-                return;
-            }
-            console.error("Autosave failed:", e);
-        });
+        }).catch(_onSaveError);
     }, 800);
 };
+
+// FEAT-33 — a stale blob PUT is refused (reload: the stale bulk change is
+// lost by design); any other refusal says the server's reason. Both are told
+// by ct_projectSaveFailed (shared).
+function _onSaveError(err: any): void {
+    if (ct_projectSaveFailed(err)) return;
+    console.error("Autosave failed:", err);
+}
 
 // ── Granular persist via PUT /analyses/{id}/{section} ──
 // Each entity route does delete-all + re-insert of the whole section
@@ -95,9 +96,7 @@ function _flushSections() {
             var data = D[section];
             if (data === undefined) continue;
             // Singleton sections (context, settings) send an object, not an array
-            RiskAPI._putSection(saveId, urlKey, data).catch(function(e) {
-                console.error("PUT section " + section + " failed:", e);
-            });
+            RiskAPI._putSection(saveId, urlKey, data).catch(ct_changeFailed);
         }
         _renderCatalog();
     }, 500);
@@ -186,7 +185,7 @@ window._persistSettings = function() {
             socle_type: D.socle_type || "anssi",
         };
         RiskAPI._putSection(_activeId, "settings", body)
-            .catch(function(e) { console.error("PUT settings failed:", e); });
+            .catch(ct_changeFailed);
     }, 500);
 };
 

@@ -771,8 +771,10 @@ def require_identity(user: Optional[User]) -> User:
     """Narrow the sentinel to a real user, or refuse the request explicitly.
 
     For the few endpoints whose data model is keyed on *who* you are — a
-    NOT NULL `owner_id` / `user_id` foreign key (Watch scopes, per-user
-    alert triage). With auth disabled there is no identity to key the row
+    NOT NULL `user_id` foreign key (per-user alert triage), or an object
+    that must be created with a real owner (a Watch scope, whose `owner_id`
+    only becomes NULL when that account is deleted). With auth disabled
+    there is no identity to key the row
     on and no row can be written, so answer 503 with the actual cause
     rather than letting `user.id` raise AttributeError -> 500.
 

@@ -40,6 +40,32 @@ declare function quickSaveJSON(): Promise<void>;
 declare function saveJSON(): Promise<void>;
 declare function enableFileEncryption(): Promise<void>;
 declare function disableFileEncryption(): void;
+interface CtApiError extends Error {
+    status: number;
+    /** The server's reason (the `detail` of the JSON body, else the raw body). */
+    detail: string;
+    /** FEAT-33: the data changed server-side since this tab loaded. */
+    stale: boolean;
+}
+declare function _ctDetailText(detail: unknown): string;
+declare function ct_apiError(resp: Response, body: string): CtApiError;
+declare function _ctRefusal(err: any): boolean;
+/**
+ * The whole-project save failed. A version conflict keeps its own message;
+ * any other refusal (400 / 409 / 422) says the server's reason, then reloads what
+ * the server keeps — every later save would fail the same way. A 403 is only
+ * said, in red: reloading would not change it, and a read-only user would
+ * get it on every visit. Returns false for any other failure (the caller
+ * logs it).
+ */
+declare function ct_projectSaveFailed(err: any): boolean;
+/**
+ * A targeted change (PATCH, section PUT, create, delete) failed: a refusal
+ * shows the server's reason in red — a 404 too (the record was deleted
+ * meanwhile, e.g. from another tab) — and any other failure (server error,
+ * network) is said too: the change was not saved.
+ */
+declare function ct_changeFailed(err: any): void;
 declare function createSnapshot(): void;
 declare function restoreSnapshot(): void;
 declare function deleteSnapshot(): void;
