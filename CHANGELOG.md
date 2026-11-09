@@ -58,21 +58,12 @@ changes since the previous one and published as the GitHub release notes.
 - Tie the sweep gate to the handler's user and let every fake reach the creation on the old code
 - Permission checks on the analysis singleton routes
 
-### Maintenance
-
-- Sync the AppSec recipients fix and the require_identity docstring to the copies and the standalone mirror (propagation)
-- Sync the API docs switch and posture tests to the standalone mirror (propagation)
-
 ## 1.2.1 — 2026-10-23
 
 ### Fixed
 
 - A composed character is dispatched once in the Firefox and Safari event order too (socle)
 - A character composed with a dead key or an IME is dispatched once, complete (socle)
-
-### Maintenance
-
-- Socle composition dedup (propagation)
 
 ## 1.2.0 — 2026-10-20
 
