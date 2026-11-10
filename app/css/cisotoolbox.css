@@ -876,6 +876,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-w-140 { width: 140px; }
 .ct-w-160 { width: 160px; }
 .ct-w-170 { width: 170px; }
+.ct-w-200 { width: 200px; }
 .ct-w-30 { width: 30px; }
 .ct-w-40 { width: 40px; }
 .ct-w-50 { width: 50px; }
@@ -1554,6 +1555,57 @@ td .ct-ref-select, td .ct-ref-select * { box-shadow: none; }
 .ctm-ss-drop.open { display:block; }
 .ctm-ss-opt { padding:6px 10px; cursor:pointer; font-size:0.85em; }
 .ctm-ss-opt:hover { background:var(--ct-accent-tint); }
+
+/* ── ct_datepicker: typed date field + calendar (FEAT-64) ──
+   The native date input stays in the page, hidden, and holds the value; the
+   text field before it takes its classes. The element selector with the
+   base rule's :not() list outranks its `background` shorthand. */
+.ct-date-native { display: none !important; }
+input.ct-date-input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]) {
+  padding-right: 30px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238a909c' stroke-width='1.4'%3E%3Crect x='2' y='3' width='12' height='11' rx='1.5'/%3E%3Cpath d='M2 6.5h12M5.5 1.5v3M10.5 1.5v3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 9px center; background-size: 14px 14px;
+  cursor: text;
+}
+/* The :not() list outranks the base and table-cell field rules (and a
+   module's own border on the field). */
+input.ct-date-input[aria-invalid="true"]:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]) { border-color: var(--ct-critical); }
+.ct-date-error { display: block; flex-basis: 100%; margin-top: 2px; }
+.ct-date-pop {
+  position: fixed; z-index: 1200; width: 272px; max-width: calc(100vw - 16px); box-sizing: border-box;
+  padding: 10px; background: var(--ct-surface); color: var(--ct-ink);
+  border: 1px solid var(--ct-line); border-radius: var(--ct-r-lg); box-shadow: var(--ct-shadow-overlay);
+  font-size: var(--ct-text-ui);
+}
+.ct-date-pop__head { display: flex; gap: 4px; align-items: center; margin-bottom: 8px; }
+.ct-date-pop__head select { flex: 1 1 auto; min-width: 0; height: var(--ct-h-sm); padding: 0 4px; font-size: var(--ct-text-data); }
+.ct-date-pop__head .ct-date-pop__year { flex: 0 0 76px; }
+.ct-date-pop__nav {
+  flex: 0 0 28px; height: var(--ct-h-sm); border: 1px solid var(--ct-line); border-radius: var(--ct-r-sm);
+  background: var(--ct-surface); color: var(--ct-ink); font-size: 16px; line-height: 1; cursor: pointer;
+}
+.ct-date-pop__nav:hover:not(:disabled) { border-color: var(--ct-accent); }
+.ct-date-pop__nav:disabled { color: var(--ct-ink-disabled); cursor: default; }
+.ct-date-pop__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.ct-date-pop__wd { text-align: center; font-size: var(--ct-text-label); color: var(--ct-ink-2); padding: 2px 0 4px; text-transform: capitalize; }
+.ct-date-pop__day {
+  height: 32px; border: 1px solid transparent; border-radius: var(--ct-r-sm); background: transparent;
+  color: var(--ct-ink); font: inherit; font-size: var(--ct-text-data); cursor: pointer;
+}
+.ct-date-pop__day:hover:not(:disabled) { background: var(--ct-accent-tint); }
+.ct-date-pop__day:focus-visible { outline: none; border-color: var(--ct-accent); box-shadow: var(--ct-focus-soft); }
+.ct-date-pop__day.is-today { border-color: var(--ct-line-field); font-weight: 700; }
+.ct-date-pop__day.is-selected { background: var(--ct-accent); color: var(--ct-onsolid); font-weight: 700; }
+.ct-date-pop__day:disabled { color: var(--ct-ink-disabled); cursor: default; }
+.ct-date-pop__time { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: var(--ct-text-data); color: var(--ct-ink-2); }
+.ct-date-pop__time-input { width: 110px; height: var(--ct-h-sm); padding: 0 6px; }
+.ct-date-pop__foot { display: flex; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--ct-line); }
+.ct-date-pop__link { border: 0; background: none; padding: 4px 6px; color: var(--ct-accent); font: inherit; font-size: var(--ct-text-data); font-weight: 600; cursor: pointer; border-radius: var(--ct-r-sm); }
+.ct-date-pop__link:hover:not(:disabled) { background: var(--ct-accent-tint); }
+.ct-date-pop__link:disabled { color: var(--ct-ink-disabled); cursor: default; }
+@media (pointer: coarse) {
+  .ct-date-pop__day { height: 40px; }
+}
 .ct-measure-form input, .ct-measure-form select, .ct-measure-form textarea { padding:6px 10px; border:1px solid var(--ct-line); border-radius:6px; font-size:0.9em; font-family:inherit; }
 .ct-measure-form textarea { resize:vertical; min-height:60px; }
 

@@ -289,11 +289,18 @@ function computeSSGravity(erList: string): EbNum {
 // _confirmDialog() is provided by cisotoolbox.js
 
 // ═══════════════════════════════════════════════════════════════════════
+// A date field takes an empty or YYYY-MM-DD value; a legacy free-text value
+// stays a text input so it stays visible and editable.
+function _isIsoDateOrEmpty(val: unknown): boolean {
+    return val == null || val === "" || /^\d{4}-\d{2}-\d{2}$/.test(String(val));
+}
+// The context dates get the date field.
+function _isDateKey(key: string, val: unknown): boolean {
+    return (key === "date" || key === "date_precedente") && _isIsoDateOrEmpty(val);
+}
 function _range(a: EbNum, b: EbNum) { const r: number[] = []; for (let i = Math.max(1,a||1); i <= Math.min(4,b||4); i++) r.push(i); return r; }
 function inp(section: string, idx: number, field: string, val: unknown, type = "text", cls = "") {
-    // Retro-compat: a date field with a legacy non-ISO value stays a text input so
-    // the old value stays visible/editable; ISO (YYYY-MM-DD) or empty gets the picker.
-    if (type === "date" && val != null && val !== "" && !/^\d{4}-\d{2}-\d{2}$/.test(String(val))) type = "text";
+    if (type === "date" && !_isIsoDateOrEmpty(val)) type = "text";
     const w = type === "number" ? 'class="w-70" min="0" max="999999999999"' : 'maxlength="2000"';
     return `<input type="${type}" value="${esc(val)}" ${w} class="${cls}" data-s="${section}" data-i="${idx}" data-f="${field}" data-t="${type}" data-change="_updateFieldFromEl" data-pass-el />`;
 }
@@ -858,7 +865,7 @@ function renderContext() {
     let h = '<div class="grid-2col ct-form-grid">';
     for (const [label, key] of shortFields) {
         h += `<div class="ct-meta-item"><div class="label">${label}</div><div class="value">
-            <input type="text" value="${esc(c[key])}" class="w-full" data-change="_setContextField" data-args='${_da(key)}' data-pass-value />
+            <input type="${_isDateKey(key, c[key]) ? "date" : "text"}" value="${esc(c[key])}" class="w-full" data-change="_setContextField" data-args='${_da(key)}' data-pass-value />
         </div></div>`;
     }
     h += '</div>';
