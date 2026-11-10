@@ -731,6 +731,8 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--ct-accent); }
 .ct-clickable { cursor: pointer; }
 .ct-link { color: var(--ct-accent); text-decoration: underline dotted; text-underline-offset: 2px; }
 .ct-clickable:hover .ct-link { text-decoration-style: solid; }
+.ct-link-btn { border: 0; background: none; padding: 0; font: inherit; color: var(--ct-accent); text-decoration: underline dotted; text-underline-offset: 2px; cursor: pointer; text-align: left; }
+.ct-link-btn:hover { text-decoration-style: solid; }
 .ct-hidden { display: none; }
 .ct-row { display: flex; align-items: center; gap: var(--ct-s2); }
 .ct-row-wrap { flex-wrap: wrap; }
