@@ -1608,6 +1608,18 @@ input.ct-date-input[aria-invalid="true"]:not([type="checkbox"]):not([type="radio
 @media (pointer: coarse) {
   .ct-date-pop__day { height: 40px; }
 }
+
+/* ── Three-state filter pills (ct_pillfilter) ──────────────────
+   Included pills reuse the module's .filter-pill.active colours; an
+   excluded one is struck through on a dashed border. */
+.filter-pill.is-excluded { border-style: dashed; border-color: var(--ct-ink-2); color: var(--ct-ink-2); text-decoration: line-through; }
+.filter-pill-mark { margin-right: 4px; font-weight: 700; text-decoration: none; display: inline-block; }
+.filter-pills-howto { display: block; margin-bottom: 6px; }
+/* Three taps on one pill: a target a finger hits. */
+@media (max-width: 768px) {
+  .filter-pills-row .filter-pill { min-height: 36px; padding-left: 12px; padding-right: 12px; }
+}
+
 .ct-measure-form input, .ct-measure-form select, .ct-measure-form textarea { padding:6px 10px; border:1px solid var(--ct-line); border-radius:6px; font-size:0.9em; font-family:inherit; }
 .ct-measure-form textarea { resize:vertical; min-height:60px; }
 
