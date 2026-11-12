@@ -162,11 +162,21 @@ async def internal_stats(request: Request, db: AsyncSession = Depends(get_db)):
 
     # ── Breakdown as donut of residual levels ──
     donut_segments = []
-    if dist["Critique"]:   donut_segments.append({"label": "Critique",   "value": dist["Critique"],   "color": "redMax"})
-    if dist["Eleve"]:      donut_segments.append({"label": "Élevé",      "value": dist["Eleve"],      "color": "red"})
-    if dist["Moyen"]:      donut_segments.append({"label": "Modéré",    "value": dist["Moyen"],      "color": "orange"})
-    if dist["Faible"]:     donut_segments.append({"label": "Faible",    "value": dist["Faible"],     "color": "yellow"})
-    if dist["Negligeable"]: donut_segments.append({"label": "Négligeable", "value": dist["Negligeable"], "color": "green"})
+    if dist["Critique"]:
+        donut_segments.append({"label": "Critical", "label_fr": "Critique",
+                               "value": dist["Critique"], "color": "redMax"})
+    if dist["Eleve"]:
+        donut_segments.append({"label": "High", "label_fr": "Élevé",
+                               "value": dist["Eleve"], "color": "red"})
+    if dist["Moyen"]:
+        donut_segments.append({"label": "Moderate", "label_fr": "Modéré",
+                               "value": dist["Moyen"], "color": "orange"})
+    if dist["Faible"]:
+        donut_segments.append({"label": "Low", "label_fr": "Faible",
+                               "value": dist["Faible"], "color": "yellow"})
+    if dist["Negligeable"]:
+        donut_segments.append({"label": "Negligible", "label_fr": "Négligeable",
+                               "value": dist["Negligeable"], "color": "green"})
 
     # ── Top items: top 3 critical/high residuals with scenario label ──
     top_items = []
@@ -192,26 +202,30 @@ async def internal_stats(request: Request, db: AsyncSession = Depends(get_db)):
     if overdue > 0:
         alerts.append({
             "level": "critical" if overdue >= 5 else "warning",
-            "text": f"{overdue} mesure(s) en retard",
+            "text": f"{overdue} overdue measure(s)",
+            "text_fr": f"{overdue} mesure(s) en retard",
             "url": "/risk/",
         })
     if critical_high > 0:
         alerts.append({
             "level": "warning",
-            "text": f"{critical_high} risque(s) résiduel(s) élevé(s)",
+            "text": f"{critical_high} high residual risk(s)",
+            "text_fr": f"{critical_high} risque(s) résiduel(s) élevé(s)",
             "url": "/risk/",
         })
     if critical_high_undecided > 0:
         alerts.append({
             "level": "critical" if critical_high_undecided >= 3 else "warning",
-            "text": f"{critical_high_undecided} risque(s) résiduel(s) élevé(s)/critique(s) sans décision d'acceptation",
+            "text": f"{critical_high_undecided} high or critical residual risk(s) without an acceptance decision",
+            "text_fr": f"{critical_high_undecided} risque(s) résiduel(s) élevé(s)/critique(s) sans décision d'acceptation",
             "url": "/risk/",
         })
 
     return {
         # Stats v2 envelope
         "entity_count": total_analyses,
-        "entity_label": "Analyses EBIOS RM",
+        "entity_label": "EBIOS RM analyses",
+        "entity_label_fr": "Analyses EBIOS RM",
         # Semantic critical count so Pilot doesn't parse localized breakdown
         # labels — residual risks rated Critique or Élevé.
         "criticals": critical_high,
@@ -232,7 +246,7 @@ async def internal_stats(request: Request, db: AsyncSession = Depends(get_db)):
             "data": {
                 "segments": donut_segments,
                 "center_label": str(total_residuals),
-                "center_sublabel": "risques résiduels",
+                "center_sublabel": "residual risks",
             },
         },
         "top_items": top_items,
@@ -254,11 +268,11 @@ def _posture_label(score: int) -> str:
     if score is None:
         return ""
     if score < 40:
-        return "Faible"
+        return "Low"
     if score < 60:
-        return "Modéré"
+        return "Moderate"
     if score < 80:
-        return "Bon"
+        return "Good"
     return "Excellent"
 
 
@@ -278,7 +292,8 @@ async def internal_activity(request: Request, db: AsyncSession = Depends(get_db)
             "date": (a.updated_at or a.created_at or _dt.utcnow()).isoformat(),
             "module": "risk",
             "type": "analysis_updated",
-            "label": f"Analyse « {(a.name or a.id)[:50]} » mise à jour",
+            "label": f"Analysis \"{(a.name or a.id)[:50]}\" updated",
+            "label_fr": f"Analyse « {(a.name or a.id)[:50]} » mise à jour",
             "url": "/risk/",
         })
     return events[:10]

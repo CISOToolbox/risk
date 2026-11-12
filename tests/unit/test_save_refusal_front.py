@@ -142,7 +142,7 @@ def _validation_error() -> list:
 # ── the whole-project save (autosave) ────────────────────────────────
 
 def test_stale_conflict_keeps_its_message():
-    assert _run("save", 409, "Données modifiées côté serveur depuis le chargement",
+    assert _run("save", 409, "Data changed on the server since it was loaded",
                 {"X-CT-Conflict": "stale"}) == ["alert:chrome.stale_conflict", "reload"]
 
 

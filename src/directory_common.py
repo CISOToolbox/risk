@@ -70,9 +70,9 @@ async def create_local_personnel(db: AsyncSession, body: dict) -> tuple[int, dic
     prenom = (body.get("prenom") or "").strip()
     fonction = (body.get("fonction") or "").strip()
     if not email or "@" not in email:
-        return 400, {"detail": "Email valide requis"}
+        return 400, {"detail": "A valid email is required"}
     if not nom and not prenom:
-        return 400, {"detail": "Nom ou prénom requis"}
+        return 400, {"detail": "A last name or first name is required"}
 
     people = await _load(db)
     for p in people:
