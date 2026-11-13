@@ -219,12 +219,35 @@ function _statutLabel(raw: string | number): string {
     var k = _normStatut(raw);
     return k ? t("ebios.m.statut_" + k) : String(raw || "");
 }
+// Same rule for the other closed lists: the stored value stays French, the
+// option shows its label in the active language.
+var _OPTION_KEYS: Record<string, string> = {
+    "Information": "ebios.vm.nature_information", "Processus": "ebios.vm.nature_processus",
+    "Client": "ebios.pp.cat_client", "Partenaire": "ebios.pp.cat_partenaire", "Prestataire": "ebios.pp.cat_prestataire",
+    "Socle": "ebios.m.origine_socle", "Écosystème": "ebios.m.origine_ecosysteme", "SOP": "ebios.m.origine_sop",
+    "Complémentaire": "ebios.m.origine_complementaire",
+    "Prévention": "ebios.m.type_prevention", "Détection": "ebios.m.type_detection", "Réaction": "ebios.m.type_reaction",
+    "Accepter": "ebios.decision.accepter", "Réduire": "ebios.decision.reduire",
+    "Transférer": "ebios.decision.transferer", "Éviter": "ebios.decision.eviter",
+    "Absent": "ebios.eff.absent", "Partiel": "ebios.eff.partiel", "Efficace": "ebios.eff.efficace",
+};
+function _optionLabel(raw: string | number): string {
+    var k = _OPTION_KEYS[String(raw)];
+    return k ? t(k) : String(raw);
+}
+// The effectiveness of a control was stored as the label of the page that
+// set it: a value chosen in English is read as the stored (French) one.
+var _EFF_CANONICAL: Record<string, string> = {"Partial": "Partiel", "Effective": "Efficace"};
+function _toCanonicalEff(raw: unknown): string {
+    var v = String(raw || "");
+    return _EFF_CANONICAL[v] || v;
+}
 function _statutBadge(text: string) {
     var tones: Record<string, string> = {termine:"green", en_cours:"orange", a_etudier:"red", a_lancer:"gray", planifie:"blue"};
     var k = _normStatut(text);
     return _tBadge(_statutLabel(text), (k && tones[k]) || "gray");
 }
-var _effTones: Record<string, string> = {"Absent":"critical", "Partiel":"high", "Efficace":"low", "Partial":"high", "Effective":"low"};
+var _effTones: Record<string, string> = {"Absent":"critical", "Partiel":"high", "Efficace":"low"};
 function _effBadge(count: number, text: string, type: string) {
     if (!count) return "";
     return '<span class="ct-badge" data-tone="' + (_effTones[type] || "neutral") + '">' + count + ' ' + esc(text) + '</span>';
@@ -1035,7 +1058,7 @@ function renderVM() {
     let h = `<table id="vm-table"><thead><tr><th class="w-65">${t("ebios.col.vm_id")}</th><th>${t("ebios.col.vm_name")}</th><th${hd("nature")} class="w-110">${t("ebios.col.vm_nature")}</th><th${hd("desc")}>${t("ebios.col.vm_description")}</th><th${hd("resp")}>${t("ebios.col.vm_responsable")}</th><th class="col-actions"></th></tr></thead><tbody>`;
     D.vm.forEach((v, i) => {
         h += `<tr><td><strong>${esc(v.id)}</strong></td><td>${inp("vm",i,"nom",v.nom)}</td>
-            <td${hd("nature")}>${sel("vm",i,"nature",v.nature||"",["Information","Processus"])}</td>
+            <td${hd("nature")}>${sel("vm",i,"nature",v.nature||"",["Information","Processus"],_optionLabel)}</td>
             <td${hd("desc")}>${ta("vm",i,"description",v.description)}</td>
             <td${hd("resp")}>${_dirPicker(v.responsable||"", "updateField", _da("vm", i, "responsable"))}</td>
             <td>${delBtn("vm",i)}</td></tr>`;
@@ -1069,7 +1092,7 @@ function renderPP() {
         const menace = computeMenace(p.dependance, p.penetration, p.maturite, p.confiance);
         const expo = computeExposition(menace);
         h += `<tr><td><strong>${esc(p.id)}</strong></td><td>${inp("pp",i,"nom",p.nom)}</td>
-            <td${hd("cat")}>${sel("pp",i,"categorie",p.categorie||"",["Client","Partenaire","Prestataire"])}</td>
+            <td${hd("cat")}>${sel("pp",i,"categorie",p.categorie||"",["Client","Partenaire","Prestataire"],_optionLabel)}</td>
             <td${hd("type")}>${inp("pp",i,"type",p.type)}</td>
             <td>${sel("pp",i,"dependance",p.dependance,[1,2,3,4])}</td>
             <td>${sel("pp",i,"penetration",p.penetration,[1,2,3,4])}</td>
@@ -1389,7 +1412,7 @@ function _selErCat(idx: number, catKey: string, val: EbNum | undefined) {
     const field = "impact_" + catKey;
     let h = `<select data-i="${idx}" data-cat="${catKey}" data-change="_updateErGraviteCat" data-pass-el><option value=""></option>`;
     D.gravity_scale.forEach(g => {
-        const desc = (g[field] && String(g[field]).trim()) || ("Niveau " + g.niveau + (g.label ? " — " + g.label : ""));
+        const desc = (g[field] && String(g[field]).trim()) || (t("ebios.gravity.level_n", { n: g.niveau }) + (g.label ? " — " + g.label : ""));
         h += `<option value="${esc(g.niveau)}" ${String(val) === String(g.niveau) ? "selected" : ""}>${esc(desc)}</option>`;
     });
     return h + "</select>";
@@ -1754,11 +1777,11 @@ function renderSOP() {
             <td${hd("bs")}>${refSelect("sop_detail",i,"bs",s.bs,bsOptions())}</td>
             <td${hd("ctrl")}>${ta("sop_detail",i,"controle",s.controle)}</td>
             <td${hd("ref")}>${refSelect("sop_detail",i,"ref",s.ref,socleOptions())}</td>
-            <td class="ta-c"><span class="eff-badge" data-click="_effBadgeClick" data-pass-el>${s.efficacite ? '<span class="ct-badge" data-tone="'+(_effTones[s.efficacite]||"neutral")+'">'+esc(s.efficacite)+'</span>' : `<span class="text-muted fs-xs cursor-pointer">${t("ebios.col.sop_choose")}</span>`}</span><span class="hidden">${sel("sop_detail",i,"efficacite",s.efficacite,[t("ebios.eff.absent"),t("ebios.eff.partiel"),t("ebios.eff.efficace")])}</span></td>
+            <td class="ta-c"><span class="eff-badge" data-click="_effBadgeClick" data-pass-el>${s.efficacite ? '<span class="ct-badge" data-tone="'+(_effTones[_toCanonicalEff(s.efficacite)]||"neutral")+'">'+esc(_optionLabel(_toCanonicalEff(s.efficacite)))+'</span>' : `<span class="text-muted fs-xs cursor-pointer">${t("ebios.col.sop_choose")}</span>`}</span><span class="hidden">${sel("sop_detail",i,"efficacite",_toCanonicalEff(s.efficacite),["Absent","Partiel","Efficace"],_optionLabel)}</span></td>
             <td${hd("mp")}>${refSelect("sop_detail",i,"mesure_proposee",s.mesure_proposee,measuresOptions())}<button class="ct-btn mt-8" data-write data-variant="primary" data-size="xs" data-click="addSOPMeasure" data-args='${_da(i)}'>${t("ebios.btn.new_measure")}</button></td>`;
         h += `<td><div class="phase-actions">`;
-        h += `<button class="ct-btn" data-size="xs" data-variant="primary" data-icon data-click="moveSOPPhase" data-args='${_da(i,-1)}' title="Monter">&#9650;</button>`;
-        h += `<button class="ct-btn" data-size="xs" data-variant="primary" data-icon data-click="moveSOPPhase" data-args='${_da(i,1)}' title="Descendre">&#9660;</button>`;
+        h += `<button class="ct-btn" data-size="xs" data-variant="primary" data-icon data-click="moveSOPPhase" data-args='${_da(i,-1)}' title="${t("ebios.btn.move_up")}">&#9650;</button>`;
+        h += `<button class="ct-btn" data-size="xs" data-variant="primary" data-icon data-click="moveSOPPhase" data-args='${_da(i,1)}' title="${t("ebios.btn.move_down")}">&#9660;</button>`;
         h += `<button class="ct-btn" data-variant="danger" data-size="xs" data-click="delSOPPhase" data-args='${_da(i)}' data-icon>${_icon("trash", 14)}</button>`;
         h += `</div></td></tr>`;
     });
@@ -1933,9 +1956,10 @@ function _computeSOPVop() {
         if (!sopId) return;
         if (!sopPhases[sopId]) sopPhases[sopId] = { absent: 0, partiel: 0, efficace: 0, total: 0 };
         sopPhases[sopId].total++;
-        if (s.efficacite === "Absent") sopPhases[sopId].absent++;
-        else if (s.efficacite === "Partiel") sopPhases[sopId].partiel++;
-        else if (s.efficacite === "Efficace") sopPhases[sopId].efficace++;
+        const eff = _toCanonicalEff(s.efficacite);
+        if (eff === "Absent") sopPhases[sopId].absent++;
+        else if (eff === "Partiel") sopPhases[sopId].partiel++;
+        else if (eff === "Efficace") sopPhases[sopId].efficace++;
     });
     const sopVop: Record<string, number> = {};
     const sopTaux: Record<string, number> = {};
@@ -2047,8 +2071,8 @@ function renderMeasures() {
     D.measures.forEach((m, i) => {
         h += `<tr><td><strong>${esc(m.id)}</strong></td><td>${inp("measures",i,"mesure",m.mesure)}</td>
             <td${hd("details")}>${ta("measures",i,"details",m.details||"")}</td>
-            <td${hd("orig")}>${sel("measures",i,"origine",m.origine||"",["Socle","Écosystème","SOP","Complémentaire"])}</td>
-            <td${hd("type")}>${sel("measures",i,"type",m.type,["Prévention","Détection","Réaction"])}</td>
+            <td${hd("orig")}>${sel("measures",i,"origine",m.origine||"",["Socle","Écosystème","SOP","Complémentaire"],_optionLabel)}</td>
+            <td${hd("type")}>${sel("measures",i,"type",m.type,["Prévention","Détection","Réaction"],_optionLabel)}</td>
             <td${hd("sop")}>${refSelect("measures",i,"sop",m.sop,sopOptions())}</td>
             <td${hd("phase")}>${inp("measures",i,"phase",m.phase)}</td>
             <td${hd("effet")}>${ta("measures",i,"effet",m.effet)}</td>
@@ -2105,7 +2129,7 @@ function renderResiduals() {
             <td${hd("vi")} class="computed">${vInit ? _riskBadge(riInit ? "V" + vInit + " \u2014 " + riInit : "V" + vInit) : '<span class="text-muted">—</span>'}</td>
             <td${hd("vr")}>${sel("residuals",i,"v_resid",vrClamped,vrOptions)}</td>
             <td${hd("rr")} class="computed">${risk ? _riskBadge(risk) : ""}</td>
-            <td${hd("dec")}>${sel("residuals",i,"decision",res.decision||"",["Accepter","Réduire","Transférer","Éviter"])}</td></tr>`;
+            <td${hd("dec")}>${sel("residuals",i,"decision",res.decision||"",["Accepter","Réduire","Transférer","Éviter"],_optionLabel)}</td></tr>`;
     });
     h += '</tbody></table>';
     document.getElementById("table-residuals")!.innerHTML = h;
@@ -2203,8 +2227,8 @@ function renderSynthesis() {
             levels: Math.max(NX, NY),
             xLevels: NX,
             yLevels: NY,
-            xLabel: t("ebios.synth.col_vraisemblance") || "Vraisemblance",
-            yLabel: t("ebios.synth.col_gravite") || "Gravite",
+            xLabel: t("ebios.synth.col_vraisemblance"),
+            yLabel: t("ebios.synth.col_gravite"),
             yLabels: gLabels,
             grid: grid,
             colorFn: function(v, g) {
@@ -2213,9 +2237,9 @@ function renderSynthesis() {
                 return _riskBg(level);
             },
             legend: [
-                {label: t("ebios.risk.faible") || "Faible", color: "var(--ct-low-fill)"},
-                {label: t("ebios.risk.moyen") || "Moyen", color: "var(--ct-high-fill)"},
-                {label: t("ebios.risk.eleve") || "Eleve", color: "var(--ct-critical-fill)"}
+                {label: t("ebios.risk.faible"), color: "var(--ct-low-fill)"},
+                {label: t("ebios.risk.moyen"), color: "var(--ct-high-fill)"},
+                {label: t("ebios.risk.eleve"), color: "var(--ct-critical-fill)"}
             ],
             tooltipFn: function(items) {
                 return items.map(function(item) {
@@ -2339,7 +2363,7 @@ function renderAll() {
         renderMeasures();
         renderResiduals();
     } catch (e: any) {
-        console.error("Erreur renderAll:", e);
+        console.error("renderAll failed:", e);
         showStatus(t("ebios.status.error", {msg: e.message}));
     }
 }
@@ -2421,7 +2445,7 @@ async function exportSynthesisPPTX() {
                 }
             }
             for (let v = 1; v <= sd.NX; v++) s.addText("V" + v, { x: x0 + (v - 1) * cw, y: y0 + sd.NY * ch, w: cw, h: 0.3, fontSize: 9, align: "center", color: "6B7280" });
-            s.addText(t("ebios.synth.col_vraisemblance") || "Vraisemblance", { x: x0, y: y0 + sd.NY * ch + 0.3, w: sd.NX * cw, h: 0.3, fontSize: 10, align: "center", color: "374151" });
+            s.addText(t("ebios.synth.col_vraisemblance"), { x: x0, y: y0 + sd.NY * ch + 0.3, w: sd.NX * cw, h: 0.3, fontSize: 10, align: "center", color: "374151" });
             if (reading) { const px = x0 + sd.NX * cw + 0.5; s.addText(reading, { x: px, y: 1.6, w: Math.max(3, W - px - 0.4), h: 4.6, fontSize: 13, color: "374151", valign: "top" }); }
             return s;
         }
@@ -2461,17 +2485,17 @@ async function exportSynthesisPPTX() {
         // 1. Title
         let s = pptx.addSlide();
         s.background = { color: ACCENT };
-        s.addText(t("ebios.synth.export_title") || "Synthèse managériale des risques", { x: 0.5, y: 2.6, w: W - 1, h: 1, fontSize: 34, bold: true, color: "FFFFFF", align: "center" });
+        s.addText(t("ebios.synth.export_title"), { x: 0.5, y: 2.6, w: W - 1, h: 1, fontSize: 34, bold: true, color: "FFFFFF", align: "center" });
         s.addText(societe, { x: 0.5, y: 3.7, w: W - 1, h: 0.6, fontSize: 22, color: "DCE6F2", align: "center" });
-        s.addText((t("ebios.synth.export_subtitle") || "Analyse EBIOS RM") + " · " + dateStr, { x: 0.5, y: 4.4, w: W - 1, h: 0.5, fontSize: 14, color: "9FB3C8", align: "center" });
+        s.addText((t("ebios.synth.export_subtitle")) + " · " + dateStr, { x: 0.5, y: 4.4, w: W - 1, h: 0.5, fontSize: 14, color: "9FB3C8", align: "center" });
 
         // 2. Scope and security baseline
-        s = pptx.addSlide(); header(s, t("ebios.synth.scope_title") || "Périmètre et socle de sécurité");
+        s = pptx.addSlide(); header(s, t("ebios.synth.scope_title"));
         s.addText([
             { text: t("ebios.synth.scope_perimeter") + "  ", options: { bold: true, color: "1E3A5F" } }, { text: objet + "\n\n", options: { color: "374151" } },
             { text: t("ebios.synth.scope_referentiel") + "  ", options: { bold: true, color: "1E3A5F" } }, { text: socleRef, options: { color: "374151" } }
         ], { x: 0.6, y: 0.95, w: W - 1.2, h: 1.3, fontSize: 15 });
-        s.addText((t("ebios.synth.scope_coverage") || "Couverture du socle de sécurité :") + "  " + sd.socle.avg + "%", { x: 0.6, y: 2.4, w: W - 1.2, h: 0.6, fontSize: 22, bold: true, color: ACCENT, align: "center" });
+        s.addText((t("ebios.synth.scope_coverage")) + "  " + sd.socle.avg + "%", { x: 0.6, y: 2.4, w: W - 1.2, h: 0.6, fontSize: 22, bold: true, color: ACCENT, align: "center" });
         [{ n: sd.socle.nonApp, l: t("ebios.misc.non_applique_label"), c: "FCA5A5" }, { n: sd.socle.partiel, l: t("ebios.misc.partiel_label"), c: "FED7AA" }, { n: sd.socle.applique, l: t("ebios.misc.applique_label"), c: "DCFCE7" }].forEach(function(k: any, i: number) {
             const x = 1.4 + i * 3.6;
             s.addShape(pptx.ShapeType.roundRect, { x: x, y: 3.1, w: 3, h: 1.6, fill: { color: k.c }, rectRadius: 0.1 });
@@ -2482,7 +2506,7 @@ async function exportSynthesisPPTX() {
         s.addNotes(t("ebios.synth.scope_measures", { n: socleMeasures }));
 
         // 3. Synthesis: initial vs residual risks + baseline / measures
-        s = pptx.addSlide(); header(s, t("ebios.synth.exec_summary") || "Synthèse managériale");
+        s = pptx.addSlide(); header(s, t("ebios.synth.exec_summary"));
         s.addText(t("ebios.synth.intro_synthese"), { x: 0.5, y: 0.78, w: W - 1, h: 0.55, fontSize: 13, color: "374151" });
         const distRow = function(d: { eleve: number; moyen: number; faible: number }, y: number, label: string) {
             s.addText(label, { x: 0.5, y: y - 0.38, w: W - 1, h: 0.32, fontSize: 13, bold: true, color: ACCENT, align: "center" });
@@ -2495,43 +2519,43 @@ async function exportSynthesisPPTX() {
         };
         distRow(dInit, 1.85, t("ebios.synth.dist_initial"));
         distRow(dResid, 3.85, t("ebios.synth.dist_residual"));
-        s.addText((t("ebios.synth.socle_avg") || "Conformité du socle") + " : " + sd.socle.avg + "%   ·   " + t("ebios.misc.measures_todo_count", { todo: sd.measures.toDoCount, total: sd.measures.total }), { x: 1, y: 5.5, w: W - 2, h: 0.5, fontSize: 15, align: "center", color: "374151" });
+        s.addText((t("ebios.synth.socle_avg")) + " : " + sd.socle.avg + "%   ·   " + t("ebios.misc.measures_todo_count", { todo: sd.measures.toDoCount, total: sd.measures.total }), { x: 1, y: 5.5, w: W - 2, h: 0.5, fontSize: 15, align: "center", color: "374151" });
         s.addNotes(t("ebios.synth.intro_synthese"));
 
         // 3. Initial cartography (before treatment)
-        matrixSlide(t("ebios.synth.map_initial") || "Cartographie initiale", function(sp: EbSynthPos) { return sp.vInit; }, t("ebios.synth.intro_carto_init"), t("ebios.synth.reading_matrix")).addNotes(t("ebios.synth.intro_carto_init"));
+        matrixSlide(t("ebios.synth.map_initial"), function(sp: EbSynthPos) { return sp.vInit; }, t("ebios.synth.intro_carto_init"), t("ebios.synth.reading_matrix")).addNotes(t("ebios.synth.intro_carto_init"));
 
         // 4. Residual cartography (after treatment)
-        matrixSlide(t("ebios.synth.map_residual") || "Cartographie résiduelle", function(sp: EbSynthPos) { return sp.vResid; }, t("ebios.synth.intro_carto_resid"), t("ebios.synth.reading_matrix")).addNotes(t("ebios.synth.intro_carto_resid"));
+        matrixSlide(t("ebios.synth.map_residual"), function(sp: EbSynthPos) { return sp.vResid; }, t("ebios.synth.intro_carto_resid"), t("ebios.synth.reading_matrix")).addNotes(t("ebios.synth.intro_carto_resid"));
 
         // 5. Top risks to treat (non-low residuals, sorted by severity)
         let topRows = sd.rows.slice().sort(function(a: EbSynthRow, b: EbSynthRow) { return (sev(b.riskResid) - sev(a.riskResid)) || (sev(b.riskInit) - sev(a.riskInit)); });
         const prioritaires = topRows.filter(function(r: EbSynthRow) { return sev(r.riskResid) >= 2; });
         if (prioritaires.length) topRows = prioritaires;
-        tableSlide(t("ebios.synth.top_risks") || "Top risques à traiter",
+        tableSlide(t("ebios.synth.top_risks"),
             [t("ebios.synth.col_ss"), t("ebios.synth.col_scenario"), t("ebios.synth.col_risque_initial"), t("ebios.synth.col_risque_residuel")],
             topRows.map(function(r: EbSynthRow) { return [r.id, r.scenario, riskCell(r.riskInit), riskCell(r.riskResid)]; }),
             t("ebios.synth.intro_top_risks"), 15).addNotes(t("ebios.synth.intro_top_risks"));
 
         // 6. Treatment plan (measures to implement)
-        tableSlide(t("ebios.synth.measures_title") || "Plan de traitement", [t("ebios.synth.col_id"), t("ebios.synth.col_mesure"), t("ebios.synth.col_origine"), t("ebios.synth.col_responsable"), t("ebios.synth.col_echeance"), t("ebios.synth.col_statut")],
+        tableSlide(t("ebios.synth.measures_title"), [t("ebios.synth.col_id"), t("ebios.synth.col_mesure"), t("ebios.synth.col_origine"), t("ebios.synth.col_responsable"), t("ebios.synth.col_echeance"), t("ebios.synth.col_statut")],
             sd.measures.todo.map(function(m: EbiosMeasure) { return [m.id, m.mesure, m.origine || "", m.responsable || "", m.echeance || "", m.statut || ""]; }),
             t("ebios.synth.intro_pacs"), 12).addNotes(t("ebios.synth.intro_pacs"));
 
         // 7. Residual risk acceptance
-        s = pptx.addSlide(); header(s, t("ebios.synth.acceptance_title") || "Acceptation des risques résiduels");
+        s = pptx.addSlide(); header(s, t("ebios.synth.acceptance_title"));
         s.addText(t("ebios.synth.acceptance_text", { eleve: dResid.eleve, moyen: dResid.moyen, faible: dResid.faible }), { x: 0.6, y: 1.0, w: W - 1.2, h: 1.1, fontSize: 16, color: "374151" });
         s.addText(t("ebios.synth.acceptance_note"), { x: 0.6, y: 2.2, w: W - 1.2, h: 1.1, fontSize: 14, color: "374151" });
-        s.addText(t("ebios.synth.val_date") || "Date :", { x: 1, y: 3.7, w: 2, h: 0.4, fontSize: 15, bold: true, color: "1F2937" });
+        s.addText(t("ebios.synth.val_date"), { x: 1, y: 3.7, w: 2, h: 0.4, fontSize: 15, bold: true, color: "1F2937" });
         s.addShape(pptx.ShapeType.line, { x: 3, y: 4.05, w: 4.5, h: 0, line: { color: "9CA3AF", width: 1 } });
-        s.addText(t("ebios.synth.val_sign") || "Nom / signature :", { x: 1, y: 4.6, w: 3, h: 0.4, fontSize: 15, bold: true, color: "1F2937" });
+        s.addText(t("ebios.synth.val_sign"), { x: 1, y: 4.6, w: 3, h: 0.4, fontSize: 15, bold: true, color: "1F2937" });
         s.addShape(pptx.ShapeType.line, { x: 4, y: 4.95, w: 7, h: 0, line: { color: "9CA3AF", width: 1 } });
         s.addNotes(t("ebios.synth.acceptance_text", { eleve: dResid.eleve, moyen: dResid.moyen, faible: dResid.faible }) + " " + t("ebios.synth.acceptance_note"));
 
         await pptx.writeFile({ fileName: _synthFileName() + ".pptx" });
         showStatus(t("ebios.status.pptx_downloaded"));
     } catch (e: any) {
-        console.error("Erreur export PPTX:", e);
+        console.error("PPTX export failed:", e);
         alert(t("ebios.alert.pptx_export_error", { msg: e.message }));
     }
 }
@@ -2601,7 +2625,7 @@ function _riskMatrixSVG(getV: (sp: EbSynthPos) => number): string | null {
     for (let g = 1; g <= sd.NY; g++) gLabels.push((typeof gravLabel === "function" && gravLabel(g)) || ("G" + g));
     const html = ctRenderMatrix({
         levels: Math.max(sd.NX, sd.NY), xLevels: sd.NX, yLevels: sd.NY,
-        xLabel: t("ebios.synth.col_vraisemblance") || "Vraisemblance", yLabel: t("ebios.synth.col_gravite") || "Gravité",
+        xLabel: t("ebios.synth.col_vraisemblance"), yLabel: t("ebios.synth.col_gravite"),
         yLabels: gLabels, grid: grid,
         colorFn: (v, g) => _riskBg(riskLevel(g, v)),
         legend: [{ label: t("ebios.risk.faible"), color: "var(--ct-low-fill)" }, { label: t("ebios.risk.moyen"), color: "var(--ct-high-fill)" }, { label: t("ebios.risk.eleve"), color: "var(--ct-critical-fill)" }]
@@ -2620,7 +2644,7 @@ function _riskMatrixRefSVG() {
     for (let g = 1; g <= sd.NY; g++) gLabels.push((typeof gravLabel === "function" && gravLabel(g)) || ("G" + g));
     const html = ctRenderMatrix({
         levels: Math.max(sd.NX, sd.NY), xLevels: sd.NX, yLevels: sd.NY,
-        xLabel: t("ebios.synth.col_vraisemblance") || "Vraisemblance", yLabel: t("ebios.synth.col_gravite") || "Gravité",
+        xLabel: t("ebios.synth.col_vraisemblance"), yLabel: t("ebios.synth.col_gravite"),
         yLabels: gLabels, grid: {},
         colorFn: (v, g) => _riskBg(riskLevel(g, v)),
         legend: [{ label: t("ebios.risk.faible"), color: "var(--ct-low-fill)" }, { label: t("ebios.risk.moyen"), color: "var(--ct-high-fill)" }, { label: t("ebios.risk.eleve"), color: "var(--ct-critical-fill)" }]
@@ -2666,16 +2690,16 @@ async function _reportImages() {
             imgs.pp_map_initial = await _svgToPng(_eco(_buildEcoSVG(init, t("ebios.eco.map_initial"))), 720, 3);
             imgs.pp_map_residual = await _svgToPng(_eco(_buildEcoSVG(resid, t("ebios.eco.map_after"))), 720, 3);
         }
-    } catch (e: any) { console.warn("Capture cartographie écosystème:", e); }
+    } catch (e: any) { console.warn("Ecosystem map capture:", e); }
     try {
         const si = _riskMatrixSVG(sp => sp.vInit), sr = _riskMatrixSVG(sp => sp.vResid);
         if (si) imgs.risk_map_initial = await _svgToPng(_svgResolveTokens(si), 380, 2);
         if (sr) imgs.risk_map_residual = await _svgToPng(_svgResolveTokens(sr), 380, 2);
-    } catch (e: any) { console.warn("Capture matrice de risque:", e); }
+    } catch (e: any) { console.warn("Risk matrix capture:", e); }
     try {
         const ref = _riskMatrixRefSVG();
         if (ref) imgs.risk_matrix_ref = await _svgToPng(_svgResolveTokens(ref), 440, 2);
-    } catch (e: any) { console.warn("Capture matrice d'acceptabilité:", e); }
+    } catch (e: any) { console.warn("Acceptability matrix capture:", e); }
     return imgs;
 }
 
@@ -2715,7 +2739,7 @@ function _reportData() {
             const ids = String(x.ss).split(",").map(s => (s.trim().match(/^SS-\d+/) || [""])[0]).filter(Boolean);
             (sopSS[x.sop] = sopSS[x.sop] || new Set()); ids.forEach(id => sopSS[x.sop].add(id));
         }
-        if (x.sop) (stepsBySop[x.sop] = stepsBySop[x.sop] || []).push({ phase: S(_attackLabel(x.phase)), action: S(x.action), controle: S(x.controle), efficacite: S(x.efficacite) });
+        if (x.sop) (stepsBySop[x.sop] = stepsBySop[x.sop] || []).push({ phase: S(_attackLabel(x.phase)), action: S(x.action), controle: S(x.controle), efficacite: S(_optionLabel(_toCanonicalEff(x.efficacite))) });
     });
     // Resolve SS-linked couples (SR/OV) and feared events to readable labels.
     const coupleTxt: Record<string, string> = {}; (D.srov || []).forEach(x => { coupleTxt[x.couple] = S(srName[x.sr_id] || x.sr_id) + " / " + S(ovName[x.ov_id] || x.ov_id); });
@@ -2756,14 +2780,14 @@ function _reportData() {
         cart_redacteur: S(_resolveRedacteur()),
         cart_contributeurs: S(c.contributeurs || ""),
         cart_version: "1",
-        cart_date: (new Date()).toLocaleDateString("fr-FR"),
-        cart_classification: "Confidentiel",
+        cart_date: (new Date()).toLocaleDateString(_locale === "fr" ? "fr-FR" : "en-GB"),
+        cart_classification: t("ebios.report.confidential"),
         dist_eleve: dr.eleve, dist_moyen: dr.moyen, dist_faible: dr.faible,
         dist_init_eleve: di.eleve, dist_init_moyen: di.moyen, dist_init_faible: di.faible,
         ss_count: (D.ss || []).length,
         socle_avg: sd.socle.avg, mes_todo: sd.measures.toDoCount, mes_total: sd.measures.total,
         // loops — field names MUST match the tags in tools/tag-original-template.py
-        vm: (D.vm || []).map(x => ({ id: S(x.id), nom: S(x.nom), nature: S(x.nature), description: S(x.description), responsable: S(x.responsable) })),
+        vm: (D.vm || []).map(x => ({ id: S(x.id), nom: S(x.nom), nature: S(_optionLabel(x.nature)), description: S(x.description), responsable: S(x.responsable) })),
         bs: (D.bs || []).map(x => ({ id: S(x.id), nom: S(x.nom), type: S(x.type), vm: S(x.vm), localisation: S(x.localisation), proprietaire: S(x.proprietaire) })),
         er: (D.er || []).map(x => ({ id: S(x.id), vm: S(x.vm), evenement: S(x.evenement), impacts: S(x.impacts), gravite: S(x.gravite) })),
         sr_list: (D.sr_list || []).map(x => ({ id: S(x.id), nom: S(x.nom) })),
@@ -2773,7 +2797,7 @@ function _reportData() {
             const prio = pert > 7 ? t("ebios.srov.p1") : pert > 4 ? t("ebios.srov.p2") : pert >= 3 ? t("ebios.srov.non_retenu") : pert > 0 ? t("ebios.srov.ecarte") : "";
             return { couple: S(x.couple), sr: S(srName[x.sr_id] || x.sr_id), ov: S(ovName[x.ov_id] || x.ov_id), motivation: S(x.motivation), ressources: S(x.ressources), activite: S(x.activite), pertinence: S(pert || ""), priorite: S(prio), justification: S(x.justification) };
         }),
-        pp: (D.pp || []).map(x => ({ id: S(x.id), nom: S(x.nom), categorie: S(x.categorie) })),
+        pp: (D.pp || []).map(x => ({ id: S(x.id), nom: S(x.nom), categorie: S(_optionLabel(x.categorie)) })),
         pp_eval: (D.pp || []).map(x => {
             const men = computeMenace(x.dependance, x.penetration, x.maturite, x.confiance);
             return { nom: S(x.nom), dependance: S(x.dependance), penetration: S(x.penetration), maturite: S(x.maturite), confiance: S(x.confiance), menace: men == null ? "" : S(men), exposition: men == null ? "" : computeExposition(men) };
@@ -2782,7 +2806,7 @@ function _reportData() {
         ss: (D.ss || []).map(x => ({ id: S(x.id), scenario: S(x.scenario), pp: S(x.pp), bs: S(x.bs), er: S(x.er) })),
         risks_init: sd.rows.map(r => ({ id: S(r.id), scenario: S(r.scenario), gravite: S(r.gNum), vInit: S(r.vInit), riskInit: S(r.riskInit || "—") })),
         risks_resid: sd.rows.map(r => ({ id: S(r.id), scenario: S(r.scenario), reduction: S(r.riskInit || "—") + " → " + S(r.riskResid || "—") })),
-        measures: (D.measures || []).filter(x => !/termin|done/i.test(String(x.statut || ""))).map(x => ({ id: S(x.id), mesure: S(x.mesure), origine: S(x.origine), cout: S(x.cout), responsable: S(x.responsable), echeance: S(x.echeance), statut: S(x.statut) })),
+        measures: (D.measures || []).filter(x => !/termin|done/i.test(String(x.statut || ""))).map(x => ({ id: S(x.id), mesure: S(x.mesure), origine: S(_optionLabel(x.origine)), cout: S(x.cout), responsable: S(x.responsable), echeance: S(x.echeance), statut: S(_statutLabel(x.statut)) })),
         socle: socleRows.map(s => isAnssi
             ? ({ ref: S(s.num), theme: S(s.thematique), mesure: S(s.mesure), conformite: _conf(s.conformite), ecart: S(s.ecart) })
             : ({ ref: S(s.ref), theme: S(s.theme), mesure: S(s.mesure), conformite: _conf(s.conformite), ecart: S(s.ecart) })),
@@ -2839,7 +2863,7 @@ async function exportWordReport() {
     try {
         await _loadDocxLibs();
         showStatus(t("ebios.status.generating_docx"));
-        const _wlang = (typeof _locale !== "undefined" && _locale === "en") ? "en" : "fr";
+        const _wlang = (typeof _locale !== "undefined" && _locale === "fr") ? "fr" : "en";
         const resp = await fetch("templates/ebios-report-" + _wlang + ".docx");
         if (!resp.ok) throw new Error("template HTTP " + resp.status);
         const doc = new window.docxtemplater(new PizZip(await resp.arrayBuffer()),
@@ -2847,13 +2871,13 @@ async function exportWordReport() {
         doc.render(_reportData());
         const zip = doc.getZip();
         try { _injectImages(zip, await _reportImages()); }
-        catch (imgErr: any) { console.warn("Cartographies non intégrées:", imgErr);
+        catch (imgErr: any) { console.warn("Maps left out of the report:", imgErr);
             zip.file("word/document.xml", zip.file("word/document.xml").asText().replace(/<w:t[^>]*>@@IMG:[a-z_]+@@<\/w:t>/g, '<w:t/>')); }
         const blob = zip.generate({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
         _downloadBlob(blob, _synthFileName() + ".docx");
         showStatus(t("ebios.status.docx_downloaded"));
     } catch (e: any) {
-        console.error("Erreur export Word:", e);
+        console.error("Word export failed:", e);
         alert(t("ebios.alert.docx_export_error", { msg: e.message }));
     }
 }
@@ -2893,7 +2917,7 @@ async function exportExcel() {
         _downloadBlob(blob, name + ".xlsx");
         showStatus(t("ebios.status.excel_downloaded"));
     } catch (e: any) {
-        console.error("Erreur export Excel:", e);
+        console.error("Excel export failed:", e);
         alert(t("ebios.alert.excel_export_error", {msg: e.message}));
     }
 }
@@ -3070,7 +3094,7 @@ function _fillExcelData(wb: ExcelJS.Workbook) {
             wsSOP.getCell(r, 5).value = s.bs || "";
             wsSOP.getCell(r, 6).value = s.controle || "";
             wsSOP.getCell(r, 7).value = s.ref || "";
-            wsSOP.getCell(r, 8).value = s.efficacite || "";
+            wsSOP.getCell(r, 8).value = _toCanonicalEff(s.efficacite);
             wsSOP.getCell(r, 9).value = s.commentaire || "";
             wsSOP.getCell(r, 10).value = s.mesure_proposee || "";
             wsSOP.getCell(r, 11).value = s.type_mesure || "";
@@ -3138,7 +3162,7 @@ async function importExcel(event: Event) {
         _readExcelData(wb);
         _initDataAndRender(() => _autoSave());
     } catch (e: any) {
-        console.error("Erreur import Excel:", e);
+        console.error("Excel import failed:", e);
         alert(t("ebios.alert.excel_import_error", {msg: e.message}));
     }
 }
@@ -3261,7 +3285,7 @@ function _readExcelData(wb: ExcelJS.Workbook) {
                 sop, ss: _cv(wsSOP.getCell(r,2)), phase,
                 action: _cv(wsSOP.getCell(r,4)), bs: _cv(wsSOP.getCell(r,5)),
                 controle: _cv(wsSOP.getCell(r,6)), ref: _cv(wsSOP.getCell(r,7)),
-                efficacite: _cv(wsSOP.getCell(r,8)), commentaire: _cv(wsSOP.getCell(r,9)),
+                efficacite: _toCanonicalEff(_cv(wsSOP.getCell(r,8))), commentaire: _cv(wsSOP.getCell(r,9)),
                 mesure_proposee: _cv(wsSOP.getCell(r,10)), type_mesure: _cv(wsSOP.getCell(r,11))
             });
         }
@@ -3534,8 +3558,8 @@ try {
     // Offer session restore if data exists in localStorage
     _checkAutoSaveBanner();
 } catch (e: any) {
-    console.error("Erreur au rendu initial:", e);
-    document.querySelector(".container")!.innerHTML = `<section><h2>Erreur</h2><pre>${esc(e.message)}
+    console.error("Initial render failed:", e);
+    document.querySelector(".container")!.innerHTML = `<section><h2>${esc(t("misc.error"))}</h2><pre>${esc(e.message)}
 ${esc(e.stack||"")}</pre></section>`;
 }
 

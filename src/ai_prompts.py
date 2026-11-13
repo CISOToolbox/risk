@@ -69,12 +69,22 @@ def _j(value: Any) -> str:
 
 
 def _lang(language: str) -> str:
-    return "French" if (language or "fr") == "fr" else "English"
+    return "French" if (language or "").strip().lower().startswith("fr") else "English"
 
 
 def _attack_label(value: str) -> str:
     v = str(value or "").strip()
     return ATTACK_TACTICS.get(v.upper(), v)
+
+
+# An effectiveness chosen on an English page used to be stored as its English
+# label: read it as the stored (French) value, the one the instructions name.
+_EFFICACITE = {"Partial": "Partiel", "Effective": "Efficace"}
+
+
+def _efficacite(row: dict) -> str:
+    value = str(row.get("efficacite") or "")
+    return _EFFICACITE.get(value, value)
 
 
 def _rows(D: dict, key: str) -> list[dict]:
@@ -514,8 +524,8 @@ def _sop(D: dict, lang: str, ss_id: str | None = None,
          " phase — not a rewrite of its description. If widening it makes the"
          " existing title inaccurate, and only then, put a corrected title in"
          " `mesure_titre`, close to the original." if avec_mesures else "") +
-        "\n\nPropose a kill chain (SOP) for this strategic scenario. Use the step-by-step method"
-        " (proche en proche): entry point → lateral movement → target. Keep it concise: 4-6 key"
+        "\n\nPropose a kill chain (SOP) for this strategic scenario. Use the step-by-step method:"
+        " entry point → lateral movement → target. Keep it concise: 4-6 key"
         " phases maximum. Set each phase to the MITRE ATT&CK tactic id that best matches it,"
         " following the canonical order: " +
         ", ".join(f"{k} {v}" for k, v in ATTACK_TACTICS.items()) +
@@ -578,13 +588,13 @@ def _eco(D: dict, lang: str, avec_mesures: bool = True, **_) -> str:
 
 def _measures(D: dict, lang: str, avec_mesures: bool = True, **_) -> str:
     faibles = [s for s in _rows(D, "sop_detail")
-               if s.get("efficacite") in ("Absent", "Partiel")]
+               if _efficacite(s) in ("Absent", "Partiel")]
     return (
         "Context: " + _j(_study_context(D, "socle")) +
         "\n\nWeak phases (Absent/Partial controls): " + _j([
             {"sop": s.get("sop", ""), "ss": s.get("ss", ""),
              "phase": _attack_label(s.get("phase", "")), "action": s.get("action", ""),
-             "bs": s.get("bs", ""), "efficacite": s.get("efficacite", "")}
+             "bs": s.get("bs", ""), "efficacite": _efficacite(s)}
             for s in faibles]) +
         _bloc_mesures(D, avec_mesures) +
         "\n\nPropose 3-5 security measures to address the weak phases. Prioritize baseline"
@@ -628,7 +638,7 @@ def _socle(D: dict, lang: str, avec_mesures: bool = True, **_) -> str:
                           "reglementation": ctx.get("reglementation", "")}) +
         "\n\nBaseline framework: " + ("ANSSI Guide d'hygiène (42 measures)" if is_anssi
                                       else "ISO 27001 Annex A") +
-        "\n\nBaseline controls with gaps (not fully conformant, with a documented écart): " + _j([
+        "\n\nBaseline controls with gaps (not fully conformant, with a documented deviation): " + _j([
             {"ref": ("#" + str(e.get("num", ""))) if is_anssi else e.get("ref", ""),
              "theme": e.get("thematique") or e.get("theme") or "",
              "mesure": e.get("mesure", ""), "conformite": e.get("conformite", ""),
@@ -721,7 +731,7 @@ def _sop_row(D: dict, lang: str, row: int | None = None,
         "\n\nSOP phase with weak control: " + _j({
             "sop": e.get("sop", ""), "ss": e.get("ss", ""), "phase": e.get("phase", ""),
             "action": e.get("action", ""), "bs": e.get("bs", ""),
-            "controle": e.get("controle", ""), "efficacite": e.get("efficacite", "")}) +
+            "controle": e.get("controle", ""), "efficacite": _efficacite(e)}) +
         "\n\nExisting proposed measure: " + (e.get("mesure_proposee") or "none") +
         _bloc_mesures(D, avec_mesures) +
         "\n\nPropose 2-3 security measures to address this attack phase. Reference MITRE ATT&CK"
@@ -770,7 +780,7 @@ def _ss_v_init(D: dict, ss_id: str) -> int:
             continue
         ph = phases.setdefault(sop, {"absent": 0, "partiel": 0, "efficace": 0, "total": 0})
         ph["total"] += 1
-        eff = s.get("efficacite")
+        eff = _efficacite(s)
         if eff == "Absent":
             ph["absent"] += 1
         elif eff == "Partiel":
@@ -804,7 +814,7 @@ def _residual_ss(D: dict, lang: str, row: int | None = None,
     ss = scenarios[row]
     res = (_rows(D, "residuals")[row] if row < len(_rows(D, "residuals")) else {}) or {}
     phases = [d for d in _rows(D, "sop_detail") if d.get("ss") == ss.get("id")]
-    faibles = [p for p in phases if p.get("efficacite") in ("Absent", "Partiel")]
+    faibles = [p for p in phases if _efficacite(p) in ("Absent", "Partiel")]
     liees = [x.strip().split(" - ")[0].strip()
              for x in str(res.get("mesures") or "").split(",") if x.strip()]
     # COMPUTED, as in the original frontend — these values are stored
@@ -820,7 +830,7 @@ def _residual_ss(D: dict, lang: str, row: int | None = None,
         f"\n\nSeverity: {g_num}, Initial likelihood: V{v_init}" +
         "\n\nWeak SOP phases (Absent/Partial): " + _j([
             {"phase": _attack_label(p.get("phase", "")), "action": p.get("action", ""),
-             "bs": p.get("bs", ""), "efficacite": p.get("efficacite", "")} for p in faibles]) +
+             "bs": p.get("bs", ""), "efficacite": _efficacite(p)} for p in faibles]) +
         # FEAT-40 — with the DESCRIPTIONS and what each measure already covers.
         # Without them, the model selected on an eight-word label: it could
         # not know whether "Chiffrement" already covered the scenario.
@@ -901,7 +911,7 @@ def _ecartes(ignored: list | None) -> list[str]:
     return propres[-ECARTES_MAX:]
 
 
-def build_prompt(panel: str, D: dict, language: str = "fr",
+def build_prompt(panel: str, D: dict, language: str = "en",
                  ss_id: str | None = None,
                  custom_instruction: str | None = None,
                  extra_instruction: str | None = None,

@@ -304,20 +304,20 @@ function _renderSharePanel(panel: { title: HTMLElement; body: HTMLElement; foote
     // Add user form
     h += '<div class="ct-flex ct-gap-1 ct-mb-4">';
     h += '<input type="email" id="share-email" placeholder="Email" class="ct-flex-1 ct-py-1 ct-px-2 ct-bordered ct-r-md ct-text-meta">';
-    h += '<button class="ct-btn mt-8 ct-py-1 ct-px-3 ct-text-label" data-write data-variant="primary" data-size="xs" data-click="_addShare" data-args=\'' + _da(analysis.id) + '\'>Ajouter</button>';
+    h += '<button class="ct-btn mt-8 ct-py-1 ct-px-3 ct-text-label" data-write data-variant="primary" data-size="xs" data-click="_addShare" data-args=\'' + _da(analysis.id) + '\'>' + esc(t("btn_add")) + '</button>';
     h += '</div>';
 
     // Permission checkboxes for new user
     h += '<div id="share-perms" class="ct-flex ct-gap-3 ct-mb-4 ct-text-label">';
     ["read", "edit", "delete", "share"].forEach(function(p) {
-        var labels: Record<string, string> = { read: "Lecture", edit: "Modification", "delete": "Suppression", share: "Partage" };
-        h += '<label class="ct-flex ct-items-center ct-gap-1 ct-clickable"><input type="checkbox" value="' + p + '"' + (p === "read" ? " checked disabled" : "") + '> ' + labels[p] + '</label>';
+        var labels: Record<string, string> = { read: t("risk.share.read"), edit: t("risk.share.edit"), "delete": t("risk.share.delete"), share: t("risk.share.share") };
+        h += '<label class="ct-flex ct-items-center ct-gap-1 ct-clickable"><input type="checkbox" value="' + p + '"' + (p === "read" ? " checked disabled" : "") + '> ' + esc(labels[p]) + '</label>';
     });
     h += '</div>';
 
     // Current shares
     if (shared.length) {
-        h += '<table class="ct-w-full ct-text-meta"><thead><tr><th class="ct-ta-l">Utilisateur</th><th>Lecture</th><th>Modif.</th><th>Suppr.</th><th>Partage</th><th></th></tr></thead><tbody>';
+        h += '<table class="ct-w-full ct-text-meta"><thead><tr><th class="ct-ta-l">' + esc(t("risk.share.user")) + '</th><th>' + esc(t("risk.share.read")) + '</th><th>' + esc(t("risk.share.edit_short")) + '</th><th>' + esc(t("risk.share.delete_short")) + '</th><th>' + esc(t("risk.share.share")) + '</th><th></th></tr></thead><tbody>';
         shared.forEach(function(s) {
             var perms = s.permissions || ["read"];
             h += '<tr>';
@@ -332,7 +332,7 @@ function _renderSharePanel(panel: { title: HTMLElement; body: HTMLElement; foote
         });
         h += '</tbody></table>';
     } else {
-        h += '<div class="ct-muted ct-text-meta ct-ta-c ct-p-3">Aucun partage</div>';
+        h += '<div class="ct-muted ct-text-meta ct-ta-c ct-p-3">' + esc(t("risk.share.none")) + '</div>';
     }
 
     panel.body.innerHTML = h;
@@ -347,7 +347,7 @@ function _addShare(analysisId: string | number) {
     if (perms.indexOf("read") < 0) perms.unshift("read");
 
     RiskAPI.share(analysisId, email.value.trim(), perms).then(function(analysis) {
-        showStatus("Partage ajoute");
+        showStatus(t("risk.share.added"));
         _renderSharePanel(window._aiEnsurePanel!(), analysis);
     }).catch(function(e) { alert(e.message); });
 }
@@ -361,14 +361,14 @@ function _toggleSharePerm(analysisId: string | number, email: string, perm: stri
         if (cb.checked && perms.indexOf(cb.value) < 0) perms.push(cb.value);
     });
     RiskAPI.share(analysisId, email, perms).then(function() {
-        showStatus("Droits mis a jour");
+        showStatus(t("risk.share.updated"));
     }).catch(function(e) { alert(e.message); });
 }
 window._toggleSharePerm = _toggleSharePerm;
 
 function _removeShare(analysisId: string | number, email: string) {
     RiskAPI.revokeShare(analysisId, email).then(function(analysis) {
-        showStatus("Partage supprime");
+        showStatus(t("risk.share.removed"));
         _renderSharePanel(window._aiEnsurePanel!(), analysis);
     }).catch(function(e) { alert(e.message); });
 }

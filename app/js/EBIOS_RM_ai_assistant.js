@@ -202,7 +202,7 @@
                 analysis_id: analysisId,
                 panel: ask.panel,
                 ss_id: ask.ssId || null,
-                language: typeof _locale !== "undefined" ? _locale : "fr",
+                language: typeof _locale !== "undefined" ? _locale : "en",
                 row: (ask.row === undefined ? null : ask.row),
                 include_existing_measures: ask.includeMeasures !== false,
                 custom_instruction: ask.custom || null,
@@ -599,14 +599,15 @@
                     }
                 }
                 // Only then do we create.
-                if (!mesureRef && (p.efficacite === "Absent" || p.efficacite === "Partiel") && p.mesure_proposee) {
+                var eff = _toCanonicalEff(p.efficacite) || "Absent";
+                if (!mesureRef && (eff === "Absent" || eff === "Partiel") && p.mesure_proposee) {
                     var mId = nextId("measures");
                     D.measures.push({ id: mId, mesure: p.mesure_proposee, details: "", origine: "SOP", type: "Prévention",
                         sop: sopId, phase: _attackResolveId(p.phase) || (p.phase || ""), effet: "", ref_socle: p.ref || "", responsable: "", echeance: "", cout: "", statut: "À étudier" });
                     mesureRef = mId + " - " + p.mesure_proposee;
                 }
                 var phase = _attackResolveId(p.phase) || (p.phase || "");
-                D.sop_detail.push({ sop: sopId, ss: s.ss, phase: phase, action: p.action || "", bs: p.bs || "", controle: p.controle || "", ref: p.ref || "", efficacite: p.efficacite || "Absent", commentaire: "", mesure_proposee: mesureRef, type_mesure: "" });
+                D.sop_detail.push({ sop: sopId, ss: s.ss, phase: phase, action: p.action || "", bs: p.bs || "", controle: p.controle || "", ref: p.ref || "", efficacite: eff, commentaire: "", mesure_proposee: mesureRef, type_mesure: "" });
             });
             return sopId;
         },
@@ -1125,12 +1126,13 @@
                     h += '<table style="width:100%;font-size:var(--ct-text-label);border-collapse:collapse;margin:var(--ct-s1) 0">';
                     h += '<tr class="ct-bg-info-tint"><th class="ct-py-1 ct-px-1 ct-ta-l">Phase</th><th class="ct-py-1 ct-px-1 ct-ta-l">Action</th><th class="ct-py-1 ct-px-1 ct-ta-l">BS</th><th class="ct-py-1 ct-px-1 ct-ta-l">Eff.</th><th class="ct-py-1 ct-px-1 ct-ta-l">' + t("ai.sop.measure_col") + '</th></tr>';
                     sop.phases.forEach(function (ph) {
-                        var effColor = ph.efficacite === "Efficace" ? "#27ae60" : ph.efficacite === "Partiel" ? "#f39c12" : "#e74c3c";
+                        var eff = _toCanonicalEff(ph.efficacite) || "Absent";
+                        var effColor = eff === "Efficace" ? "#27ae60" : eff === "Partiel" ? "#f39c12" : "#e74c3c";
                         h += '<tr class="ct-border-bottom">';
                         h += '<td class="ct-py-1 ct-px-1 ct-nowrap">' + esc(_attackLabel(ph.phase) || "") + '</td>';
                         h += '<td class="ct-p-1">' + esc(ph.action || "") + '</td>';
                         h += '<td class="ct-py-1 ct-px-1 ct-nowrap">' + esc((ph.bs || "").split(" - ")[0]) + '</td>';
-                        h += '<td style="padding:3px 6px;color:' + effColor + ';font-weight:600">' + esc(ph.efficacite || "Absent") + '</td>';
+                        h += '<td style="padding:3px 6px;color:' + effColor + ';font-weight:600">' + esc(_optionLabel(eff)) + '</td>';
                         // FEAT-40 — without this column, reusing an existing
                         // measure or inventing one produced exactly the same
                         // display: the anti-duplicate was invisible.
@@ -1167,7 +1169,7 @@
         if (!entry)
             return;
         var ref = isAnssi ? "#" + entry.num : entry.ref;
-        var lang = typeof _locale !== "undefined" ? _locale : "fr";
+        var lang = typeof _locale !== "undefined" ? _locale : "en";
         _aiShowLoading("✨ " + t("ai.label.measures") + " — " + ref);
         try {
             var result = await _callAI({ panel: "socle_row", row: socleIdx });
@@ -1197,7 +1199,7 @@
         var ppId = (entry.pp_id || "").split(" - ")[0].trim();
         var ppNom = (entry.pp_id || "").split(" - ").slice(1).join(" - ").trim();
         var pp = D.pp.find(function (p) { return p.id === ppId; });
-        var lang = typeof _locale !== "undefined" ? _locale : "fr";
+        var lang = typeof _locale !== "undefined" ? _locale : "en";
         _aiShowLoading("✨ " + t("ai.label.measures") + " — " + (ppNom || ppId));
         try {
             var result = await _callAI({ panel: "eco_row", row: ecoIdx });
@@ -1224,7 +1226,7 @@
         var entry = D.sop_detail[sopIdx];
         if (!entry)
             return;
-        var lang = typeof _locale !== "undefined" ? _locale : "fr";
+        var lang = typeof _locale !== "undefined" ? _locale : "en";
         _aiShowLoading("✨ " + t("ai.label.measures") + " — " + (entry.sop || "") + " " + (_attackLabel(entry.phase) || ""));
         try {
             var result = await _callAI({ panel: "sop_row", row: sopIdx });
@@ -1454,14 +1456,14 @@
         var ss = D.ss[ssIdx];
         if (!ss)
             return;
-        var lang = typeof _locale !== "undefined" ? _locale : "fr";
+        var lang = typeof _locale !== "undefined" ? _locale : "en";
         var gNum = computeSSGravity(ss.er);
         var vInitMap = _ssVInit();
         var vInit = vInitMap[ss.id] || 0;
         var res = D.residuals[ssIdx] || {};
         // Collect existing measures and SOP details for this SS
         var sopPhases = D.sop_detail.filter(function (d) { return d.ss === ss.id; });
-        var weakPhases = sopPhases.filter(function (d) { return d.efficacite === "Absent" || d.efficacite === "Partiel"; });
+        var weakPhases = sopPhases.filter(function (d) { var eff = _toCanonicalEff(d.efficacite); return eff === "Absent" || eff === "Partiel"; });
         var existingMeasures = D.measures.map(function (m) { return { id: m.id, mesure: m.mesure, origine: m.origine, type: m.type, statut: m.statut }; });
         var currentLinked = (res.mesures || "").split(",").map(function (s) { return s.trim().split(" - ")[0].trim(); }).filter(Boolean);
         _aiShowLoading("✨ " + ss.id + " — " + t("ebios.col.r_mesures"));

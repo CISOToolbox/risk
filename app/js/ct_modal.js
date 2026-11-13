@@ -233,9 +233,9 @@
     }
     function confirm(opts) {
         opts = opts || {};
-        var cancelLabel = opts.cancelLabel || _t("btn_cancel", "Annuler");
+        var cancelLabel = opts.cancelLabel || _t("btn_cancel", "Cancel");
         var okLabel = opts.confirmLabel
-            || _t(opts.danger ? "btn_confirm" : "btn_ok", opts.danger ? "Confirmer" : "OK");
+            || _t(opts.danger ? "btn_confirm" : "btn_ok", opts.danger ? "Confirm" : "OK");
         return open({
             title: opts.title || "",
             body: '<div>' + esc(opts.message || "") + '</div>',

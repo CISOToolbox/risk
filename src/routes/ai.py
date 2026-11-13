@@ -57,7 +57,7 @@ _SYS_STRUCTURE = {
     1: "- Workshop 1: Scope & security baseline — Business assets (VM), Supporting assets (BS), Feared events (ER), Security baseline (ANSSI 42 or ISO 27001 Annex A)",
     2: "- Workshop 2: Risk origins — Risk origins (RO/SR) and Target objectives (TO/OV), assessed as RO/TO pairs with Motivation/Resources/Activity scores (0-4)",
     3: "- Workshop 3: Strategic scenarios — Stakeholders (PP) with threat assessment (Dependency/Penetration/Maturity/Trust), Strategic scenarios (SS) linking RO/TO → PP → BS → ER",
-    4: "- Workshop 4: Operational scenarios — Kill chains (SOP) using step-by-step method (proche en proche), MITRE ATT&CK techniques, controls assessment (Effective/Partial/Absent)",
+    4: "- Workshop 4: Operational scenarios — Kill chains (SOP) using step-by-step method, MITRE ATT&CK techniques, controls assessment (Effective/Partial/Absent)",
     5: "- Workshop 5: Risk treatment — Security measures registry, residual risk assessment, treatment decisions",
 }
 
@@ -143,7 +143,7 @@ class RiskSuggestRequest(BaseModel):
     panel: str
     ss_id: str | None = None          # `sop` panel only
     row: int | None = None            # "inline" panels: the targeted row
-    language: str = "fr"
+    language: str = "en"
     # Two distinct semantics, inherited from the frontend: `custom_instruction`
     # REPLACES the panel's automatic instruction (data and JSON schema kept),
     # `extra_instruction` is ADDED to it ("refine" box).

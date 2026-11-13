@@ -129,7 +129,7 @@
             return _userLabel(u).toLowerCase() === q || (u.email || "").toLowerCase() === q;
         });
         if (inst.onCreate && q && !exact) {
-            var tmpl = _i18n("ct.userpicker.create", 'Créer "{q}"');
+            var tmpl = _i18n("ct.userpicker.create", "Create \"{q}\"");
             h += '<div class="ct-userpicker-create" data-click="_ctUpCreate" data-args=\''
                 + _da(id, query) + '\' data-stop data-pass-event>'
                 + '<span style="font-size:1.1em;color:var(--ct-ink);font-weight:700">+</span> '
@@ -138,7 +138,7 @@
         }
         if (!h) {
             h = '<div class="ct-userpicker-empty">'
-                + esc(_i18n("ct.userpicker.empty", "Aucun utilisateur"))
+                + esc(_i18n("ct.userpicker.empty", "No users"))
                 + '</div>';
         }
         dd.innerHTML = h;
@@ -262,7 +262,7 @@
                 inst.onChange(created.email || "");
         }).catch(function (e) {
             if (typeof showStatus === "function")
-                showStatus(e.message || "Erreur", true);
+                showStatus(e.message || _i18n("misc.error", "Error"), true);
         });
     };
     // ──────────────────────────────────────────────────────────────
@@ -388,22 +388,22 @@
         var body = ''
             + '<div class="ct-measure-form">'
             + '<div class="ct-measure-form__row">'
-            + '<label>' + esc(_i18n("ct.userpicker.prenom", "Prénom")) + ' *'
+            + '<label>' + esc(_i18n("ct.userpicker.prenom", "First name")) + ' *'
             + '<input type="text" id="ctup-prenom" value="' + esc(prefPrenom) + '">'
             + '</label>'
-            + '<label>' + esc(_i18n("ct.userpicker.nom", "Nom")) + ' *'
+            + '<label>' + esc(_i18n("ct.userpicker.nom", "Last name")) + ' *'
             + '<input type="text" id="ctup-nom" value="' + esc(prefNom) + '">'
             + '</label>'
             + '</div>'
             + '<label>' + esc(_i18n("ct.userpicker.email", "Email")) + ' *'
-            + '<input type="email" id="ctup-email" value="' + esc(prefEmail) + '" placeholder="prenom.nom@example.com">'
+            + '<input type="email" id="ctup-email" value="' + esc(prefEmail) + '" placeholder="name@example.com">'
             + '</label>'
-            + '<label>' + esc(_i18n("ct.userpicker.fonction", "Fonction"))
+            + '<label>' + esc(_i18n("ct.userpicker.fonction", "Job title"))
             + '<input type="text" id="ctup-fonction">'
             + '</label>'
             + '</div>';
         return window.ct_modal.open({
-            title: _i18n("ct.userpicker.new_title", "Nouvel utilisateur"),
+            title: _i18n("ct.userpicker.new_title", "New user"),
             body: body,
             size: "md",
             onOpen: function () {
@@ -418,9 +418,9 @@
                 }
             },
             buttons: [
-                { id: "cancel", label: _i18n("btn_cancel", "Annuler") },
+                { id: "cancel", label: _i18n("btn_cancel", "Cancel") },
                 { id: "save", primary: true,
-                    label: _i18n("ct.userpicker.create", "Créer l'utilisateur"),
+                    label: _i18n("ct.userpicker.create_btn", "Create the user"),
                     result: function () {
                         var prenom = ((document.getElementById("ctup-prenom") || {}).value || "").trim();
                         var nom = ((document.getElementById("ctup-nom") || {}).value || "").trim();
@@ -428,12 +428,12 @@
                         var fonction = ((document.getElementById("ctup-fonction") || {}).value || "").trim();
                         if (!email || email.indexOf("@") < 1) {
                             if (typeof showStatus === "function")
-                                showStatus(_i18n("ct.userpicker.email_required", "Email valide requis"), true);
+                                showStatus(_i18n("ct.userpicker.email_required", "A valid email is required"), true);
                             return false;
                         }
                         if (!nom && !prenom) {
                             if (typeof showStatus === "function")
-                                showStatus(_i18n("ct.userpicker.name_required", "Nom ou prénom requis"), true);
+                                showStatus(_i18n("ct.userpicker.name_required", "A first or last name is required"), true);
                             return false;
                         }
                         return { email: email, nom: nom, prenom: prenom, fonction: fonction };
@@ -459,7 +459,7 @@
                             return (p.email || "").toLowerCase() === formData.email.toLowerCase();
                         });
                         if (typeof showStatus === "function") {
-                            showStatus(_i18n("ct.userpicker.email_exists", "Email déjà existant : {email}").replace("{email}", formData.email));
+                            showStatus(_i18n("ct.userpicker.email_exists", "This email already exists: {email}").replace("{email}", formData.email));
                         }
                         return existing || null;
                     });
@@ -469,7 +469,7 @@
                 return resp.json();
             }).catch(function (e) {
                 if (typeof showStatus === "function")
-                    showStatus(_i18n("ct.userpicker.create_error", "Erreur création utilisateur : {msg}")
+                    showStatus(_i18n("ct.userpicker.create_error", "Could not create the user: {msg}")
                         .replace("{msg}", e.message || e), true);
                 return null;
             });

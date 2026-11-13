@@ -267,7 +267,7 @@
             if (!a)
                 return;
             var d = typeof a.data === "string" ? a.data : JSON.stringify(a.data, null, 2);
-            var fname = (a.name || "analyse").replace(/[^a-zA-Z0-9_-]/g, "_") + "_EBIOS_RM.json";
+            var fname = (a.name || "analysis").replace(/[^a-zA-Z0-9_-]/g, "_") + "_EBIOS_RM.json";
             var blob = new Blob([d], { type: "application/json" });
             var link = document.createElement("a");
             link.href = URL.createObjectURL(blob);

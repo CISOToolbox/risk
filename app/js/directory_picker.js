@@ -70,7 +70,7 @@
             id: uid,
             users: _dirPeople,
             value: display,
-            placeholder: "Rechercher...",
+            placeholder: t("misc.search"),
             onCreate: canCreate
                 ? function (q) { return up.promptCreateUser({ query: q, apiUrl: "api/directory" }); }
                 : null,
@@ -103,7 +103,7 @@
                 h += '</div>';
             });
             h += '<select style="margin-top:6px;padding:4px 8px;border:1px solid var(--ct-line);border-radius:4px;font-size:0.82em" data-change="' + addHandler + '" data-pass-value>';
-            h += '<option value="">+ Ajouter</option>';
+            h += '<option value="">+ ' + esc(t("btn_add")) + '</option>';
             _dirPeople.forEach(function (p) {
                 if (ids.indexOf(p.email) >= 0)
                     return;
@@ -116,7 +116,7 @@
         }
         else {
             // Local mode: comma-separated text
-            h += '<input type="text" value="' + esc(ids.join(", ")) + '" placeholder="Noms separes par des virgules" data-change="' + addHandler + '" data-pass-value style="width:100%;padding:6px 10px;border:1px solid var(--ct-line);border-radius:4px;font-size:0.85em">';
+            h += '<input type="text" value="' + esc(ids.join(", ")) + '" placeholder="' + esc(t("dir.names_placeholder")) + '" data-change="' + addHandler + '" data-pass-value style="width:100%;padding:6px 10px;border:1px solid var(--ct-line);border-radius:4px;font-size:0.85em">';
         }
         return h;
     };
@@ -136,13 +136,13 @@
         if (!_dirPilotAvailable)
             return '';
         var h = '<div style="margin:16px 0;padding:12px;background:var(--ct-canvas);border:1px solid var(--ct-line);border-radius:8px">';
-        h += '<label style="font-weight:600;font-size:0.85em;display:block;margin-bottom:8px">Source de l\'annuaire</label>';
+        h += '<label style="font-weight:600;font-size:0.85em;display:block;margin-bottom:8px">' + esc(t("dir.source")) + '</label>';
         h += '<select data-change="_dirSetSource" data-pass-value data-pass-el style="padding:6px 10px;border:1px solid var(--ct-line);border-radius:4px;font-size:0.85em">';
-        h += '<option value="local"' + (_dirSource === "local" ? ' selected' : '') + '>Base locale du module</option>';
-        h += '<option value="pilot"' + (_dirSource === "pilot" ? ' selected' : '') + '>Annuaire central (Pilot)</option>';
+        h += '<option value="local"' + (_dirSource === "local" ? ' selected' : '') + '>' + esc(t("dir.source_local")) + '</option>';
+        h += '<option value="pilot"' + (_dirSource === "pilot" ? ' selected' : '') + '>' + esc(t("dir.source_pilot")) + '</option>';
         h += '</select>';
         if (_dirSource === "pilot")
-            h += '<div style="font-size:0.78em;color:var(--ct-ink-2);margin-top:4px">' + _dirPeople.length + ' personne(s) dans l\'annuaire Pilot</div>';
+            h += '<div style="font-size:0.78em;color:var(--ct-ink-2);margin-top:4px">' + esc(t("dir.pilot_count", { n: _dirPeople.length })) + '</div>';
         h += '</div>';
         return h;
     };
@@ -164,7 +164,7 @@
             if (_dirSource === "pilot" && !_dirLoaded)
                 _dirFetchPeople();
             if (typeof showStatus === "function")
-                showStatus("Source annuaire : " + (_dirSource === "pilot" ? "Pilot" : "locale"));
+                showStatus(t(_dirSource === "pilot" ? "dir.source_set_pilot" : "dir.source_set_local"));
             if (typeof renderAll === "function")
                 setTimeout(renderAll, 300);
             else if (typeof renderPanel === "function")

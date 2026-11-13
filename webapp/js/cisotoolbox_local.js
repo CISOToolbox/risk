@@ -118,7 +118,7 @@ async function _renderSnapshotsPanel(opts) {
     }
     else {
         h += '<table><thead><tr><th>' + esc(t(keys.col_name)) + '</th><th>' + esc(t(keys.col_date)) + '</th><th>' + esc(t(keys.col_org)) + '</th><th>' + esc(t(keys.col_actions)) + '</th></tr></thead><tbody>';
-        var loc = (typeof _locale !== "undefined" && _locale === "en") ? "en-US" : "fr-FR";
+        var loc = (typeof _locale !== "undefined" && _locale === "fr") ? "fr-FR" : "en-GB";
         for (var i = snaps.length - 1; i >= 0; i--) {
             var s = snaps[i];
             var d = new Date(s.date);
@@ -521,7 +521,7 @@ function _isSnapEncrypted() {
     }
 }
 async function createSnapshot() {
-    var name = prompt(t("snap_prompt_name"), new Date().toLocaleString(_locale === "en" ? "en-GB" : "fr-FR"));
+    var name = prompt(t("snap_prompt_name"), new Date().toLocaleString(_locale === "fr" ? "fr-FR" : "en-GB"));
     if (!name)
         return;
     var snaps = await _getSnapshots();
@@ -638,7 +638,7 @@ function _wireDemoSettings() {
             _loadDemo();
     };
     function _loadDemo() {
-        var demoFile = (window._locale || "fr") === "fr" ? "demo-fr.json" : "demo-en.json";
+        var demoFile = (window._locale || "en") === "fr" ? "demo-fr.json" : "demo-en.json";
         if (typeof window._ctSettingsEnd === "function")
             window._ctSettingsEnd();
         if (typeof window._aiClosePanel === "function")

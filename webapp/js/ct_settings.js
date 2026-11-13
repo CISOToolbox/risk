@@ -95,7 +95,7 @@
             }
             // API key (all providers except custom-without-key)
             if (p !== "custom" || true) {
-                h += '<div class="settings-label fs-sm" style="margin-bottom:4px">' + t("settings.api_key") + (p === "custom" ? ' <span class="text-muted">(optionnel)</span>' : '') + '</div>';
+                h += '<div class="settings-label fs-sm" style="margin-bottom:4px">' + t("settings.api_key") + (p === "custom" ? ' <span class="text-muted">' + t("settings.optional") + '</span>' : '') + '</div>';
                 h += '<div style="display:flex;gap:6px;align-items:center">';
                 h += '<input type="password" class="settings-input" id="settings-api-key" value="' + esc(key) + '" placeholder="' + esc((pConf.placeholder || "sk-...")) + '" style="flex:1">';
                 h += '<button class="settings-btn-eye" id="settings-toggle-key" title="' + t("settings.show_key") + '">👁</button>';
@@ -115,12 +115,12 @@
             if (p === "custom") {
                 h += '<div class="settings-label fs-sm" style="margin-top:12px;margin-bottom:4px">' + t("settings.endpoint") + ' <span style="color:var(--ct-critical)">*</span></div>';
                 h += '<input type="url" class="settings-input" id="settings-endpoint" value="' + esc(window._aiGetEndpoint()) + '" placeholder="https://my-llm.example.com/v1/chat/completions" style="width:100%">';
-                h += '<p class="fs-xs text-muted" style="margin-top:4px">' + (t("settings.custom_endpoint_note") || "URL complète du endpoint compatible OpenAI (POST, JSON, messages[]).") + '</p>';
+                h += '<p class="fs-xs text-muted" style="margin-top:4px">' + t("settings.custom_endpoint_note") + '</p>';
             }
             else if (!window._aiBrowserOnly) {
                 // The browser-only edition calls each provider at its own
                 // endpoint only (CSP connect-src): no override there.
-                h += '<div class="settings-label fs-sm" style="margin-top:12px;margin-bottom:4px">' + t("settings.endpoint") + ' <span class="text-muted">(optionnel)</span></div>';
+                h += '<div class="settings-label fs-sm" style="margin-top:12px;margin-bottom:4px">' + t("settings.endpoint") + '</div>';
                 h += '<input type="url" class="settings-input" id="settings-endpoint" value="' + esc(window._aiGetEndpoint()) + '" placeholder="' + esc((pConf.endpoint || "")) + '" style="width:100%">';
                 h += '<p class="fs-xs text-muted" style="margin-top:4px">' + t("settings.endpoint_note") + '</p>';
             }
@@ -130,7 +130,7 @@
             // Add "custom" to provider options if not already defined
             var allProviderOpts = provOpts;
             if (!AI_PROVIDERS.custom && (!_allow || _allow.indexOf("custom") >= 0)) {
-                allProviderOpts += '<option value="custom"' + (curProvider === "custom" ? ' selected' : '') + '>' + (t("settings.provider_custom") || "Custom LLM") + '</option>';
+                allProviderOpts += '<option value="custom"' + (curProvider === "custom" ? ' selected' : '') + '>' + (t("settings.provider_custom")) + '</option>';
             }
             _settingsHTML +=
                 '<div class="settings-section">' +
@@ -149,7 +149,7 @@
                     '<input type="file" class="settings-input" id="settings-context-file" accept=".md,.txt,.markdown" style="flex:1;font-family:inherit">' +
                     (window._aiGetContextName() ? '<button class="ai-btn-ignore" id="settings-context-clear" style="white-space:nowrap">' + t("settings.context_clear") + '</button>' : '') +
                     '</div>' +
-                    (window._aiGetContextName() ? '<p class="fs-xs" style="margin-top:4px;color:var(--ct-low)">&#10003; ' + esc(window._aiGetContextName()) + ' (' + Math.round(window._aiGetContext().length / 1024) + ' Ko)</p>' : '<p class="fs-xs text-muted" style="margin-top:4px">' + t("settings.context_note") + '</p>') +
+                    (window._aiGetContextName() ? '<p class="fs-xs" style="margin-top:4px;color:var(--ct-low)">&#10003; ' + esc(window._aiGetContextName()) + ' (' + Math.round(window._aiGetContext().length / 1024) + ' KB)</p>' : '<p class="fs-xs text-muted" style="margin-top:4px">' + t("settings.context_note") + '</p>') +
                     '</div>';
         }
         else {
@@ -254,7 +254,7 @@
             if (aiToggle && newProvider === "custom") {
                 var epVal = (document.getElementById("settings-endpoint") || {}).value || "";
                 if (!epVal.trim()) {
-                    alert(t("settings.custom_needs_endpoint") || "L'endpoint est requis pour un LLM personnalisé.");
+                    alert(t("settings.custom_needs_endpoint"));
                     return;
                 }
             }
@@ -541,6 +541,7 @@
         "settings.show_key": "Afficher / masquer la clé",
         "settings.api_key_note": "La clé est stockée dans votre navigateur (localStorage) et n'est jamais incluse dans les fichiers sauvegardés. Elle est transmise directement à l'API du fournisseur depuis votre navigateur — elle peut être visible dans les DevTools et par les extensions installées.",
         "settings.endpoint": "Endpoint API (optionnel)",
+        "settings.optional": "(optionnel)",
         "settings.endpoint_note": "Laissez vide pour utiliser l'API officielle du fournisseur. Renseignez une URL custom pour utiliser un proxy ou un endpoint compatible (ex: Azure OpenAI, Ollama, LiteLLM).",
         "settings.secret_key": "Secret Access Key (AWS)",
         "settings.region": "Region AWS",
@@ -575,6 +576,7 @@
         "settings.show_key": "Show / hide key",
         "settings.api_key_note": "The key is stored in your browser (localStorage) and never included in saved files. It is transmitted directly to the provider's API from your browser — it may be visible in DevTools and to installed browser extensions.",
         "settings.endpoint": "API Endpoint (optional)",
+        "settings.optional": "(optional)",
         "settings.endpoint_note": "Leave empty to use the official provider API. Enter a custom URL for a proxy or compatible endpoint (e.g.: Azure OpenAI, Ollama, LiteLLM).",
         "settings.secret_key": "Secret Access Key (AWS)",
         "settings.region": "AWS Region",

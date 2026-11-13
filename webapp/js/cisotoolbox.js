@@ -441,7 +441,7 @@ function _svgTimeline(data, opts) {
     data = data || {};
     var events = (data.events || []).slice(-8); // keep latest 8
     if (!events.length)
-        return '<div class="ct-empty">Aucun événement</div>';
+        return '<div class="ct-empty">' + esc(t("ct.timeline.empty")) + '</div>';
     var w = opts.width || 320, h = 60;
     var statusColor = {
         completed: _svgSeriesColor("green"),
@@ -1513,18 +1513,18 @@ function ctRenderMatrix(opts) {
     var colors = opts.colors || (N === 4 ? CT_COLORS.matrix4 : CT_COLORS.matrix5);
     var colorFn = opts.colorFn || null;
     var defaultLegend = [
-        { label: t("matrix.low") || "Faible", color: "#dcfce7" },
-        { label: t("matrix.moderate") || "Modere", color: "#fef9c3" },
-        { label: t("matrix.significant") || "Significatif", color: "#fed7aa" },
-        { label: t("matrix.high") || "Eleve", color: "#fecaca" },
-        { label: t("matrix.critical") || "Critique", color: "#fca5a5" },
-        { label: t("matrix.extreme") || "Extreme", color: "#ef4444" }
+        { label: t("matrix.low"), color: "#dcfce7" },
+        { label: t("matrix.moderate"), color: "#fef9c3" },
+        { label: t("matrix.significant"), color: "#fed7aa" },
+        { label: t("matrix.high"), color: "#fecaca" },
+        { label: t("matrix.critical"), color: "#fca5a5" },
+        { label: t("matrix.extreme"), color: "#ef4444" }
     ];
     var legend = opts.legend || defaultLegend;
     var matrixId = "ct-matrix-" + (++_ctMatrixCounter);
     var grid = opts.grid || {};
-    var xLabel = opts.xLabel || t("matrix.x") || "Impact";
-    var yLabel = opts.yLabel || t("matrix.y") || "Vraisemblance";
+    var xLabel = opts.xLabel || t("matrix.x");
+    var yLabel = opts.yLabel || t("matrix.y");
     var xLabels = opts.xLabels || null;
     var yLabels = opts.yLabels || null;
     var svg = '<div style="display:flex;flex-direction:column;align-items:center"><svg viewBox="-14 0 ' + (W + 14) + ' ' + H + '" style="width:100%;max-width:420px;overflow:visible">';
@@ -1802,7 +1802,7 @@ function ct_renderAppbar(opts) {
             + '<img class="ct-modulemark" src="' + esc(mark) + '" alt="">'
             + "<span>" + esc(name) + "</span></span>";
     }
-    var context = o.context ? '<span class="ct-appbar-sep"></span><nav class="ct-appbar-context" aria-label="Contexte"><span>' + esc(o.context) + "</span></nav>" : "";
+    var context = o.context ? '<span class="ct-appbar-sep"></span><nav class="ct-appbar-context" aria-label="' + esc(t("chrome.context")) + '"><span>' + esc(o.context) + "</span></nav>" : "";
     var avatar = CT_EDITION === "opensource" ? "" : '<span class="ct-avatar" title="—">—</span>';
     return picker + context
         + '<span class="ct-spacer"></span>'

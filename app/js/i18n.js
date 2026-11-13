@@ -140,6 +140,9 @@ function _applyStaticTranslations() {
     document.querySelectorAll("[data-i18n-placeholder]").forEach(function (el) {
         el.placeholder = t(el.getAttribute("data-i18n-placeholder"));
     });
+    document.querySelectorAll("[data-i18n-aria-label]").forEach(function (el) {
+        el.setAttribute("aria-label", t(el.getAttribute("data-i18n-aria-label")));
+    });
 }
 function _getSettingsButtonHTML() {
     return '<button class="btn-settings" id="btn-settings" data-click="openSettings"'

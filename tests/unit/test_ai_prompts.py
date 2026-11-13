@@ -159,6 +159,15 @@ def test_the_language_reaches_the_prompt():
     assert "Respond in English." in build_prompt("vm", D, "en")
 
 
+@pytest.mark.parametrize("language, named", [
+    ("fr", "French"), ("FR", "French"), ("fr-FR", "French"), ("fr_FR", "French"), (" fr ", "French"),
+    ("en", "English"), ("", "English"), (None, "English"), ("de", "English"),
+])
+def test_the_language_is_read_whatever_its_spelling(language, named):
+    # `fr-FR`, the tag a browser gives, used to be answered in English.
+    assert ai_prompts._lang(language) == named
+
+
 # ── "custom instruction" mode: the split ─────────────────────────────────
 
 def test_a_custom_instruction_keeps_the_data_and_the_schema():

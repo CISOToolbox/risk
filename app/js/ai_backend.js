@@ -66,8 +66,7 @@
         if (!_purgeStoredKeys())
             return;
         if (typeof showStatus === "function") {
-            showStatus(t("settings.ai_keys_purged")
-                || "Locally stored AI API keys removed — they are managed by the server.");
+            showStatus(t("settings.ai_keys_purged"));
         }
     }
     // ═══════════════════════════════════════════════════════════════════
@@ -150,7 +149,7 @@
             systemPrompt += "\n\n--- METHODOLOGY INSTRUCTIONS (provided by the user) ---\n" + ctx;
         }
         if (!window._aiRuntime.can_use)
-            throw new Error(t("ai.invalid_key") || "AI access not granted");
+            throw new Error(t("ai.invalid_key"));
         var r;
         try {
             r = await fetch("api/ai/complete", {
@@ -169,7 +168,7 @@
             throw new Error("Network: " + e.message);
         }
         if (r.status === 403)
-            throw new Error(t("ai.invalid_key") || "AI access not granted");
+            throw new Error(t("ai.invalid_key"));
         if (!r.ok) {
             var errTxt = await r.text();
             throw new Error("API " + r.status + ": " + errTxt.substring(0, 200));
@@ -243,7 +242,7 @@
                         ? '<p class="fs-xs text-muted" style="margin:4px 0 0">' + esc(t(window._aiRuntime.managed_by === "module"
                             ? (window._aiRuntime.editable ? "settings.ai_server.note_admin" : "settings.ai_server.note")
                             : "settings.ai_managed_note")) + '</p>'
-                        : '<p class="fs-xs" style="margin:4px 0 0;color:var(--ct-critical)">' + esc(t("settings.ai_no_access") || "AI access has not been granted to your account. Contact your administrator.") + '</p>') +
+                        : '<p class="fs-xs" style="margin:4px 0 0;color:var(--ct-critical)">' + esc(t("settings.ai_no_access")) + '</p>') +
                     serverHTML +
                     '</div>';
         }
