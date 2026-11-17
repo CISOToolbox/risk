@@ -18,7 +18,7 @@ Correspondence table (KEEP IN SYNC — the fixture test enforces it):
 
     module      rev   TS chain (ct_schema)            python chain (here)
     risk        1     —                               —
-    compliance  1     —                               —
+    compliance  2     1→2 proofs get source=manual    1→2 proofs get source=manual
     audit       1     —                               —
     asset       1     —                               —
     access      1     —                               —
@@ -46,7 +46,7 @@ from typing import Any, Callable
 
 MODULE_REVS: dict[str, int] = {
     "risk": 1,
-    "compliance": 1,
+    "compliance": 2,
     "audit": 1,
     "asset": 1,
     "access": 1,
@@ -118,8 +118,18 @@ def _vendor_2_to_3(data: dict) -> None:
                 exp["penetration"] = _v54_axis_mean(cls, _V54_PEN)
 
 
+def _compliance_1_to_2(data: dict) -> None:
+    """FEAT-73. Every proof has a source: `manual` or `collected`. A rev<=1
+    export predates the field, and every proof it holds was added by a person.
+    This reshapes the ``preuves`` key (declared in RESHAPED_KEYS)."""
+    for p in data.get("preuves") or []:
+        if isinstance(p, dict) and not p.get("source"):
+            p["source"] = "manual"
+
+
 MODULE_MIGRATIONS: dict[str, dict[int, Callable[[dict], None]]] = {
     "vendor": {1: _vendor_1_to_2, 2: _vendor_2_to_3},
+    "compliance": {1: _compliance_1_to_2},
 }
 
 # Keys a module's migration chain is allowed to RESHAPE in place. The fixture
@@ -127,6 +137,7 @@ MODULE_MIGRATIONS: dict[str, dict[int, Callable[[dict], None]]] = {
 # every other business key must be preserved verbatim.
 RESHAPED_KEYS: dict[str, set[str]] = {
     "vendor": {"vendors"},  # FEAT-54 2→3 coerces classification 0 -> null
+    "compliance": {"preuves"},  # FEAT-73 1→2 gives each proof its source
 }
 
 
